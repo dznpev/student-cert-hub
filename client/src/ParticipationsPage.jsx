@@ -58,7 +58,7 @@ export default function ParticipationsPage({ activities, students, participation
       setError(result.message)
       return
     }
-    setNotice(`${review.approvalStatus === 'Approved' ? 'Đã duyệt' : 'Đã từ chối'} lượt tham gia của ${reviewStudent?.fullName ?? 'sinh viên'} (${reviewStudent?.studentCode ?? '—'}) trong hoạt động ${reviewActivity?.name ?? 'chưa xác định'}.`)
+    setNotice(`${review.approvalStatus === 'Approved' ? 'Đã duyệt' : 'Đã từ chối'} lượt tham gia của ${reviewStudent?.fullName ?? 'sinh viên'} (${reviewStudent?.studentCode ?? '—'}) trong hoạt động ${reviewActivity?.name ?? 'chưa xác định'}.${review.approvalStatus === 'Approved' ? ' Yêu cầu chứng nhận đã được ghi nhận; xem trạng thái PDF tại trang Chứng nhận.' : ''}`)
     setReview(null)
     setSelectedIds((current) => current.filter((id) => id !== review.participationId))
   }
@@ -117,7 +117,7 @@ export default function ParticipationsPage({ activities, students, participation
                 <div id="participation-reason-help" className="form-text">Tối đa 500 ký tự. Lý do sẽ được lưu cùng lượt tham gia.</div>
               </div>
             ) : (
-              <p className="text-body-secondary">Lượt tham gia sẽ chuyển sang Đã duyệt. Chức năng phát hành PDF chưa được kết nối.</p>
+              <p className="text-body-secondary">Lượt tham gia sẽ chuyển sang Đã duyệt và tự thêm yêu cầu chứng nhận tại trang Chứng nhận. Đây là hàng đợi mô phỏng, chưa tạo tệp PDF thật.</p>
             )}
             <div id="participation-review-error" role={error ? 'alert' : undefined}>
               {error && <p className="text-danger">{error}</p>}

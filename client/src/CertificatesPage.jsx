@@ -1,13 +1,6 @@
 import { useState } from 'react'
 import { certificateStatuses } from './certificateStatuses.js'
 
-const sampleCertificates = [
-  { certificateCode: 'CN-MAU-001', participationId: 2, issuedAt: '2026-10-26', status: 'Issued' },
-  { certificateCode: 'CN-MAU-002', participationId: 3, issuedAt: '2026-10-26', status: 'Revoked' },
-  { certificateCode: 'CN-MAU-003', participationId: 5, issuedAt: null, status: 'Generating' },
-  { certificateCode: 'CN-MAU-004', participationId: 6, issuedAt: null, status: 'Failed' },
-]
-
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
   month: '2-digit',
@@ -15,10 +8,10 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function CertificatesPage({ activities, students, participations }) {
+export default function CertificatesPage({ activities, students, participations, certificates }) {
   const [selectedActivity, setSelectedActivity] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
-  const visibleCertificates = sampleCertificates
+  const visibleCertificates = certificates
     .map((certificate) => ({
       certificate,
       participation: participations.find(({ participationId }) => participationId === certificate.participationId),
@@ -32,7 +25,8 @@ export default function CertificatesPage({ activities, students, participations 
   return (
     <>
       <h1 className="page-title mb-2">Chứng nhận</h1>
-      <p className="text-body-secondary mb-4">Dữ liệu mẫu</p>
+      <p className="text-body-secondary mb-2">Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
+      <p className="text-body-secondary mb-4">Duyệt lượt tham gia sẽ tự thêm yêu cầu chứng nhận. Đang tạo là hàng đợi mô phỏng, chưa có tệp PDF thật để tải.</p>
 
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
@@ -77,11 +71,13 @@ export default function CertificatesPage({ activities, students, participations 
                   <th scope="col">Hoạt động</th>
                   <th scope="col">Ngày phát hành</th>
                   <th scope="col">Trạng thái</th>
+                  <th scope="col">Mẫu chứng nhận</th>
+                  <th scope="col">Chi tiết PDF</th>
                 </tr>
               </thead>
               <tbody>
                 {visibleCertificates.map(({ certificate, participation }) => {
-                  const { certificateCode, issuedAt, status } = certificate
+                  const { certificateCode, issuedAt, status, templateName, templateVersion, lastError } = certificate
                   const student = students.find((item) => item.studentId === participation?.studentId)
                   const activity = activities.find((item) => item.activityId === participation?.activityId)
                   const statusInfo = certificateStatuses.find((item) => item.status === status)
@@ -94,12 +90,16 @@ export default function CertificatesPage({ activities, students, participations 
                       <td>{activity?.name ?? 'Chưa xác định'}</td>
                       <td>{issuedAt ? dateFormatter.format(new Date(issuedAt)) : '—'}</td>
                       <td><span className={'badge text-wrap ' + statusInfo.badge}>{statusInfo.label}</span></td>
+                      <td>{templateName ? `${templateName} · v${templateVersion}` : 'Chưa có thông tin mẫu'}</td>
+                      <td>{status === 'Generating'
+                        ? 'Đã ghi nhận yêu cầu, chờ xử lý mô phỏng.'
+                        : status === 'Failed' ? lastError || 'Dữ liệu lỗi mẫu, chưa có chi tiết lỗi.' : 'Dữ liệu chứng nhận mẫu, chưa có tệp PDF thật.'}</td>
                     </tr>
                   )
                 })}
                 {visibleCertificates.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center text-body-secondary">Không tìm thấy chứng nhận phù hợp.</td>
+                    <td colSpan={8} className="text-center text-body-secondary">Không tìm thấy chứng nhận phù hợp.</td>
                   </tr>
                 )}
               </tbody>

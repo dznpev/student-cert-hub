@@ -232,7 +232,7 @@ body {
 }
 
 .certificates-table {
-  min-width: 47rem;
+  min-width: 85rem;
 }
 
 .certificates-table :is(th, td):nth-child(5) {

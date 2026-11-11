@@ -14,6 +14,9 @@ import { sampleStudents } from './sampleStudents.js'
 import { sampleParticipations } from './sampleParticipations.js'
 import { sampleImportHistory } from './sampleImportHistory.js'
 import { reviewParticipations } from './reviewParticipations.js'
+import { sampleCertificates } from './sampleCertificates.js'
+import { sampleCertificateTemplates } from './sampleCertificateTemplates.js'
+import { queueCertificates } from './queueCertificates.js'
 
 const sections = [
   { id: 'overview', title: 'Tổng quan', page: DashboardPage },
@@ -31,6 +34,7 @@ export default function App() {
   const [cohorts, setCohorts] = useState(sampleCohorts)
   const [students, setStudents] = useState(sampleStudents)
   const [participations, setParticipations] = useState(sampleParticipations)
+  const [certificates, setCertificates] = useState(sampleCertificates)
   const [importHistory, setImportHistory] = useState(sampleImportHistory)
   const [activities, setActivities] = useState(sampleActivities)
   const activeSection = sections.find((section) => section.id === activeSectionId)
@@ -69,7 +73,13 @@ export default function App() {
   function reviewParticipationBatch(participationIds, approvalStatus, reason = '') {
     const result = reviewParticipations(participations, participationIds, approvalStatus, reason)
     setParticipations(result.participations)
-    return result.results
+    if (approvalStatus === 'Approved') {
+      const approvedIds = result.results.filter((item) => item.success).map((item) => item.participationId)
+      setCertificates(queueCertificates(certificates, result.participations, approvedIds, activities, sampleCertificateTemplates))
+    }
+    return result.results.map((item) => item.success && approvalStatus === 'Approved'
+      ? { ...item, message: 'Đã duyệt. Xem trạng thái PDF tại trang Chứng nhận.' }
+      : item)
   }
 
   function importStudentPreview(preview) {
@@ -161,6 +171,7 @@ export default function App() {
         <ActivePage
           students={students}
           participations={participations}
+          certificates={certificates}
           onReviewParticipation={reviewParticipation}
           onReviewParticipations={reviewParticipationBatch}
           onImportParticipations={importParticipationPreview}
