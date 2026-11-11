@@ -62,18 +62,20 @@ body {
   transform: scale(0.97);
 }
 
-.student-portal .dropdown-menu {
+:is(.student-portal, .admin-header) #portal-account-menu {
   display: block;
 }
 
-.student-portal :is(.dropdown-menu, .student-notifications) {
+.student-portal .student-notifications,
+:is(.student-portal, .admin-header) #portal-account-menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
   transition: opacity 160ms ease, transform 160ms ease-out, visibility 0s;
 }
 
-.student-portal :is(.dropdown-menu, .student-notifications)[aria-hidden="true"] {
+.student-portal .student-notifications[aria-hidden="true"],
+:is(.student-portal, .admin-header) #portal-account-menu[aria-hidden="true"] {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -86,12 +88,14 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .student-portal :is(.btn, .dropdown-item, .dropdown-menu, .student-notifications) {
+  .student-portal :is(.btn, .dropdown-item, .student-notifications),
+  :is(.student-portal, .admin-header) #portal-account-menu {
     transition: none;
   }
 
   .student-portal .btn:active,
-  .student-portal :is(.dropdown-menu, .student-notifications)[aria-hidden="true"] {
+  .student-portal .student-notifications[aria-hidden="true"],
+  :is(.student-portal, .admin-header) #portal-account-menu[aria-hidden="true"] {
     transform: none;
   }
 }

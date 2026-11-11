@@ -11,7 +11,8 @@ const studentPages = [
   ['certificates', 'Chứng nhận'],
 ]
 
-export default function StudentPortal({ students, cohorts, activities, participations, certificates, notifications, onReadNotification, onManagementSignIn }) {
+export default function StudentPortal({ students, cohorts, activities, participations, certificates, notifications,
+  onReadNotification, onManagementSignIn, onActivateDemoStudent, adminPreviewAvailable }) {
   const [studentId, setStudentId] = useState('')
   const [showPreviewPicker, setShowPreviewPicker] = useState(false)
   const [panel, setPanel] = useState('')
@@ -39,6 +40,7 @@ export default function StudentPortal({ students, cohorts, activities, participa
 
   if (!student && !showPreviewPicker) {
     return <StudentLogin students={students} onSignIn={selectStudent} onManagementSignIn={onManagementSignIn}
+      onActivateDemoStudent={onActivateDemoStudent} adminPreviewAvailable={adminPreviewAvailable}
       onPreview={() => setShowPreviewPicker(true)} />
   }
 
@@ -98,7 +100,7 @@ export default function StudentPortal({ students, cohorts, activities, participa
               Về đăng nhập
             </button>
           )}
-          <a href="#admin" className="btn btn-outline-secondary">Quay lại quản trị</a>
+          {adminPreviewAvailable && <a href="#admin" className="btn btn-outline-secondary">Quay lại quản trị</a>}
         </div>
         {student && (
           <nav className="d-flex flex-wrap gap-2 mb-3" aria-label="Khu vực cá nhân">

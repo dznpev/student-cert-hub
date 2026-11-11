@@ -1,4 +1,5 @@
 import { certificateStatuses } from './certificateStatuses.js'
+import CertificateVerificationLink from './CertificateVerificationLink.jsx'
 import { approvalStatuses } from './approvalStatuses.js'
 import { compareCodesDescending } from './sortRecords.js'
 
@@ -51,6 +52,9 @@ export default function StudentRecords({ page, studentId, activities, participat
                     </dl>
                   )}
                   {reason && <p className="mb-0 mt-2 text-break"><strong>{showCertificates ? 'Lý do thu hồi' : 'Lý do từ chối'}</strong> · {reason}</p>}
+                  {showCertificates && certificate.certificateCode && ['Issued', 'Revoked'].includes(certificate.status) && (
+                    <CertificateVerificationLink certificateCode={certificate.certificateCode} />
+                  )}
                 </li>
               )
             })}

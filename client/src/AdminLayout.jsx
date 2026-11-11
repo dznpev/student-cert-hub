@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AccountMenu from './AccountMenu.jsx'
 import hutechLogo from './assets/hutech-logo.png'
 
 export default function AdminLayout({
@@ -6,14 +7,25 @@ export default function AdminLayout({
   activeSectionId,
   onSelectSection,
   roleLabel,
+  accountIdentifier,
   onDemoSignOut,
   children,
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [accountPage, setAccountPage] = useState('')
 
   function selectSection(sectionId) {
-    onSelectSection(sectionId)
+    onSelectSection?.(sectionId)
     setMenuOpen(false)
+    setAccountMenuOpen(false)
+    setAccountPage('')
+    document.getElementById('main-content').focus()
+  }
+
+  function showAccountPage(page) {
+    setAccountPage(page)
+    setAccountMenuOpen(false)
     document.getElementById('main-content').focus()
   }
 
@@ -56,14 +68,37 @@ export default function AdminLayout({
 
       <header className="admin-header px-3 px-md-4 px-xl-5 py-3">
         <div className="brand-title">Quản lý chứng nhận sinh viên</div>
-        <div className="d-flex align-items-center flex-wrap gap-2">
+        <div className="d-flex align-items-center flex-wrap gap-2"
+          onKeyDown={(event) => {
+            if (event.key !== 'Escape' || !accountMenuOpen) return
+            const trigger = event.currentTarget.querySelector('button[aria-expanded="true"]')
+            setAccountMenuOpen(false)
+            trigger?.focus()
+          }}>
           <span className="brand-role">{roleLabel}</span>
-          {onDemoSignOut && <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onDemoSignOut}>Đăng xuất</button>}
+          <AccountMenu identifier={accountIdentifier} open={accountMenuOpen}
+            onToggle={() => setAccountMenuOpen((open) => !open)}
+            onProfile={() => showAccountPage('profile')} onAccount={() => showAccountPage('account')}
+            onSignOut={onDemoSignOut} />
         </div>
       </header>
 
-      <main id="main-content" tabIndex={-1} className="p-3 p-md-4 p-xl-5">
-        {children}
+      <main id="main-content" tabIndex={-1} className="p-3 p-md-4 p-xl-5"
+        onClick={() => accountMenuOpen && setAccountMenuOpen(false)}>
+        <div hidden={Boolean(accountPage)}>{children}</div>
+        {accountPage && (
+          <section className="card content-card rounded-4">
+            <div className="card-body p-3 p-md-4">
+              <h1 className="page-title mb-3">{accountPage === 'profile' ? 'Hồ sơ' : 'Tài khoản'}</h1>
+              <dl>
+                <dt>Tên đăng nhập</dt><dd>{accountIdentifier}</dd>
+                <dt>Vai trò</dt><dd>{roleLabel}</dd>
+              </dl>
+              {accountPage === 'account' && <p className="text-body-secondary">Tài khoản mẫu của Student Cert Hub.</p>}
+              <button type="button" className="btn btn-outline-secondary" onClick={() => showAccountPage('')}>Quay lại</button>
+            </div>
+          </section>
+        )}
       </main>
     </div>
   )

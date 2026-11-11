@@ -3,10 +3,13 @@ import AdminLayout from './AdminLayout.jsx'
 import ActivitiesPage from './ActivitiesPage.jsx'
 import AuditLogsPage from './AuditLogsPage.jsx'
 import CertificatesPage from './CertificatesPage.jsx'
+import CertificateVerification from './CertificateVerification.jsx'
 import CohortsPage from './CohortsPage.jsx'
 import DashboardPage from './DashboardPage.jsx'
 import ImportsPage from './ImportsPage.jsx'
 import StudentPortal from './StudentPortal.jsx'
+import { demoStudentActivation } from './demoStudentActivation.js'
+import SuperAdminAccounts from './SuperAdminAccounts.jsx'
 import ParticipationsPage from './ParticipationsPage.jsx'
 import StudentsPage from './StudentsPage.jsx'
 import { sampleCohorts } from './sampleCohorts.js'
@@ -43,8 +46,15 @@ function getPreviewLocation() {
 
 export default function App() {
   const previewLocation = useSyncExternalStore(subscribeToHash, getPreviewLocation)
+  const [previewRoute, previewQuery] = previewLocation.split('?', 2)
+  const showVerification = previewRoute === '#tra-cuu'
   const [managementRole, setManagementRole] = useState('')
-  const showStudentPreview = previewLocation === '#sinh-vien' || (previewLocation === '#quan-tri-mau' && !managementRole)
+  const [adminLocked, setAdminLocked] = useState(false)
+  const [superAdminSection, setSuperAdminSection] = useState('accounts')
+  const inSuperAdmin = previewLocation === '#quan-tri-mau' && managementRole === 'superAdmin'
+  const showStudentPreview = previewLocation === '#sinh-vien'
+    || (previewLocation === '#quan-tri-mau' && !managementRole)
+    || (adminLocked && !inSuperAdmin)
   const [activeSectionId, setActiveSectionId] = useState('overview')
   const [cohorts, setCohorts] = useState(sampleCohorts)
   const [students, setStudents] = useState(sampleStudents)
@@ -57,10 +67,29 @@ export default function App() {
   const activeSection = sections.find((section) => section.id === activeSectionId)
   const ActivePage = activeSection.page
 
+  function activateDemoStudent(studentCode, activationCode) {
+    const student = students.find((item) => item.studentCode === studentCode)
+    if (!student || studentCode !== demoStudentActivation.studentCode
+      || activationCode !== demoStudentActivation.activationCode) {
+      return { error: 'MSSV hoặc mã kích hoạt mẫu không đúng.' }
+    }
+    if (student.userId) return { error: 'Tài khoản này đã được kích hoạt trong phiên.' }
+
+    setStudents((current) => current.map((item) => (
+      item.studentId === student.studentId && !item.userId
+        ? { ...item, userId: 'demo-activated-' + item.studentId }
+        : item
+    )))
+    return { error: '' }
+  }
+
   function startManagementPreview(role) {
+    if (role === 'admin' && adminLocked) return false
     setManagementRole(role)
     setActiveSectionId('overview')
+    setSuperAdminSection('accounts')
     window.location.hash = 'quan-tri-mau'
+    return true
   }
 
   function endManagementPreview() {
@@ -93,7 +122,7 @@ export default function App() {
     )))
   }
 
-  function appendAuditLogs(entries) {
+  function appendAuditLogs(entries, actorLabel = 'Admin (mô phỏng)') {
     if (entries.length === 0) return
     const timestamp = new Date().toISOString()
     setAuditLogs((current) => {
@@ -103,9 +132,21 @@ export default function App() {
         auditLogId: ++nextId,
         timestamp,
         actorUserId: null,
-        actorLabel: 'Admin (mô phỏng)',
+        actorLabel,
       })), ...current]
     })
+  }
+
+  function updateAdminLock(locked) {
+    if (!inSuperAdmin || adminLocked === locked) return
+    setAdminLocked(locked)
+    appendAuditLogs([{
+      action: locked ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+      entityType: 'Accounts',
+      entityId: 'admin',
+      outcome: 'Success',
+      reason: locked ? 'Đã khóa tài khoản Admin mẫu.' : 'Đã mở khóa tài khoản Admin mẫu.',
+    }], 'Super Admin (mô phỏng)')
   }
 
   function addCohort({ cohortCode, cohortName }) {
@@ -297,30 +338,44 @@ export default function App() {
     return completeImport(preview, rows, 'Participations')
   }
 
-  if (showStudentPreview) {
+  if (showStudentPreview || showVerification) {
+    const initialCode = new URLSearchParams(previewQuery).get('ma') ?? ''
     return (
-      <StudentPortal students={students} cohorts={cohorts} activities={activities} participations={participations}
-        certificates={certificates} notifications={notifications} onReadNotification={markNotificationRead}
-        onManagementSignIn={startManagementPreview} />
+      <>
+        <div hidden={showVerification}>
+          <StudentPortal students={students} cohorts={cohorts} activities={activities} participations={participations}
+            certificates={certificates} notifications={notifications} onReadNotification={markNotificationRead}
+            onManagementSignIn={startManagementPreview} onActivateDemoStudent={activateDemoStudent}
+            adminPreviewAvailable={!adminLocked} />
+        </div>
+        {showVerification && (
+          <CertificateVerification key={initialCode} initialCode={initialCode} certificates={certificates}
+            participations={participations} activities={activities} />
+        )}
+      </>
     )
   }
 
-  if (previewLocation === '#quan-tri-mau' && managementRole === 'superAdmin') {
+  if (inSuperAdmin) {
     return (
-      <AdminLayout sections={[]} roleLabel="Super Admin · Bản xem thử" onDemoSignOut={endManagementPreview}>
-        <h1 className="page-title">Super Admin</h1>
-        <p className="text-body-secondary">Khu vực xem thử sau khi đăng nhập. Quản lý tài khoản và phân quyền chưa được tích hợp.</p>
+      <AdminLayout key="super-admin" sections={[{ id: 'accounts', title: 'Quản lý tài khoản' }, { id: 'audit', title: 'Nhật ký hệ thống' }]}
+        activeSectionId={superAdminSection} onSelectSection={setSuperAdminSection} roleLabel="Super Admin · Bản xem thử"
+        accountIdentifier="superadmin" onDemoSignOut={endManagementPreview}>
+        {superAdminSection === 'audit' ? <AuditLogsPage auditLogs={auditLogs} />
+          : <SuperAdminAccounts students={students} adminLocked={adminLocked} onUpdateAdminLock={updateAdminLock} />}
       </AdminLayout>
     )
   }
 
   return (
     <AdminLayout
+      key="admin"
       sections={sections}
       activeSectionId={activeSectionId}
       onSelectSection={setActiveSectionId}
       roleLabel="Admin cấp chứng nhận"
-      onDemoSignOut={previewLocation === '#quan-tri-mau' ? endManagementPreview : undefined}
+      accountIdentifier="admin"
+      onDemoSignOut={endManagementPreview}
     >
       {ActivePage ? (
         <ActivePage

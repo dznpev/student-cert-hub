@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { certificateStatuses } from './certificateStatuses.js'
 import { createParticipationComparator } from './sortRecords.js'
+import { normalizeSearch } from './normalizeSearch.js'
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
@@ -10,6 +11,7 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
 })
 
 export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate }) {
+  const [search, setSearch] = useState('')
   const [selectedActivity, setSelectedActivity] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
   const [processing, setProcessing] = useState(null)
@@ -19,6 +21,9 @@ export default function CertificatesPage({ cohorts, activities, students, partic
   const [notice, setNotice] = useState('')
   const processingCertificate = certificates.find((item) => item.certificateId === processing?.certificateId)
   const compareParticipations = createParticipationComparator(cohorts, activities, students)
+  const studentsById = new Map(students.map((student) => [student.studentId, student]))
+  const participationsById = new Map(participations.map((item) => [item.participationId, item]))
+  const query = normalizeSearch(search.trim().replace(/\s+/g, ' '))
 
   function openProcessing(certificateId, action) {
     setProcessing({ certificateId, action })
@@ -44,14 +49,16 @@ export default function CertificatesPage({ cohorts, activities, students, partic
     setProcessing(null)
   }
   const visibleCertificates = certificates
-    .map((certificate) => ({
-      certificate,
-      participation: participations.find(({ participationId }) => participationId === certificate.participationId),
-    }))
-    .filter(({ certificate, participation }) => {
+    .map((certificate) => {
+      const participation = participationsById.get(certificate.participationId)
+      return { certificate, participation, student: studentsById.get(participation?.studentId) }
+    })
+    .filter(({ certificate, participation, student }) => {
       const matchesActivity = selectedActivity === '' || String(participation?.activityId) === selectedActivity
       const matchesStatus = selectedStatus === '' || certificate.status === selectedStatus
-      return matchesActivity && matchesStatus
+      const matchesSearch = query === '' || [certificate.certificateCode, student?.studentCode, student?.fullName]
+        .some((value) => normalizeSearch(String(value ?? '').replace(/\s+/g, ' ')).includes(query))
+      return matchesActivity && matchesStatus && matchesSearch
     })
     .sort((left, right) => compareParticipations(left.participation, right.participation))
 
@@ -101,6 +108,12 @@ export default function CertificatesPage({ cohorts, activities, students, partic
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
+            <div className="col-12 col-xl-4">
+              <label className="form-label" htmlFor="certificate-search">Tìm kiếm</label>
+              <input id="certificate-search" type="search" className="form-control"
+                placeholder="Nhập mã chứng nhận, MSSV hoặc họ tên"
+                value={search} disabled={Boolean(processing)} onChange={(event) => setSearch(event.target.value)} />
+            </div>
             <div className="col-12 col-sm-7 col-xl-5">
               <label className="form-label" htmlFor="certificate-activity">Hoạt động</label>
               <select
@@ -149,9 +162,8 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                 </tr>
               </thead>
               <tbody>
-                {visibleCertificates.map(({ certificate, participation }) => {
+                {visibleCertificates.map(({ certificate, participation, student }) => {
                   const { certificateId, certificateCode, issuedAt, status, templateName, templateVersion, lastError, processingHistory = [], revokedAt, revocationReason } = certificate
-                  const student = students.find((item) => item.studentId === participation?.studentId)
                   const activity = activities.find((item) => item.activityId === participation?.activityId)
                   const statusInfo = certificateStatuses.find((item) => item.status === status)
 

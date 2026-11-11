@@ -1,26 +1,27 @@
 import { useState } from 'react'
 import hutechLogo from './assets/hutech-logo.png'
+import { demoManagementAccounts } from './demoManagementAccounts.js'
+import { demoStudentActivation } from './demoStudentActivation.js'
 
 const demoPassword = 'Demo123!'
 const accountTypes = [
   { id: 'student', label: 'Sinh viên' },
   { id: 'management', label: 'Quản trị' },
 ]
-const managementAccounts = {
-  admin: { label: 'Admin', username: 'admin' },
-  superAdmin: { label: 'Super Admin', username: 'superadmin' },
-}
 
-export default function StudentLogin({ students, onSignIn, onManagementSignIn, onPreview }) {
+export default function StudentLogin({ students, onSignIn, onManagementSignIn, onActivateDemoStudent, onPreview, adminPreviewAvailable }) {
   const [accountType, setAccountType] = useState('')
   const [managementRole, setManagementRole] = useState('')
   const [showCredentials, setShowCredentials] = useState(false)
   const [studentCode, setStudentCode] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [showActivation, setShowActivation] = useState(false)
+  const [activationCode, setActivationCode] = useState('')
+  const [notice, setNotice] = useState('')
   const demoStudents = students.filter((student) => student.userId?.startsWith('demo-'))
   const isManagement = accountType === 'management'
-  const managementAccount = managementAccounts[managementRole]
+  const managementAccount = demoManagementAccounts[managementRole]
   const canContinue = accountType === 'student' || Boolean(isManagement && managementAccount)
   const identifierLabel = isManagement ? 'Tên đăng nhập' : 'MSSV'
 
@@ -33,8 +34,36 @@ export default function StudentLogin({ students, onSignIn, onManagementSignIn, o
     setStudentCode('')
     setPassword('')
     setError('')
+    setNotice('')
     setShowCredentials(false)
   }
+
+  function toggleActivation(open) {
+    setShowActivation(open)
+    setActivationCode('')
+    setPassword('')
+    setError('')
+    setNotice('')
+  }
+
+  function submitActivation(event) {
+    event.preventDefault()
+    const code = studentCode.trim()
+    if (!code || !activationCode.trim()) {
+      setError('Nhập MSSV và mã kích hoạt.')
+      return
+    }
+    const result = onActivateDemoStudent(code, activationCode.trim())
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    toggleActivation(false)
+    setNotice('Đã kích hoạt tài khoản mẫu. Bạn có thể đăng nhập bằng mật khẩu mẫu bên dưới.')
+  }
+
+  const pageTitle = showActivation ? 'Kích hoạt tài khoản mẫu'
+    : showCredentials ? 'Đăng nhập ' + (isManagement ? managementAccount.label : 'sinh viên') : 'Chọn loại tài khoản'
 
   function submit(event) {
     event.preventDefault()
@@ -48,7 +77,7 @@ export default function StudentLogin({ students, onSignIn, onManagementSignIn, o
         setError('Tên đăng nhập hoặc mật khẩu mẫu không đúng.')
         return
       }
-      onManagementSignIn(managementRole)
+      if (!onManagementSignIn(managementRole)) setError('Tài khoản Admin mẫu đang bị khóa.')
       return
     }
     const student = demoStudents.find((item) => item.studentCode === code)
@@ -66,9 +95,10 @@ export default function StudentLogin({ students, onSignIn, onManagementSignIn, o
           <div className="text-center mb-4">
             <img src={hutechLogo} className="student-login-logo mb-3" alt="HUTECH" width="927" height="234" />
             <p className="small fw-semibold text-primary mb-1">Student Cert Hub · Bản xem thử</p>
-            <h1 id="student-login-title" className="h3 fw-bold mb-2">{showCredentials ? 'Đăng nhập ' + (isManagement ? managementAccount.label : 'sinh viên') : 'Chọn loại tài khoản'}</h1>
+            <h1 id="student-login-title" className="h3 fw-bold mb-2">{pageTitle}</h1>
             <p className="small text-body-secondary mb-0">
-              {showCredentials ? 'Dùng tài khoản mẫu bên dưới.' : 'Chọn loại tài khoản để tiếp tục đăng nhập mẫu.'}
+              {showActivation ? 'Dùng mã mẫu để kích hoạt hồ sơ trong phiên này.'
+                : showCredentials ? 'Dùng tài khoản mẫu bên dưới.' : 'Chọn loại tài khoản để tiếp tục đăng nhập mẫu.'}
             </p>
           </div>
           {!showCredentials && (
@@ -87,7 +117,7 @@ export default function StudentLogin({ students, onSignIn, onManagementSignIn, o
               {isManagement && (
                 <fieldset className="mb-3">
                   <legend className="fs-6 fw-semibold">Vai trò quản trị</legend>
-                  {Object.entries(managementAccounts).map(([id, account]) => (
+                  {Object.entries(demoManagementAccounts).map(([id, account]) => (
                     <label key={id} className="d-flex align-items-center gap-2 border rounded-3 p-2 mb-2">
                       <input type="radio" name="management-role" value={id} className="form-check-input m-0"
                         checked={managementRole === id} onChange={() => setManagementRole(id)} />
@@ -99,7 +129,28 @@ export default function StudentLogin({ students, onSignIn, onManagementSignIn, o
               <button type="submit" className="btn btn-primary w-100" disabled={!canContinue}>Đăng nhập</button>
             </form>
           )}
-          {showCredentials && <>
+          {showActivation && (
+            <form onSubmit={submitActivation} noValidate>
+              <div className="mb-3">
+                <label htmlFor="activation-student" className="form-label">MSSV</label>
+                <input id="activation-student" className="form-control" inputMode="numeric" autoFocus required
+                  value={studentCode} onChange={(event) => { setStudentCode(event.target.value); setError('') }} />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="activation-code" className="form-label">Mã kích hoạt</label>
+                <input id="activation-code" className="form-control" autoComplete="off" required
+                  value={activationCode} onChange={(event) => { setActivationCode(event.target.value); setError('') }} />
+              </div>
+              {error && <p className="alert alert-danger py-2" role="alert">{error}</p>}
+              <button className="btn btn-primary w-100" type="submit">Kích hoạt tài khoản</button>
+              <p className="small text-body-secondary mt-3 mb-2">
+                MSSV mẫu <code>{demoStudentActivation.studentCode}</code> · Mã <code>{demoStudentActivation.activationCode}</code>
+              </p>
+              <button type="button" className="btn btn-sm btn-link px-0" onClick={() => toggleActivation(false)}>Về đăng nhập</button>
+            </form>
+          )}
+          {showCredentials && !showActivation && <>
+            {notice && <p className="alert alert-success py-2" role="status">{notice}</p>}
             <form onSubmit={submit} noValidate>
               <div className="mb-3">
                 <label className="form-label" htmlFor="student-login-code">{identifierLabel}</label>
@@ -121,10 +172,12 @@ export default function StudentLogin({ students, onSignIn, onManagementSignIn, o
               <div>Mật khẩu mẫu: <code>{demoPassword}</code></div>
             </div>
             <button type="button" className="btn btn-sm btn-link px-0 mt-3" onClick={goBack}>Quay lại chọn loại tài khoản</button>
+            {!isManagement && <div><button type="button" className="btn btn-sm btn-link px-0" onClick={() => toggleActivation(true)}>Kích hoạt tài khoản mẫu</button></div>}
           </>}
           <div className="d-flex flex-column align-items-center gap-2 mt-3">
+            <a href="#tra-cuu" className="small">Tra cứu chứng nhận</a>
             <button type="button" className="btn btn-sm btn-link" onClick={onPreview}>Chọn hồ sơ xem thử</button>
-            <a href="#admin" className="small">Quay lại quản trị</a>
+            {adminPreviewAvailable && <a href="#admin" className="small">Quay lại quản trị</a>}
           </div>
         </div>
       </section>
