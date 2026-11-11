@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { sampleActivities } from './sampleActivities.js'
 
 const activityStatuses = {
   Draft: 'Bản nháp',
@@ -6,13 +7,6 @@ const activityStatuses = {
   Closed: 'Đã kết thúc',
   Archived: 'Đã lưu trữ',
 }
-
-// Dữ liệu mẫu sẽ được thay bằng danh sách từ API khi tích hợp backend.
-const sampleActivities = [
-  { code: 'HD001', name: 'Ngày hội việc làm', startDate: '2026-11-16', endDate: '2026-11-16', status: 'Open' },
-  { code: 'HD002', name: 'Tập huấn kỹ năng làm việc nhóm', startDate: '2026-11-23', endDate: '2026-11-24', status: 'Draft' },
-  { code: 'HD003', name: 'Chương trình tình nguyện cuối tuần', startDate: '2026-10-24', endDate: '2026-10-25', status: 'Closed' },
-]
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
@@ -70,8 +64,8 @@ export default function ActivitiesPage() {
             </div>
           </div>
 
-          <div className="table-responsive">
-            <table className="table align-middle mb-0 activities-table">
+          <div className="admin-table-scroll" role="region" aria-label="Danh sách hoạt động" tabIndex={0}>
+            <table className="table align-middle mb-0 admin-data-table activities-table">
               <caption className="visually-hidden">Danh sách hoạt động mẫu</caption>
               <thead>
                 <tr>

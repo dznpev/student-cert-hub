@@ -1,11 +1,5 @@
 import { sampleCohorts } from './sampleCohorts.js'
-
-const sampleStudents = [
-  { studentCode: '02400001', fullName: 'Nguyễn Minh Anh', email: '02400001@example.com', className: '24DTHA1', cohortId: 24, userId: 'demo-01' },
-  { studentCode: '02400002', fullName: 'Trần Gia Hân', email: '02400002@example.com', className: '24DQTA1', cohortId: 24, userId: null },
-  { studentCode: '02300001', fullName: 'Lê Hoàng Nam', email: '02300001@example.com', className: '23DTHA1', cohortId: 23, userId: 'demo-03' },
-  { studentCode: '02300002', fullName: 'Phạm Ngọc Linh', email: null, className: null, cohortId: 23, userId: null },
-]
+import { sampleStudents } from './sampleStudents.js'
 
 export default function StudentsPage() {
   return (
@@ -15,9 +9,17 @@ export default function StudentsPage() {
 
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
-          <div className="table-responsive">
-            <table className="table align-middle mb-0">
+          <div className="admin-table-scroll" role="region" aria-label="Danh sách sinh viên" tabIndex={0}>
+            <table className="table align-middle mb-0 admin-data-table students-table">
               <caption className="visually-hidden">Danh sách sinh viên mẫu</caption>
+              <colgroup>
+                <col className="students-col-code" />
+                <col className="students-col-name" />
+                <col />
+                <col className="students-col-class" />
+                <col className="students-col-cohort" />
+                <col className="students-col-account" />
+              </colgroup>
               <thead>
                 <tr>
                   <th scope="col">MSSV</th>

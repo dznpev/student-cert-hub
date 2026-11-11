@@ -144,13 +144,61 @@ body {
   border-radius: 0.2rem;
 }
 
+.admin-table-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.cohorts-table {
+  table-layout: fixed;
+  overflow-wrap: anywhere;
+}
+
+.students-table {
+  min-width: 49rem;
+  table-layout: fixed;
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-data-table th,
+.admin-data-table td {
+  height: 3rem;
+}
+
+.students-table th,
+.students-table td {
+  padding-inline: 0.375rem;
+}
+
+.students-col-code {
+  width: 12%;
+}
+
+.students-col-name {
+  width: 22%;
+}
+
+.students-col-class {
+  width: 10%;
+}
+
+.students-col-cohort {
+  width: 16%;
+}
+
+.students-col-account {
+  width: 14%;
+}
+
 .activities-card {
   background: #fff;
   border-color: var(--admin-border);
   border-radius: 0.875rem;
 }
 
-.activities-table {
+.activities-table,
+.participations-table {
   min-width: 38rem;
 }
 
@@ -191,9 +239,5 @@ body {
 
   .dashboard-chart-with-legend .dashboard-chart-legend {
     justify-self: center;
-  }
-
-  .cohorts-card {
-    width: 66.6667%;
   }
 }
