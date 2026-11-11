@@ -6,6 +6,7 @@ export default function AdminLayout({
   activeSectionId,
   onSelectSection,
   roleLabel,
+  onDemoSignOut,
   children,
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -55,7 +56,10 @@ export default function AdminLayout({
 
       <header className="admin-header px-3 px-md-4 px-xl-5 py-3">
         <div className="brand-title">Quản lý chứng nhận sinh viên</div>
-        <span className="brand-role">{roleLabel}</span>
+        <div className="d-flex align-items-center flex-wrap gap-2">
+          <span className="brand-role">{roleLabel}</span>
+          {onDemoSignOut && <button type="button" className="btn btn-sm btn-outline-secondary" onClick={onDemoSignOut}>Đăng xuất</button>}
+        </div>
       </header>
 
       <main id="main-content" tabIndex={-1} className="p-3 p-md-4 p-xl-5">

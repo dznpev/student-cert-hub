@@ -1,12 +1,9 @@
 import { useState } from 'react'
+import { createParticipationComparator } from './sortRecords.js'
 
-const approvalStatuses = {
-  Pending: { label: 'Chờ duyệt', badge: 'text-bg-warning' },
-  Approved: { label: 'Đã duyệt', badge: 'text-bg-success' },
-  Rejected: { label: 'Từ chối', badge: 'text-bg-danger' },
-}
+import { approvalStatuses } from './approvalStatuses.js'
 
-export default function ParticipationsPage({ activities, students, participations, onReviewParticipation, onReviewParticipations }) {
+export default function ParticipationsPage({ cohorts, activities, students, participations, onReviewParticipation, onReviewParticipations }) {
   const [selectedActivity, setSelectedActivity] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
   const [review, setReview] = useState(null)
@@ -66,7 +63,7 @@ export default function ParticipationsPage({ activities, students, participation
     const matchesActivity = selectedActivity === '' || String(activityId) === selectedActivity
     const matchesStatus = selectedStatus === '' || approvalStatus === selectedStatus
     return matchesActivity && matchesStatus
-  })
+  }).sort(createParticipationComparator(cohorts, activities, students))
   const selectableIds = visibleParticipations.filter((item) => item.approvalStatus === 'Pending').map((item) => item.participationId)
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedIds.includes(id))
   const successCount = batchResults.filter((item) => item.success).length

@@ -12,6 +12,90 @@ body {
   font-family: Inter, system-ui, sans-serif;
 }
 
+.student-portal-logo {
+  width: 7.5rem;
+  height: auto;
+}
+
+.student-login-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #eef8ff, #dceafd);
+}
+
+.student-login-card {
+  width: min(100%, 27rem);
+}
+
+.student-login-logo {
+  width: min(10rem, 100%);
+  height: auto;
+}
+
+.student-bell {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  margin-inline-end: 0.3rem;
+}
+
+.student-notifications {
+  position: absolute;
+  z-index: 1030;
+  inset-block-start: 100%;
+  inset-inline-end: 0.75rem;
+  width: min(28rem, calc(100% - 1.5rem));
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.student-portal .btn {
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease,
+    box-shadow 140ms ease, transform 120ms ease;
+}
+
+.student-portal .btn:active {
+  transform: scale(0.97);
+}
+
+.student-portal .dropdown-menu {
+  display: block;
+}
+
+.student-portal :is(.dropdown-menu, .student-notifications) {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 160ms ease, transform 160ms ease-out, visibility 0s;
+}
+
+.student-portal :is(.dropdown-menu, .student-notifications)[aria-hidden="true"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-5px);
+  transition-delay: 0s, 0s, 160ms;
+}
+
+.student-portal .dropdown-item {
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-portal :is(.btn, .dropdown-item, .dropdown-menu, .student-notifications) {
+    transition: none;
+  }
+
+  .student-portal .btn:active,
+  .student-portal :is(.dropdown-menu, .student-notifications)[aria-hidden="true"] {
+    transform: none;
+  }
+}
+
 .admin-shell {
   min-height: 100vh;
   display: flex;
@@ -233,6 +317,10 @@ body {
 
 .certificates-table {
   min-width: 85rem;
+}
+
+.certificates-table :is(th, td):last-child {
+  min-width: 9rem;
 }
 
 .certificates-table :is(th, td):nth-child(5) {

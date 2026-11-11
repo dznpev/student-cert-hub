@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { normalizeSearch } from './normalizeSearch.js'
+import { createStudentComparator } from './sortRecords.js'
 
 export default function StudentsPage({ cohorts, students }) {
   const [search, setSearch] = useState('')
@@ -11,7 +12,7 @@ export default function StudentsPage({ cohorts, students }) {
     const matchesCohort = selectedCohort === '' || String(cohortId) === selectedCohort
     const matchesSearch = [studentCode, fullName, className ?? ''].some((field) => normalizeSearch(field).includes(query))
     return matchesCohort && matchesSearch
-  })
+  }).sort(createStudentComparator(cohorts))
 
   function closeProfile() {
     setSelectedStudent(null)

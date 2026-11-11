@@ -1,15 +1,10 @@
 import { useState } from 'react'
 import { normalizeSearch } from './normalizeSearch.js'
 
-const sampleAuditLogs = [
-  { auditLogId: 1, timestamp: '2026-11-10T02:30:00Z', actorUserId: 'admin-demo', action: 'Nhập hồ sơ sinh viên', entityType: 'ImportBatches', entityId: '2', outcome: 'Partial', reason: '22 dòng thành công, 1 dòng bỏ qua, 1 dòng lỗi.' },
-  { auditLogId: 2, timestamp: '2026-11-09T07:15:00Z', actorUserId: null, action: 'Tạo PDF chứng nhận', entityType: 'Certificates', entityId: 'CN-MAU-004', outcome: 'Failure', reason: 'Tạo tệp PDF thất bại.' },
-  { auditLogId: 3, timestamp: '2026-10-26T03:00:00Z', actorUserId: 'admin-demo', action: 'Phát hành chứng nhận', entityType: 'Certificates', entityId: 'CN-MAU-001', outcome: 'Success', reason: null },
-]
-
 const entityLabels = {
   ImportBatches: 'Đợt nhập',
   Certificates: 'Chứng nhận',
+  ActivityParticipations: 'Lượt tham gia',
 }
 
 const outcomes = {
@@ -24,29 +19,29 @@ const timestampFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'Asia/Ho_Chi_Minh',
 })
 
-const auditRows = sampleAuditLogs.map((entry) => {
+function toAuditRow(entry) {
   const entity = entityLabels[entry.entityType] ?? entry.entityType
   return {
     ...entry,
-    actorLabel: entry.actorUserId === null ? 'Hệ thống' : 'Admin mẫu',
+    actorLabel: entry.actorLabel ?? (entry.actorUserId === null ? 'Hệ thống' : 'Admin mẫu'),
     entityLabel: entry.entityId ? entity + ' · ' + entry.entityId : entity,
   }
-})
+}
 
-export default function AuditLogsPage() {
+export default function AuditLogsPage({ auditLogs }) {
   const [search, setSearch] = useState('')
   const [selectedOutcome, setSelectedOutcome] = useState('')
   const query = normalizeSearch(search.trim().replace(/\s+/g, ' '))
-  const visibleAuditRows = auditRows.filter(({ actorLabel, action, entityLabel, outcome }) => {
-    const matchesSearch = [actorLabel, action, entityLabel].some((field) => normalizeSearch(field).includes(query))
+  const visibleAuditRows = auditLogs.map(toAuditRow).filter(({ actorLabel, action, entityLabel, outcome, reason }) => {
+    const matchesSearch = [actorLabel, action, entityLabel, reason ?? ''].some((field) => normalizeSearch(field).includes(query))
     const matchesOutcome = selectedOutcome === '' || outcome === selectedOutcome
     return matchesSearch && matchesOutcome
-  })
+  }).sort((left, right) => Date.parse(right.timestamp) - Date.parse(left.timestamp) || right.auditLogId - left.auditLogId)
 
   return (
     <>
       <h1 className="page-title mb-2">Nhật ký hệ thống</h1>
-      <p className="text-body-secondary mb-4">Dữ liệu mẫu</p>
+      <p className="text-body-secondary mb-4">Nhật ký mô phỏng trong phiên hiện tại. Giữ khi đổi menu, tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
 
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
@@ -57,7 +52,7 @@ export default function AuditLogsPage() {
                 id="audit-search"
                 type="search"
                 className="form-control"
-                placeholder="Nhập người thực hiện, hành động hoặc đối tượng"
+                placeholder="Nhập MSSV, họ tên, hành động hoặc nội dung nhật ký"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -76,6 +71,12 @@ export default function AuditLogsPage() {
                 ))}
               </select>
             </div>
+          </div>
+          <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <span className="small text-body-secondary" role="status">Hiển thị {visibleAuditRows.length}/{auditLogs.length} nhật ký</span>
+            {(search || selectedOutcome) && (
+              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => { setSearch(''); setSelectedOutcome('') }}>Xóa bộ lọc</button>
+            )}
           </div>
           <div className="admin-table-scroll" role="region" aria-label="Danh sách nhật ký hệ thống" tabIndex={0}>
             <table className="table align-middle mb-0 admin-data-table audit-logs-table">

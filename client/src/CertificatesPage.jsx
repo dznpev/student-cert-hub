@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { certificateStatuses } from './certificateStatuses.js'
+import { createParticipationComparator } from './sortRecords.js'
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
@@ -8,9 +9,40 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function CertificatesPage({ activities, students, participations, certificates }) {
+export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate }) {
   const [selectedActivity, setSelectedActivity] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
+  const [processing, setProcessing] = useState(null)
+  const [outcome, setOutcome] = useState('success')
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const processingCertificate = certificates.find((item) => item.certificateId === processing?.certificateId)
+  const compareParticipations = createParticipationComparator(cohorts, activities, students)
+
+  function openProcessing(certificateId, action) {
+    setProcessing({ certificateId, action })
+    setOutcome('success')
+    setReason('')
+    setError('')
+    setNotice('')
+  }
+
+  function submitProcessing(event) {
+    event.preventDefault()
+    if (processing.action === 'revoke' && (!reason.trim() || reason.trim().length > 500)) {
+      setError('Nhập lý do thu hồi từ 1 đến 500 ký tự.')
+      return
+    }
+    const action = processing.action === 'generate' ? outcome : processing.action
+    const result = onProcessCertificate(processing.certificateId, action, reason)
+    if (!result.success) {
+      setError(result.message)
+      return
+    }
+    setNotice(processingCertificate.certificateCode + ': ' + result.message)
+    setProcessing(null)
+  }
   const visibleCertificates = certificates
     .map((certificate) => ({
       certificate,
@@ -21,12 +53,50 @@ export default function CertificatesPage({ activities, students, participations,
       const matchesStatus = selectedStatus === '' || certificate.status === selectedStatus
       return matchesActivity && matchesStatus
     })
+    .sort((left, right) => compareParticipations(left.participation, right.participation))
 
   return (
     <>
       <h1 className="page-title mb-2">Chứng nhận</h1>
       <p className="text-body-secondary mb-2">Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
-      <p className="text-body-secondary mb-4">Duyệt lượt tham gia sẽ tự thêm yêu cầu chứng nhận. Đang tạo là hàng đợi mô phỏng, chưa có tệp PDF thật để tải.</p>
+      <p className="text-body-secondary mb-4">Duyệt lượt tham gia sẽ tự thêm yêu cầu chứng nhận. Các nút xử lý bên dưới mô phỏng kết quả tạo PDF; chưa có tệp PDF thật để tải.</p>
+
+      {processing && (
+        <form className="card rounded-4 mb-4" onSubmit={submitProcessing} aria-labelledby="certificate-process-title" noValidate>
+          <div className="card-body p-3 p-md-4">
+            <h2 id="certificate-process-title" className="h5">{processing.action === 'revoke' ? 'Thu hồi chứng nhận' : processing.action === 'retry' ? 'Thử lại chứng nhận' : 'Xử lý chứng nhận mô phỏng'}</h2>
+            <p className="text-break">{processingCertificate?.certificateCode}</p>
+            {processing.action === 'revoke' ? (
+              <div className="mb-3">
+                <p>Chứng nhận sẽ chuyển sang Đã thu hồi. Mã, ngày phát hành, liên kết và lịch sử vẫn được giữ. Thao tác đang áp dụng trên dữ liệu frontend mô phỏng.</p>
+                <label className="form-label" htmlFor="certificate-revocation-reason">Lý do thu hồi (bắt buộc)</label>
+                <textarea id="certificate-revocation-reason" className={'form-control' + (error ? ' is-invalid' : '')}
+                  rows={3} maxLength={500} required autoFocus value={reason}
+                  onChange={(event) => { setReason(event.target.value); setError('') }}
+                  aria-invalid={Boolean(error)} aria-describedby="certificate-reason-help certificate-process-error" />
+                <div id="certificate-reason-help" className="form-text">Tối đa 500 ký tự. Lý do và thời điểm thu hồi sẽ được lưu trong phiên hiện tại.</div>
+              </div>
+            ) : processing.action === 'retry' ? (
+              <p>Chứng nhận sẽ trở về Đang tạo, giữ nguyên mã và lượt tham gia. Lịch sử lỗi vẫn được giữ. Bạn có thể xử lý mô phỏng lại sau đó.</p>
+            ) : (
+              <div className="mb-3">
+                <label className="form-label" htmlFor="certificate-outcome">Kết quả mô phỏng</label>
+                <select id="certificate-outcome" className="form-select" value={outcome} onChange={(event) => setOutcome(event.target.value)} autoFocus>
+                  <option value="success">Tạo thành công</option>
+                  <option value="failure">Lỗi tạo hoặc ghi tệp PDF</option>
+                </select>
+                <p className="form-text">Thành công sẽ cập nhật ngày phát hành mẫu; thao tác này không tạo tệp PDF thật.</p>
+              </div>
+            )}
+            {error && <p id="certificate-process-error" className="alert alert-danger" role="alert">{error}</p>}
+            <div className="d-flex flex-wrap gap-2">
+              <button type="submit" className={'btn ' + (processing.action === 'revoke' ? 'btn-danger' : 'btn-primary')}>{processing.action === 'revoke' ? 'Xác nhận thu hồi' : processing.action === 'retry' ? 'Xác nhận thử lại' : 'Xác nhận xử lý mô phỏng'}</button>
+              <button type="button" className="btn btn-outline-secondary" onClick={() => setProcessing(null)} autoFocus={processing.action === 'retry'}>Hủy</button>
+            </div>
+          </div>
+        </form>
+      )}
+      {notice && <p className="alert alert-info text-break" role="status">{notice}</p>}
 
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
@@ -37,6 +107,7 @@ export default function CertificatesPage({ activities, students, participations,
                 id="certificate-activity"
                 className="form-select"
                 value={selectedActivity}
+                disabled={Boolean(processing)}
                 onChange={(event) => setSelectedActivity(event.target.value)}
               >
                 <option value="">Tất cả hoạt động</option>
@@ -51,6 +122,7 @@ export default function CertificatesPage({ activities, students, participations,
                 id="certificate-status"
                 className="form-select"
                 value={selectedStatus}
+                disabled={Boolean(processing)}
                 onChange={(event) => setSelectedStatus(event.target.value)}
               >
                 <option value="">Tất cả trạng thái</option>
@@ -73,11 +145,12 @@ export default function CertificatesPage({ activities, students, participations,
                   <th scope="col">Trạng thái</th>
                   <th scope="col">Mẫu chứng nhận</th>
                   <th scope="col">Chi tiết PDF</th>
+                  <th scope="col">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {visibleCertificates.map(({ certificate, participation }) => {
-                  const { certificateCode, issuedAt, status, templateName, templateVersion, lastError } = certificate
+                  const { certificateId, certificateCode, issuedAt, status, templateName, templateVersion, lastError, processingHistory = [], revokedAt, revocationReason } = certificate
                   const student = students.find((item) => item.studentId === participation?.studentId)
                   const activity = activities.find((item) => item.activityId === participation?.activityId)
                   const statusInfo = certificateStatuses.find((item) => item.status === status)
@@ -93,13 +166,42 @@ export default function CertificatesPage({ activities, students, participations,
                       <td>{templateName ? `${templateName} · v${templateVersion}` : 'Chưa có thông tin mẫu'}</td>
                       <td>{status === 'Generating'
                         ? 'Đã ghi nhận yêu cầu, chờ xử lý mô phỏng.'
-                        : status === 'Failed' ? lastError || 'Dữ liệu lỗi mẫu, chưa có chi tiết lỗi.' : 'Dữ liệu chứng nhận mẫu, chưa có tệp PDF thật.'}</td>
+                        : status === 'Failed' ? lastError || 'Dữ liệu lỗi mẫu, chưa có chi tiết lỗi.' : 'Dữ liệu chứng nhận mẫu, chưa có tệp PDF thật.'}
+                        {status === 'Revoked' && (
+                          <div className="mt-2" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                            <div><strong>Lý do thu hồi:</strong> {revocationReason || 'Chưa có thông tin trong dữ liệu mẫu.'}</div>
+                            <div><strong>Thời điểm:</strong> {revokedAt ? new Date(revokedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}</div>
+                          </div>
+                        )}
+                        {processingHistory.length > 0 && (
+                          <details className="mt-2">
+                            <summary>Lịch sử xử lý ({processingHistory.length})</summary>
+                            <ol className="ps-3 mb-0 small">
+                              {processingHistory.map((entry, index) => (
+                                <li key={index}>
+                                  {new Date(entry.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} · {entry.action === 'Revoked' ? 'Thu hồi' : entry.action === 'Retry' ? 'Thử lại' : 'Xử lý'} · {entry.message}
+                                  {entry.previousError && <div>Lỗi trước đó: {entry.previousError}</div>}
+                                </li>
+                              ))}
+                            </ol>
+                          </details>
+                        )}
+                      </td>
+                      <td>
+                        {status === 'Generating' ? (
+                          <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'generate')}>Xử lý mô phỏng</button>
+                        ) : status === 'Failed' ? (
+                          <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'retry')}>Thử lại</button>
+                        ) : status === 'Issued' ? (
+                          <button type="button" className="btn btn-sm btn-outline-danger" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'revoke')}>Thu hồi</button>
+                        ) : <span className="text-body-secondary">—</span>}
+                      </td>
                     </tr>
                   )
                 })}
                 {visibleCertificates.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="text-center text-body-secondary">Không tìm thấy chứng nhận phù hợp.</td>
+                    <td colSpan={9} className="text-center text-body-secondary">Không tìm thấy chứng nhận phù hợp.</td>
                   </tr>
                 )}
               </tbody>
