@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArcElement, BarController, BarElement, CategoryScale, Chart,
   DoughnutController, LinearScale, Tooltip,
@@ -11,15 +11,11 @@ Chart.register(
 )
 
 const sampleDashboard = {
-  activeStudents: 600,
   activities: 12,
-  participations: 520,
-  uniqueStudents: 310,
-  certificateCounts: { Issued: 180, Generating: 12, Failed: 6, Revoked: 4 },
   cohortParticipation: [
-    { cohortCode: 'K22', activeStudents: 180, uniqueStudents: 81 },
-    { cohortCode: 'K23', activeStudents: 200, uniqueStudents: 110 },
-    { cohortCode: 'K24', activeStudents: 220, uniqueStudents: 119 },
+    { cohortId: 23, activeStudents: 200, activities: 9, participations: 185, uniqueStudents: 110, certificateCounts: { Issued: 62, Generating: 4, Failed: 2, Revoked: 1 } },
+    { cohortId: 24, activeStudents: 220, activities: 10, participations: 195, uniqueStudents: 119, certificateCounts: { Issued: 73, Generating: 5, Failed: 3, Revoked: 2 } },
+    { cohortId: 25, activeStudents: 180, activities: 7, participations: 140, uniqueStudents: 81, certificateCounts: { Issued: 45, Generating: 3, Failed: 1, Revoked: 1 } },
   ],
 }
 
@@ -111,13 +107,22 @@ function DashboardChart({ title, type, labels, values, colors, percentages = fal
   )
 }
 
-export default function DashboardPage() {
-  const { activeStudents, activities, participations, uniqueStudents, certificateCounts, cohortParticipation } = sampleDashboard
+export default function DashboardPage({ cohorts }) {
+  const [selectedCohort, setSelectedCohort] = useState('')
+  const cohort = cohorts.find(({ cohortId }) => String(cohortId) === selectedCohort)
+  const cohortParticipation = sampleDashboard.cohortParticipation.filter(({ cohortId }) => !cohort || cohortId === cohort.cohortId)
+  const sum = (field) => cohortParticipation.reduce((total, entry) => total + entry[field], 0)
+  const certificateCounts = Object.fromEntries(certificateStatuses.map(({ status }) => [
+    status,
+    cohortParticipation.reduce((total, entry) => total + entry.certificateCounts[status], 0),
+  ]))
+  // Một hoạt động có thể có sinh viên từ nhiều khóa.
+  const activities = cohort ? (cohortParticipation[0]?.activities ?? 0) : sampleDashboard.activities
   const metrics = [
-    ['Sinh viên đang hoạt động', activeStudents],
+    ['Sinh viên đang hoạt động', sum('activeStudents')],
     ['Hoạt động', activities],
-    ['Lượt tham gia', participations],
-    ['Sinh viên đã tham gia', uniqueStudents, 'Mỗi sinh viên chỉ tính một lần'],
+    ['Lượt tham gia', sum('participations')],
+    ['Sinh viên đã tham gia', sum('uniqueStudents'), 'Mỗi sinh viên chỉ tính một lần'],
     ['Chứng nhận hiệu lực', certificateCounts.Issued],
     ['Chứng nhận bị thu hồi', certificateCounts.Revoked],
     ['Lỗi tạo PDF', certificateCounts.Failed],
@@ -126,7 +131,26 @@ export default function DashboardPage() {
   return (
     <>
       <h1 className="page-title mb-2">Tổng quan</h1>
-      <p className="text-body-secondary mb-4">Dữ liệu mẫu từ 01/09/2026 đến 30/11/2026 · Tất cả hoạt động và khóa</p>
+      <p className="text-body-secondary mb-3">
+        Dữ liệu mẫu từ 01/09/2026 đến 30/11/2026 · Tất cả hoạt động · {cohort ? cohort.cohortCode : 'Tất cả khóa'}
+      </p>
+
+      <div className="row mb-4">
+        <div className="col-12 col-sm-6 col-xl-3">
+          <label className="form-label" htmlFor="dashboard-cohort">Khóa tuyển sinh</label>
+          <select
+            id="dashboard-cohort"
+            className="form-select"
+            value={selectedCohort}
+            onChange={(event) => setSelectedCohort(event.target.value)}
+          >
+            <option value="">Tất cả khóa</option>
+            {cohorts.map(({ cohortId, cohortCode }) => (
+              <option key={cohortId} value={cohortId}>{cohortCode}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div className="row g-3 mb-4">
         {metrics.map(([label, value, note], index) => (
@@ -140,27 +164,31 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="row g-3">
-        <div className="col-12 col-xl-7">
-          <DashboardChart
-            title="Tỷ lệ tham gia theo khóa"
-            type="bar"
-            labels={cohortParticipation.map(({ cohortCode }) => cohortCode)}
-            values={cohortParticipation.map((cohort) => cohort.uniqueStudents / cohort.activeStudents * 100)}
-            colors="#2f5fc4"
-            percentages
-          />
+      {cohortParticipation.length === 0 ? (
+        <p className="text-body-secondary mb-0">Khóa này chưa có dữ liệu biểu đồ.</p>
+      ) : (
+        <div className="row g-3">
+          <div className="col-12 col-xl-7">
+            <DashboardChart
+              title="Tỷ lệ tham gia theo khóa"
+              type="bar"
+              labels={cohortParticipation.map(({ cohortId }) => cohorts.find((item) => item.cohortId === cohortId)?.cohortCode ?? String(cohortId))}
+              values={cohortParticipation.map((cohort) => cohort.uniqueStudents / cohort.activeStudents * 100)}
+              colors="#2f5fc4"
+              percentages
+            />
+          </div>
+          <div className="col-12 col-xl-5">
+            <DashboardChart
+              title="Chứng nhận theo trạng thái"
+              type="doughnut"
+              labels={certificateStatuses.map(({ label }) => label)}
+              values={certificateStatuses.map(({ status }) => certificateCounts[status])}
+              colors={certificateStatuses.map(({ color }) => color)}
+            />
+          </div>
         </div>
-        <div className="col-12 col-xl-5">
-          <DashboardChart
-            title="Chứng nhận theo trạng thái"
-            type="doughnut"
-            labels={certificateStatuses.map(({ label }) => label)}
-            values={certificateStatuses.map(({ status }) => certificateCounts[status])}
-            colors={certificateStatuses.map(({ color }) => color)}
-          />
-        </div>
-      </div>
+      )}
     </>
   )
 }

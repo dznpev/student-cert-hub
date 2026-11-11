@@ -154,8 +154,21 @@ body {
   overflow-wrap: anywhere;
 }
 
+.cohort-status-filter {
+  max-width: 12.5rem;
+}
+
+.cohort-code-col {
+  width: 3rem;
+}
+
+.cohort-actions-col {
+  width: 4.75rem;
+  white-space: nowrap;
+}
+
 .students-table {
-  min-width: 49rem;
+  min-width: 60rem;
   table-layout: fixed;
   font-size: 0.9375rem;
   overflow-wrap: anywhere;
@@ -187,6 +200,10 @@ body {
   width: 16%;
 }
 
+.students-col-actions {
+  width: 7rem;
+}
+
 .students-col-account {
   width: 14%;
 }
@@ -214,6 +231,7 @@ body {
   min-width: 34rem;
 }
 
+.audit-logs-table,
 .import-history-table {
   min-width: 56rem;
 }
@@ -227,6 +245,12 @@ body {
   --bs-btn-active-border-color: var(--admin-accent-dark);
   --bs-btn-disabled-bg: var(--admin-accent);
   --bs-btn-disabled-border-color: var(--admin-accent);
+}
+
+@media (min-width: 576px) {
+  .cohort-code-col {
+    width: 5rem;
+  }
 }
 
 @media (min-width: 992px) {
@@ -248,6 +272,18 @@ body {
 }
 
 @media (min-width: 1200px) {
+  .cohort-code-col {
+    width: 5.5rem;
+  }
+
+  .cohort-status-col {
+    width: 28%;
+  }
+
+  .cohort-actions-col {
+    width: 11.5rem;
+  }
+
   .dashboard-chart-with-legend {
     grid-template-columns: minmax(0, 19rem) minmax(10rem, 1fr);
     column-gap: 1.5rem;

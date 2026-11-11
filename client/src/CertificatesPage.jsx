@@ -1,7 +1,5 @@
+import { useState } from 'react'
 import { certificateStatuses } from './certificateStatuses.js'
-import { sampleActivities } from './sampleActivities.js'
-import { sampleParticipations } from './sampleParticipations.js'
-import { sampleStudents } from './sampleStudents.js'
 
 const sampleCertificates = [
   { certificateCode: 'CN-MAU-001', participationId: 2, issuedAt: '2026-10-26', status: 'Issued' },
@@ -17,7 +15,20 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function CertificatesPage() {
+export default function CertificatesPage({ activities, students, participations }) {
+  const [selectedActivity, setSelectedActivity] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState('')
+  const visibleCertificates = sampleCertificates
+    .map((certificate) => ({
+      certificate,
+      participation: participations.find(({ participationId }) => participationId === certificate.participationId),
+    }))
+    .filter(({ certificate, participation }) => {
+      const matchesActivity = selectedActivity === '' || String(participation?.activityId) === selectedActivity
+      const matchesStatus = selectedStatus === '' || certificate.status === selectedStatus
+      return matchesActivity && matchesStatus
+    })
+
   return (
     <>
       <h1 className="page-title mb-2">Chứng nhận</h1>
@@ -25,6 +36,36 @@ export default function CertificatesPage() {
 
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
+          <div className="row g-3 mb-3">
+            <div className="col-12 col-sm-7 col-xl-5">
+              <label className="form-label" htmlFor="certificate-activity">Hoạt động</label>
+              <select
+                id="certificate-activity"
+                className="form-select"
+                value={selectedActivity}
+                onChange={(event) => setSelectedActivity(event.target.value)}
+              >
+                <option value="">Tất cả hoạt động</option>
+                {activities.map(({ activityId, code, name }) => (
+                  <option key={activityId} value={activityId}>{code} · {name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="col-12 col-sm-5 col-xl-3">
+              <label className="form-label" htmlFor="certificate-status">Trạng thái chứng nhận</label>
+              <select
+                id="certificate-status"
+                className="form-select"
+                value={selectedStatus}
+                onChange={(event) => setSelectedStatus(event.target.value)}
+              >
+                <option value="">Tất cả trạng thái</option>
+                {certificateStatuses.map(({ status, label }) => (
+                  <option key={status} value={status}>{label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="admin-table-scroll" role="region" aria-label="Danh sách chứng nhận" tabIndex={0}>
             <table className="table align-middle mb-0 admin-data-table certificates-table">
               <caption className="visually-hidden">Danh sách chứng nhận mẫu</caption>
@@ -39,10 +80,10 @@ export default function CertificatesPage() {
                 </tr>
               </thead>
               <tbody>
-                {sampleCertificates.map(({ certificateCode, participationId, issuedAt, status }) => {
-                  const participation = sampleParticipations.find((item) => item.participationId === participationId)
-                  const student = sampleStudents.find((item) => item.studentId === participation?.studentId)
-                  const activity = sampleActivities.find((item) => item.activityId === participation?.activityId)
+                {visibleCertificates.map(({ certificate, participation }) => {
+                  const { certificateCode, issuedAt, status } = certificate
+                  const student = students.find((item) => item.studentId === participation?.studentId)
+                  const activity = activities.find((item) => item.activityId === participation?.activityId)
                   const statusInfo = certificateStatuses.find((item) => item.status === status)
 
                   return (
@@ -56,6 +97,11 @@ export default function CertificatesPage() {
                     </tr>
                   )
                 })}
+                {visibleCertificates.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="text-center text-body-secondary">Không tìm thấy chứng nhận phù hợp.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
