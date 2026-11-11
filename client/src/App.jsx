@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import AdminLayout from './AdminLayout.jsx'
 import ActivitiesPage from './ActivitiesPage.jsx'
+import CertificatesPage from './CertificatesPage.jsx'
 import CohortsPage from './CohortsPage.jsx'
 import DashboardPage from './DashboardPage.jsx'
+import ImportsPage from './ImportsPage.jsx'
 import ParticipationsPage from './ParticipationsPage.jsx'
 import StudentsPage from './StudentsPage.jsx'
 
@@ -12,8 +14,8 @@ const sections = [
   { id: 'students', title: 'Sinh viên', page: StudentsPage },
   { id: 'activities', title: 'Hoạt động', page: ActivitiesPage },
   { id: 'participations', title: 'Lượt tham gia', page: ParticipationsPage },
-  { id: 'certificates', title: 'Chứng nhận' },
-  { id: 'imports', title: 'Nhập dữ liệu Excel' },
+  { id: 'certificates', title: 'Chứng nhận', page: CertificatesPage },
+  { id: 'imports', title: 'Nhập dữ liệu Excel', page: ImportsPage },
   { id: 'audit', title: 'Nhật ký hệ thống' },
 ]
 

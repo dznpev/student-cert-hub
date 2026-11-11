@@ -1,12 +1,6 @@
 import { sampleActivities } from './sampleActivities.js'
+import { sampleParticipations } from './sampleParticipations.js'
 import { sampleStudents } from './sampleStudents.js'
-
-const sampleParticipations = [
-  { participationId: 1, activityId: 1, studentId: 1, approvalStatus: 'Pending' },
-  { participationId: 2, activityId: 3, studentId: 1, approvalStatus: 'Approved' },
-  { participationId: 3, activityId: 3, studentId: 3, approvalStatus: 'Approved' },
-  { participationId: 4, activityId: 3, studentId: 4, approvalStatus: 'Rejected' },
-]
 
 const approvalStatuses = {
   Pending: { label: 'Chờ duyệt', badge: 'text-bg-warning' },

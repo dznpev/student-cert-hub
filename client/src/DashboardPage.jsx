@@ -3,6 +3,7 @@ import {
   ArcElement, BarController, BarElement, CategoryScale, Chart,
   DoughnutController, LinearScale, Tooltip,
 } from 'chart.js'
+import { certificateStatuses } from './certificateStatuses.js'
 
 Chart.register(
   ArcElement, BarController, BarElement, CategoryScale,
@@ -21,13 +22,6 @@ const sampleDashboard = {
     { cohortCode: 'K24', activeStudents: 220, uniqueStudents: 119 },
   ],
 }
-
-const certificateStatuses = [
-  { status: 'Issued', label: 'Đang hiệu lực', color: '#2f5fc4' },
-  { status: 'Generating', label: 'Đang tạo', color: '#946700' },
-  { status: 'Failed', label: 'Tạo lỗi', color: '#b54149' },
-  { status: 'Revoked', label: 'Đã thu hồi', color: '#68768a' },
-]
 
 const numberFormat = new Intl.NumberFormat('vi-VN')
 const percentFormat = new Intl.NumberFormat('vi-VN', { style: 'percent', maximumFractionDigits: 1 })

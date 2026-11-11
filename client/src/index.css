@@ -202,6 +202,22 @@ body {
   min-width: 38rem;
 }
 
+.certificates-table {
+  min-width: 47rem;
+}
+
+.certificates-table :is(th, td):nth-child(5) {
+  white-space: nowrap;
+}
+
+.import-preview-table {
+  min-width: 34rem;
+}
+
+.import-history-table {
+  min-width: 56rem;
+}
+
 .admin-primary-button {
   --bs-btn-bg: var(--admin-accent);
   --bs-btn-border-color: var(--admin-accent);
