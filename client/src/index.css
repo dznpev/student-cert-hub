@@ -219,7 +219,11 @@ body {
 }
 
 .participations-table {
-  min-width: 62rem;
+  min-width: 65rem;
+}
+
+.participation-select-col {
+  width: 2.75rem;
 }
 
 .participation-reason {

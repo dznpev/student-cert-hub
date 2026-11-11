@@ -13,6 +13,7 @@ import { sampleActivities } from './sampleActivities.js'
 import { sampleStudents } from './sampleStudents.js'
 import { sampleParticipations } from './sampleParticipations.js'
 import { sampleImportHistory } from './sampleImportHistory.js'
+import { reviewParticipations } from './reviewParticipations.js'
 
 const sections = [
   { id: 'overview', title: 'Tổng quan', page: DashboardPage },
@@ -62,31 +63,13 @@ export default function App() {
   }
 
   function reviewParticipation(participationId, approvalStatus, reason = '') {
-    const participation = participations.find((item) => item.participationId === participationId)
-    if (!participation || participation.approvalStatus !== 'Pending') {
-      return { success: false, message: 'Lượt tham gia không còn ở trạng thái Chờ duyệt. Vui lòng kiểm tra lại danh sách.' }
-    }
-    if (!['Approved', 'Rejected'].includes(approvalStatus)) {
-      return { success: false, message: 'Trạng thái duyệt không hợp lệ.' }
-    }
-    const rejectedReason = reason.trim()
-    if (approvalStatus === 'Rejected' && (!rejectedReason || rejectedReason.length > 500)) {
-      return { success: false, message: 'Nhập lý do từ chối từ 1 đến 500 ký tự.' }
-    }
-    const updatedAt = new Date().toISOString()
-    setParticipations((current) => current.map((item) => (
-      item.participationId === participationId && item.approvalStatus === 'Pending'
-        ? {
-          ...item,
-          approvalStatus,
-          rejectedReason: approvalStatus === 'Rejected' ? rejectedReason : null,
-          approvedAt: approvalStatus === 'Approved' ? updatedAt : null,
-          approvedBy: null,
-          updatedAt,
-        }
-        : item
-    )))
-    return { success: true }
+    return reviewParticipationBatch([participationId], approvalStatus, reason)[0]
+  }
+
+  function reviewParticipationBatch(participationIds, approvalStatus, reason = '') {
+    const result = reviewParticipations(participations, participationIds, approvalStatus, reason)
+    setParticipations(result.participations)
+    return result.results
   }
 
   function importStudentPreview(preview) {
@@ -179,6 +162,7 @@ export default function App() {
           students={students}
           participations={participations}
           onReviewParticipation={reviewParticipation}
+          onReviewParticipations={reviewParticipationBatch}
           onImportParticipations={importParticipationPreview}
           importHistory={importHistory}
           onImportStudents={importStudentPreview}
