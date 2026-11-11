@@ -1,3 +1,4 @@
+import { getStudentAccountStatus } from './studentAccountStatuses.js'
 import { useState } from 'react'
 import hutechLogo from './assets/hutech-logo.png'
 import { demoManagementAccounts } from './demoManagementAccounts.js'
@@ -10,7 +11,7 @@ const accountTypes = [
   { id: 'management', label: 'Quản trị' },
 ]
 
-export default function StudentLogin({ students, studentPasswords, managementPasswords, onSignIn, onManagementSignIn, onActivateDemoStudent, onVerifyDemoActivation, onRequestReset, onResetPassword, onPreview, adminPreviewAvailable }) {
+export default function StudentLogin({ students, studentPasswords, onSignIn, onManagementSignIn, onActivateDemoStudent, onVerifyDemoActivation, onRequestReset, onResetPassword, onPreview, adminPreviewAvailable }) {
   const [accountType, setAccountType] = useState('')
   const [managementRole, setManagementRole] = useState('')
   const [showCredentials, setShowCredentials] = useState(false)
@@ -24,7 +25,7 @@ export default function StudentLogin({ students, studentPasswords, managementPas
   const [initialPassword, setInitialPassword] = useState('')
   const [initialPasswordConfirmation, setInitialPasswordConfirmation] = useState('')
   const [notice, setNotice] = useState('')
-  const demoStudents = students.filter((student) => student.userId?.startsWith('demo-'))
+  const demoStudents = students.filter((student) => student.userId?.startsWith('demo-') && getStudentAccountStatus(student) === 'active')
   const isManagement = accountType === 'management'
   const managementAccount = demoManagementAccounts[managementRole]
   const canContinue = accountType === 'student' || Boolean(isManagement && managementAccount)
@@ -92,15 +93,15 @@ export default function StudentLogin({ students, studentPasswords, managementPas
       return
     }
     if (isManagement) {
-      if (code !== managementAccount?.username || password !== (managementPasswords[managementRole] ?? demoPassword)) {
-        setError('Tên đăng nhập hoặc mật khẩu mẫu không đúng.')
-        return
-      }
-      if (!onManagementSignIn(managementRole)) setError('Tài khoản Admin mẫu đang bị khóa.')
+      setError(onManagementSignIn(managementRole, code, password))
       return
     }
-    const student = demoStudents.find((item) => item.studentCode === code)
-    if (!student || password !== (studentPasswords[student.studentId] ?? demoPassword)) {
+    const student = students.find((item) => item.studentCode === code)
+    if (student && getStudentAccountStatus(student) === 'pending') {
+      setError('Tài khoản đang chờ kích hoạt. Hãy dùng mã được cấp để kích hoạt và tự đặt mật khẩu trước khi đăng nhập.')
+      return
+    }
+    if (!student?.userId || password !== (studentPasswords[student.studentId] ?? demoPassword)) {
       setError('MSSV hoặc mật khẩu mẫu không đúng.')
       return
     }

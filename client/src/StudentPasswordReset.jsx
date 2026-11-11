@@ -62,6 +62,7 @@ export default function StudentPasswordReset({ onRequestReset, onResetPassword, 
           <p className="small text-break bg-body-tertiary p-2 rounded">
             Mã thử <code>{resetRequest.code}</code> · Có hiệu lực 15 phút, dùng một lần.
           </p>
+          <p className="small"><a href={'#dat-lai-mat-khau?' + new URLSearchParams({ mssv: studentCode.trim(), ma: resetRequest.code })}>Mở liên kết đặt lại mật khẩu thử</a><br />Chỉ dùng trong cùng tab; chưa gửi email.</p>
           {[
             ['reset-code', 'Mã xác nhận', 'text', resetCode, setResetCode],
             ['reset-password', 'Mật khẩu mới', 'password', newPassword, setNewPassword],

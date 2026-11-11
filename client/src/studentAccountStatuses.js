@@ -8,6 +8,8 @@ export const studentAccountStatuses = {
 }
 
 export function getStudentAccountStatus({ studentCode, userId, accountDisabled, activationPending }) {
-  if (userId) return accountDisabled ? 'disabled' : 'active'
-  return activationPending || studentCode === demoStudentActivation.studentCode ? 'pending' : 'unlinked'
+  if (accountDisabled) return 'disabled'
+  if (activationPending) return 'pending'
+  if (userId) return 'active'
+  return studentCode === demoStudentActivation.studentCode ? 'pending' : 'unlinked'
 }

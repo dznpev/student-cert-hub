@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import CertificateDownloadPanel from './CertificateDownloadPanel.jsx'
 import { certificateStatuses } from './certificateStatuses.js'
 import { createParticipationComparator } from './sortRecords.js'
 import { normalizeSearch } from './normalizeSearch.js'
@@ -11,6 +12,8 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
 })
 
 export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate }) {
+  const [selectedIds, setSelectedIds] = useState([])
+  const [downloadRequest, setDownloadRequest] = useState(null)
   const [search, setSearch] = useState('')
   const [selectedActivity, setSelectedActivity] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
@@ -29,7 +32,15 @@ export default function CertificatesPage({ cohorts, activities, students, partic
   const hasIssuedDateFilter = Boolean(issuedFrom || issuedTo)
   const invalidIssuedRange = Boolean(issuedFrom && issuedTo && issuedFrom > issuedTo)
 
+  function changeFilter(setFilter, value) {
+    setFilter(value)
+    setSelectedIds([])
+    setDownloadRequest(null)
+  }
+
   function openProcessing(certificateId, action) {
+    setDownloadRequest(null)
+    setSelectedIds([])
     setProcessing({ certificateId, action })
     setOutcome('success')
     setReason('')
@@ -71,6 +82,10 @@ export default function CertificatesPage({ cohorts, activities, students, partic
       return (!issuedFrom || issuedDay >= issuedFrom) && (!issuedTo || issuedDay <= issuedTo)
     })
     .sort((left, right) => compareParticipations(left.participation, right.participation))
+
+  const selectableIds = visibleCertificates.filter(({ certificate }) => certificate.status === 'Issued').map(({ certificate }) => certificate.certificateId)
+  const selectedVisibleIds = selectableIds.filter((id) => selectedIds.includes(id))
+  const allSelected = selectableIds.length > 0 && selectedVisibleIds.length === selectableIds.length
 
   return (
     <>
@@ -122,7 +137,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
               <label className="form-label" htmlFor="certificate-search">Tìm kiếm</label>
               <input id="certificate-search" type="search" className="form-control"
                 placeholder="Nhập mã chứng nhận, MSSV hoặc họ tên"
-                value={search} disabled={Boolean(processing)} onChange={(event) => setSearch(event.target.value)} />
+                value={search} disabled={Boolean(processing)} onChange={(event) => changeFilter(setSearch, event.target.value)} />
             </div>
             <div className="col-12 col-sm-7 col-xl-5">
               <label className="form-label" htmlFor="certificate-activity">Hoạt động</label>
@@ -131,7 +146,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                 className="form-select"
                 value={selectedActivity}
                 disabled={Boolean(processing)}
-                onChange={(event) => setSelectedActivity(event.target.value)}
+                onChange={(event) => changeFilter(setSelectedActivity, event.target.value)}
               >
                 <option value="">Tất cả hoạt động</option>
                 {activities.map(({ activityId, code, name }) => (
@@ -146,7 +161,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                 className="form-select"
                 value={selectedStatus}
                 disabled={Boolean(processing)}
-                onChange={(event) => setSelectedStatus(event.target.value)}
+                onChange={(event) => changeFilter(setSelectedStatus, event.target.value)}
               >
                 <option value="">Tất cả trạng thái</option>
                 {certificateStatuses.map(({ status, label }) => (
@@ -161,7 +176,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
               <div className="col-12 col-sm-6 col-xl-3">
                 <label className="form-label" htmlFor="certificate-issued-from">Từ ngày</label>
                 <input id="certificate-issued-from" type="date" className="form-control"
-                  value={issuedFrom} onChange={(event) => setIssuedFrom(event.target.value)} />
+                  value={issuedFrom} onChange={(event) => changeFilter(setIssuedFrom, event.target.value)} />
               </div>
               <div className="col-12 col-sm-6 col-xl-3">
                 <label className="form-label" htmlFor="certificate-issued-to">Đến ngày</label>
@@ -169,7 +184,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                   className={'form-control' + (invalidIssuedRange ? ' is-invalid' : '')}
                   aria-invalid={invalidIssuedRange}
                   aria-describedby={invalidIssuedRange ? 'certificate-issued-range-error' : undefined}
-                  value={issuedTo} onChange={(event) => setIssuedTo(event.target.value)} />
+                  value={issuedTo} onChange={(event) => changeFilter(setIssuedTo, event.target.value)} />
                 {invalidIssuedRange && (
                   <div id="certificate-issued-range-error" className="invalid-feedback" role="alert">
                     Đến ngày phải bằng hoặc sau Từ ngày.
@@ -178,11 +193,25 @@ export default function CertificatesPage({ cohorts, activities, students, partic
               </div>
             </div>
           </fieldset>
+          <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <span className="small" role="status">Đã chọn {selectedVisibleIds.length} chứng nhận hiệu lực trong danh sách đang lọc.</span>
+            <button type="button" className="btn btn-outline-primary" disabled={Boolean(processing) || selectedVisibleIds.length === 0}
+              onClick={() => setDownloadRequest({ format: 'zip', certificateIds: selectedVisibleIds })}>Tải ZIP đã chọn</button>
+            <button type="button" className="btn btn-outline-secondary" disabled={Boolean(processing) || selectedIds.length === 0}
+              onClick={() => { setSelectedIds([]); setDownloadRequest(null) }}>Bỏ chọn</button>
+          </div>
+          <p className="small text-body-secondary">Chỉ chọn chứng nhận đang hiệu lực. Đổi bộ lọc sẽ bỏ chọn. Tải PDF/ZIP hiện là giao diện thử, chưa có tệp và quyền tải từ API.</p>
+          {downloadRequest && <CertificateDownloadPanel key={downloadRequest.format + ':' + downloadRequest.certificateIds.join(',')}
+            request={downloadRequest} certificates={certificates} onClose={() => setDownloadRequest(null)} />}
           <div className="admin-table-scroll" role="region" aria-label="Danh sách chứng nhận" tabIndex={0}>
             <table className="table align-middle mb-0 admin-data-table certificates-table">
               <caption className="visually-hidden">Danh sách chứng nhận mẫu</caption>
               <thead>
                 <tr>
+                  <th scope="col"><input type="checkbox" className="form-check-input" aria-label="Chọn tất cả chứng nhận hiệu lực đang hiển thị"
+                    checked={allSelected} disabled={Boolean(processing) || selectableIds.length === 0}
+                    ref={(element) => { if (element) element.indeterminate = selectedVisibleIds.length > 0 && !allSelected }}
+                    onChange={(event) => { setSelectedIds(event.target.checked ? selectableIds : []); setDownloadRequest(null) }} /></th>
                   <th scope="col">Mã chứng nhận</th>
                   <th scope="col">MSSV</th>
                   <th scope="col">Họ và tên</th>
@@ -202,6 +231,12 @@ export default function CertificatesPage({ cohorts, activities, students, partic
 
                   return (
                     <tr key={certificateCode}>
+                      <td><input type="checkbox" className="form-check-input" aria-label={'Chọn chứng nhận ' + certificateCode}
+                        checked={selectedVisibleIds.includes(certificateId)} disabled={Boolean(processing) || status !== 'Issued'}
+                        onChange={(event) => {
+                          setSelectedIds((current) => event.target.checked ? [...current, certificateId] : current.filter((id) => id !== certificateId))
+                          setDownloadRequest(null)
+                        }} /></td>
                       <th scope="row">{certificateCode}</th>
                       <td>{student?.studentCode ?? '—'}</td>
                       <td>{student?.fullName ?? 'Chưa xác định'}</td>
@@ -233,6 +268,9 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                         )}
                       </td>
                       <td>
+                        <button type="button" className="btn btn-sm btn-outline-primary mb-2" disabled={Boolean(processing) || status !== 'Issued'}
+                          aria-label={'Tải PDF ' + certificateCode} onClick={() => setDownloadRequest({ format: 'pdf', certificateIds: [certificateId] })}>Tải PDF</button>
+                        <div>
                         {status === 'Generating' ? (
                           <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'generate')}>Xử lý mô phỏng</button>
                         ) : status === 'Failed' ? (
@@ -240,13 +278,14 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                         ) : status === 'Issued' ? (
                           <button type="button" className="btn btn-sm btn-outline-danger" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'revoke')}>Thu hồi</button>
                         ) : <span className="text-body-secondary">—</span>}
+                        </div>
                       </td>
                     </tr>
                   )
                 })}
                 {visibleCertificates.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="text-center text-body-secondary">
+                    <td colSpan={10} className="text-center text-body-secondary">
                       {invalidIssuedRange ? 'Hãy sửa khoảng ngày phát hành để xem kết quả.' : 'Không tìm thấy chứng nhận phù hợp.'}
                     </td>
                   </tr>

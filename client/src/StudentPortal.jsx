@@ -5,6 +5,7 @@ import PortalSidebar from './PortalSidebar.jsx'
 import StudentOverview from './StudentOverview.jsx'
 import StudentRecords from './StudentRecords.jsx'
 import StudentLogin from './StudentLogin.jsx'
+import StudentProfileForm from './StudentProfileForm.jsx'
 import PasswordChangeForm from './PasswordChangeForm.jsx'
 import hutechLogo from './assets/hutech-logo.png'
 
@@ -21,7 +22,9 @@ const studentAccountPages = [
 ]
 
 export default function StudentPortal({ students, cohorts, activities, participations, certificates, notifications,
-  studentPasswords, managementPasswords, onChangePassword, onReadNotification, onManagementSignIn, onActivateDemoStudent, onVerifyDemoActivation, onRequestReset, onResetPassword, adminPreviewAvailable }) {
+  studentPasswords, onChangePassword, onUpdateEmail, onReadNotification, onManagementSignIn, onActivateDemoStudent, onVerifyDemoActivation, onRequestReset, onResetPassword, adminPreviewAvailable }) {
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [notice, setNotice] = useState('')
   const [studentId, setStudentId] = useState('')
   const [showPreviewPicker, setShowPreviewPicker] = useState(false)
   const [panel, setPanel] = useState('')
@@ -38,6 +41,8 @@ export default function StudentPortal({ students, cohorts, activities, participa
   const studentCertificates = certificates.filter(({ participationId }) => participationIds.has(participationId))
 
   function selectStudent(id) {
+    setEditingProfile(false)
+    setNotice('')
     setStudentId(id)
     setPanel('')
     setPage('overview')
@@ -45,6 +50,8 @@ export default function StudentPortal({ students, cohorts, activities, participa
   }
 
   function showPage(nextPage) {
+    setEditingProfile(false)
+    setNotice('')
     setPage(nextPage)
     setPanel('')
     mainRef.current?.focus()
@@ -62,12 +69,14 @@ export default function StudentPortal({ students, cohorts, activities, participa
   }
 
   function goHome() {
+    setEditingProfile(false)
+    setNotice('')
     setAccountSectionOpen(false)
     showPage('overview')
   }
 
   if (!student && !showPreviewPicker) {
-    return <StudentLogin students={students} studentPasswords={studentPasswords} managementPasswords={managementPasswords}
+    return <StudentLogin students={students} studentPasswords={studentPasswords}
       onSignIn={(id) => { setSignedIn(true); selectStudent(id) }} onManagementSignIn={onManagementSignIn}
       onActivateDemoStudent={onActivateDemoStudent} onVerifyDemoActivation={onVerifyDemoActivation} adminPreviewAvailable={adminPreviewAvailable}
       onRequestReset={onRequestReset} onResetPassword={onResetPassword}
@@ -150,14 +159,27 @@ export default function StudentPortal({ students, cohorts, activities, participa
           <section className="card rounded-4">
             <div className="card-body p-4">
               <h1 className="page-title mb-3">{page === 'profile' ? 'Hồ sơ' : 'Tài khoản'}</h1>
+              {notice && <p className="alert alert-success" role="status">{notice}</p>}
+              {editingProfile && signedIn && page === 'profile' ? (
+                <StudentProfileForm key={student.studentId} student={student} cohorts={cohorts} emailOnly
+                  onCancel={() => setEditingProfile(false)} onSave={(values) => {
+                    const errors = onUpdateEmail(student.studentId, values.email)
+                    if (!Object.keys(errors).length) { setEditingProfile(false); setNotice('Đã lưu email hồ sơ trong phiên mẫu.') }
+                    return errors
+                  }} />
+              ) : <>
               <dl className="mb-0">
                 <dt>MSSV</dt><dd>{student.studentCode}</dd>
                 {page === 'profile' ? (
-                  <><dt>Họ và tên</dt><dd>{student.fullName}</dd><dt>Khóa</dt><dd>{cohort?.cohortCode ?? '—'}</dd></>
+                  <><dt>Họ và tên</dt><dd>{student.fullName}</dd><dt>Khóa</dt><dd>{cohort?.cohortCode ?? '—'}</dd><dt>Lớp</dt><dd>{student.className || 'Chưa có'}</dd><dt>Email</dt><dd className="text-break">{student.email || 'Chưa có'}</dd></>
                 ) : (
                   <><dt>Email</dt><dd>{student.email || 'Chưa có'}</dd><dt>Phiên</dt><dd>Xem thử</dd></>
                 )}
               </dl>
+              {page === 'profile' && (signedIn ? <button type="button" className="btn btn-primary mt-3"
+                onClick={() => { setNotice(''); setEditingProfile(true) }}>Sửa email</button>
+                : <p className="small text-body-secondary mt-3 mb-0">Đăng nhập bằng MSSV để sửa email của bạn.</p>)}
+              </>}
             </div>
           </section>
         )}

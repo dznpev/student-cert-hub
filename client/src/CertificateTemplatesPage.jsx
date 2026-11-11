@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import CertificateTemplateImage from './CertificateTemplateImage.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
+
+const CertificateTemplatePdf = lazy(() => import('./CertificateTemplatePdf.jsx'))
 
 const previewTypes = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' }
 
@@ -36,7 +38,7 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
   }, [previewUrl])
 
   function openPreview(file, saved = false, fieldPositions = {}) {
-    setFilePreview({ file, saved, fieldPositions, ready: file.type === 'application/pdf', url: URL.createObjectURL(file) })
+    setFilePreview({ file, saved, fieldPositions, ready: false, url: URL.createObjectURL(file) })
     setPreviewError('')
     setSaveError('')
     setNotice('')
@@ -248,7 +250,7 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
             <label className="form-label" htmlFor="template-preview-file">Tệp mẫu</label>
             <input id="template-preview-file" className="form-control" type="file" ref={fileInput}
               accept=".pdf,.png,.jpg,.jpeg" aria-describedby="template-preview-help" onChange={choosePreview} />
-            <div id="template-preview-help" className="form-text">Có thể đặt vị trí trường trên ảnh PNG hoặc JPG. PDF hỗ trợ xem trước.</div>
+            <div id="template-preview-help" className="form-text">Đặt chữ và QR trên ảnh PNG, JPG hoặc từng trang PDF.</div>
           </div>
           {previewError && <p className="alert alert-danger" role="alert">{previewError}</p>}
           {filePreview && (
@@ -261,9 +263,12 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
                 <button type="button" className="btn btn-sm btn-outline-secondary" onClick={clearPreview}>Bỏ tệp</button>
               </div>
               {filePreview.file.type === 'application/pdf' ? (
-                <div className="ratio ratio-4x3">
-                  <iframe key={filePreview.url} src={filePreview.url} className="border rounded" title={`Xem trước mẫu PDF ${filePreview.file.name}`} />
-                </div>
+                <Suspense fallback={<p role="status">Đang tải trình xem PDF…</p>}>
+                  <CertificateTemplatePdf key={filePreview.url} url={filePreview.url} fileName={filePreview.file.name}
+                    fieldPositions={filePreview.fieldPositions}
+                    onChange={!filePreview.saved ? (fieldPositions) => setFilePreview((current) => current?.url === filePreview.url ? { ...current, fieldPositions } : current) : undefined}
+                    onLoad={() => setFilePreview((current) => current?.url === filePreview.url && !current.ready ? { ...current, ready: true } : current)} />
+                </Suspense>
               ) : !previewError && (
                 <CertificateTemplateImage key={filePreview.url} src={filePreview.url} fileName={filePreview.file.name}
                   fieldPositions={filePreview.fieldPositions}

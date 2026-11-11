@@ -31,7 +31,7 @@ const verticalAlignments = { top: 'Căn trên', middle: 'Căn giữa dọc', bot
 const verticalAnchors = { top: 0, middle: 50, bottom: 100 }
 const verticalOffsets = { top: '0', middle: '-50%', bottom: '-100%' }
 
-export default function CertificateTemplateImage({ src, fileName, fieldPositions, onChange, onLoad, onError }) {
+export default function CertificateTemplateImage({ src, fileName, fieldPositions, onChange, onLoad, onError, surfaceLabel = 'ảnh', referenceWidth }) {
   const [selectedField, setSelectedField] = useState('fullName')
   const [showSampleContent, setShowSampleContent] = useState(false)
   const [previewWidth, setPreviewWidth] = useState(0)
@@ -40,7 +40,8 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
   const imageRef = useRef(null)
   const dragRef = useRef(null)
   const position = fieldPositions[selectedField]
-  const fontSizePt = position?.fontSizePt ?? Number(((position?.fontSize ?? 2) * naturalWidth / 100 * 0.75).toFixed(1))
+  const originalWidth = referenceWidth ?? naturalWidth
+  const fontSizePt = position?.fontSizePt ?? Number(((position?.fontSize ?? 2) * originalWidth / 100 * 0.75).toFixed(1))
 
   useEffect(() => {
     const observer = new ResizeObserver(([entry]) => setPreviewWidth(entry.contentRect.width))
@@ -170,7 +171,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
               ))}
               {selectedField === 'qrCode' ? (
                 <div className="col-12">
-                  <label className="form-label" htmlFor="template-qr-size">Kích thước QR · {position.qrSize ?? 18}% chiều rộng ảnh</label>
+                  <label className="form-label" htmlFor="template-qr-size">Kích thước QR · {position.qrSize ?? 18}% chiều rộng {surfaceLabel}</label>
                   <input id="template-qr-size" type="range" min="5" max="40" step="1" className="form-range"
                     value={position.qrSize ?? 18} onChange={(event) => setPosition({ ...position, qrSize: Number(event.target.value) })} />
                 </div>
@@ -208,7 +209,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
                         aria-label="Gạch chân" aria-pressed={Boolean(position.underline)} onClick={() => setPosition({ ...position, underline: !position.underline })}>U</button>
                     </div>
                     <div>
-                      <div id="template-alignment-label" className="form-label">Căn theo ảnh</div>
+                      <div id="template-alignment-label" className="form-label">Căn theo {surfaceLabel}</div>
                       <div className="btn-group" role="group" aria-labelledby="template-alignment-label">
                         {Object.entries(alignments).map(([value, label]) => {
                           const aligned = (position.textAlign ?? 'center') === value && position.x === imageAnchors[value]
@@ -222,7 +223,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
                       </div>
                     </div>
                     <div>
-                      <div id="template-vertical-alignment-label" className="form-label">Căn dọc theo ảnh</div>
+                      <div id="template-vertical-alignment-label" className="form-label">Căn dọc theo {surfaceLabel}</div>
                       <div className="btn-group" role="group" aria-labelledby="template-vertical-alignment-label">
                         {Object.entries(verticalAlignments).map(([value, label]) => {
                           const aligned = (position.verticalAlign ?? 'middle') === value && position.y === verticalAnchors[value]
@@ -236,7 +237,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
                       </div>
                     </div>
                   </div>
-                  <p className="form-text mb-0">Bật Xem thử nội dung để xem kiểu chữ. Cỡ pt được quy đổi theo ảnh gốc; phông chữ dùng trên máy của bạn.</p>
+                  <p className="form-text mb-0">Bật Xem thử nội dung để xem kiểu chữ. Cỡ pt được quy đổi theo {surfaceLabel} gốc; phông chữ dùng trên máy của bạn.</p>
                 </div>
               )}
             </div>
@@ -276,7 +277,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
                 color: showSampleContent ? color : undefined,
                 textDecoration: showSampleContent && underline ? 'underline' : undefined,
                 fontSize: showSampleContent && key !== 'qrCode'
-                  ? `${savedFontSizePt != null && naturalWidth ? savedFontSizePt * 4 / 3 * previewWidth / naturalWidth : previewWidth * fontSize / 100}px`
+                  ? `${savedFontSizePt != null && originalWidth ? savedFontSizePt * 4 / 3 * previewWidth / originalWidth : previewWidth * fontSize / 100}px`
                   : undefined }}>
               {showSampleContent && key === 'qrCode' ? <TemplatePreviewQr /> : showSampleContent ? sampleValues[key] : fields[key]}
             </span>

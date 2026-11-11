@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { demoManagementAccounts } from './demoManagementAccounts.js'
+import ManagementAccountForm from './ManagementAccountForm.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 
@@ -10,7 +10,8 @@ const statuses = {
   ...studentAccountStatuses,
 }
 
-export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdminLock, onUpdateStudentLock, onIssueActivationCode }) {
+export default function SuperAdminAccounts({ students, managementAccounts, currentAccountId, onSaveManagementAccount, onUpdateAdminLock, onUpdateStudentLock, onIssueActivationCode }) {
+  const [editingAccount, setEditingAccount] = useState(null)
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
@@ -21,11 +22,11 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
   const [activationError, setActivationError] = useState('')
   const query = normalizeSearch(search.trim())
   const rows = [
-    ...Object.entries(demoManagementAccounts).map(([accountRole, account]) => ({
-      id: accountRole, identifier: account.username, name: account.label, role: accountRole,
-      status: accountRole === 'admin' && adminLocked ? 'locked' : 'demo',
-      canToggleLock: accountRole === 'admin',
-      locked: accountRole === 'admin' && adminLocked,
+    ...managementAccounts.map((account) => ({
+      id: account.accountId, identifier: account.username, name: account.fullName, role: account.role,
+      status: account.disabled ? 'locked' : 'demo',
+      canToggleLock: account.accountId !== currentAccountId,
+      locked: account.disabled, account,
     })),
     ...students.map((student) => ({
       id: 'student-' + student.studentId,
@@ -35,7 +36,7 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
       studentId: student.studentId,
       status: getStudentAccountStatus(student),
       canToggleLock: Boolean(student.userId),
-      canIssueActivation: !student.userId && !student.accountDisabled,
+      canIssueActivation: getStudentAccountStatus(student) !== 'active' && !student.accountDisabled,
       locked: Boolean(student.accountDisabled),
     })),
   ]
@@ -45,8 +46,8 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
   ))
 
   function confirmAccountLock() {
-    const { role: accountRole, studentId, identifier, locked } = confirmLock
-    if (accountRole === 'admin') onUpdateAdminLock(!locked)
+    const { id, role: accountRole, studentId, identifier, locked } = confirmLock
+    if (accountRole !== 'student') onUpdateAdminLock(id, !locked)
     else onUpdateStudentLock(studentId, !locked)
     setNotice(`Đã ${locked ? 'mở khóa' : 'khóa'} tài khoản ${identifier}.`)
     setConfirmLock(null)
@@ -56,6 +57,17 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
     <>
       <h1 className="page-title mb-2">Quản lý tài khoản</h1>
       <p className="text-body-secondary mb-4">Danh sách tài khoản và hồ sơ sinh viên dùng thử. Trạng thái khóa được lưu trong phiên hiện tại.</p>
+      <div className="d-flex justify-content-end mb-3">
+        <button type="button" className="btn btn-primary" disabled={editingAccount !== null || confirmLock !== null || activationTarget !== null}
+          onClick={() => { setEditingAccount({}); setNotice('') }}>Thêm tài khoản quản trị</button>
+      </div>
+      {editingAccount !== null && <ManagementAccountForm key={editingAccount.accountId ?? 'new'} account={editingAccount.accountId ? editingAccount : null}
+        isCurrentAccount={editingAccount.accountId === currentAccountId} onCancel={() => setEditingAccount(null)}
+        onSave={(id, values) => {
+          const errors = onSaveManagementAccount(id, values)
+          if (!Object.keys(errors).length) { setEditingAccount(null); setNotice(id ? 'Đã lưu tài khoản quản trị.' : 'Đã tạo tài khoản quản trị mẫu. Có thể đăng nhập trong phiên này.') }
+          return errors
+        }} />}
       {confirmLock !== null && (
         <section className="alert alert-warning" aria-labelledby="confirm-account-lock">
           <h2 id="confirm-account-lock" className="h6">{confirmLock.locked ? 'Mở khóa' : 'Khóa'} tài khoản {confirmLock.identifier}?</h2>
@@ -90,6 +102,9 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
           <h2 id="activation-issued-title" className="h6">Mã thử cho MSSV {issuedActivation.studentCode}</h2>
           <p className="text-break mb-2"><code id="issued-activation-code">{issuedActivation.code}</code></p>
           <p className="small mb-2">Hết hạn lúc {new Date(issuedActivation.expiresAt).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}. Mã chỉ dùng để thử trong phiên hiện tại.</p>
+          <p className="small mb-2">Mở liên kết thử sẽ chuyển sang màn hình sinh viên trong cùng tab. Chưa gửi email.</p>
+          <a className="btn btn-sm btn-outline-primary me-2 mb-2"
+            href={'#kich-hoat?' + new URLSearchParams({ mssv: issuedActivation.studentCode, ma: issuedActivation.code })}>Mở liên kết kích hoạt thử</a>
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setIssuedActivation(null)}>Ẩn mã</button>
         </section>
       )}
@@ -132,9 +147,13 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
                     <td>{row.name}</td>
                     <td>{roles[row.role]}</td>
                     <td><span className={'badge text-wrap ' + statuses[row.status].badge}>{statuses[row.status].label}</span></td>
-                    <td>{row.canToggleLock && (
+                    <td><div className="d-flex flex-wrap gap-2">
+                      {row.account && <button type="button" className="btn btn-sm btn-outline-primary"
+                        aria-label={`Sửa tài khoản ${row.identifier}`} disabled={editingAccount !== null || confirmLock !== null || activationTarget !== null}
+                        onClick={() => { setEditingAccount(row.account); setNotice('') }}>Sửa</button>}
+                      {row.canToggleLock && (
                       <button type="button" className={'btn btn-sm ' + (row.locked ? 'btn-outline-primary' : 'btn-outline-danger')}
-                        disabled={confirmLock !== null || activationTarget !== null}
+                        disabled={confirmLock !== null || activationTarget !== null || editingAccount !== null}
                         aria-label={`${row.locked ? 'Mở khóa' : 'Khóa'} tài khoản ${row.identifier}`}
                         onClick={() => { setNotice(''); setConfirmLock(row) }}>
                         {row.locked ? 'Mở khóa' : 'Khóa'}
@@ -142,13 +161,13 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
                     )}
                       {row.canIssueActivation && (
                         <button type="button" className="btn btn-sm btn-outline-primary"
-                          disabled={confirmLock !== null || activationTarget !== null}
+                          disabled={confirmLock !== null || activationTarget !== null || editingAccount !== null}
                           aria-label={`Cấp mã kích hoạt ${row.identifier}`}
                           onClick={() => { setActivationTarget(row); setActivationError(''); setIssuedActivation(null); setNotice('') }}>
                           Cấp mã kích hoạt
                         </button>
                       )}
-                    </td>
+                    </div></td>
                   </tr>
                 ))}
                 {visibleRows.length === 0 && <tr><td colSpan={5} className="text-center text-body-secondary">Không tìm thấy mục phù hợp.</td></tr>}

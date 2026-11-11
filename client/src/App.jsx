@@ -1,3 +1,5 @@
+import StudentAccountLink from './StudentAccountLink.jsx'
+import { getStudentAccountStatus } from './studentAccountStatuses.js'
 import { useState, useSyncExternalStore } from 'react'
 import AdminLayout from './AdminLayout.jsx'
 import ActivitiesPage from './ActivitiesPage.jsx'
@@ -9,6 +11,7 @@ import CohortsPage from './CohortsPage.jsx'
 import DashboardPage from './DashboardPage.jsx'
 import ImportsPage from './ImportsPage.jsx'
 import StudentPortal from './StudentPortal.jsx'
+import { demoManagementAccounts } from './demoManagementAccounts.js'
 import { demoPassword } from './demoPassword.js'
 import { demoStudentActivation } from './demoStudentActivation.js'
 import SuperAdminAccounts from './SuperAdminAccounts.jsx'
@@ -70,13 +73,17 @@ export default function App() {
   const previewLocation = useSyncExternalStore(subscribeToHash, getPreviewLocation)
   const [previewRoute, previewQuery] = previewLocation.split('?', 2)
   const showVerification = previewRoute === '#tra-cuu'
-  const [managementRole, setManagementRole] = useState('')
-  const [adminLocked, setAdminLocked] = useState(false)
+  const [managementAccounts, setManagementAccounts] = useState(() => Object.entries(demoManagementAccounts).map(([role, account]) => ({ accountId: role, username: account.username, fullName: account.label, role, disabled: false })))
+  const [managementAccountId, setManagementAccountId] = useState('')
+  const managementAccount = managementAccounts.find((account) => account.accountId === managementAccountId)
+  const managementRole = managementAccount?.role ?? ''
+  const adminLocked = Boolean(managementAccounts.find((account) => account.accountId === 'admin')?.disabled)
   const [superAdminSection, setSuperAdminSection] = useState('accounts')
   const inSuperAdmin = previewLocation === '#quan-tri-mau' && managementRole === 'superAdmin'
   const showStudentPreview = previewLocation === '#sinh-vien'
     || (previewLocation === '#quan-tri-mau' && !managementRole)
-    || (adminLocked && !inSuperAdmin)
+    || (managementAccount?.disabled)
+    || (adminLocked && !managementAccount && !inSuperAdmin)
   const [activeSectionId, setActiveSectionId] = useState('overview')
   const [cohorts, setCohorts] = useState(sampleCohorts)
   const [students, setStudents] = useState(sampleStudents)
@@ -96,18 +103,26 @@ export default function App() {
 
   function requestStudentPasswordReset(studentCode) {
     const student = students.find((item) => item.studentCode === studentCode)
-    if (!student?.userId || student.accountDisabled) return { error: 'Tài khoản mẫu chưa sẵn sàng để đặt lại mật khẩu.' }
+    if (!student || getStudentAccountStatus(student) !== 'active') return { error: 'Tài khoản mẫu chưa sẵn sàng để đặt lại mật khẩu.' }
     if (!student.email) return { error: 'Hồ sơ chưa có email. Liên hệ quản trị viên để được hỗ trợ.' }
     const request = { ...createDemoCode(), used: false }
     setPasswordResetRequests((current) => ({ ...current, [student.studentId]: request }))
     return { error: '', code: request.code }
   }
 
-  function resetStudentPassword(studentCode, code, newPassword) {
+  function verifyStudentPasswordReset(studentCode, code) {
     const student = students.find((item) => item.studentCode === studentCode)
     const request = passwordResetRequests[student?.studentId]
-    if (!student?.userId || student.accountDisabled || !request || request.used
+    if (!student || getStudentAccountStatus(student) !== 'active' || !request || request.used
       || request.code !== code || isDemoCodeExpired(request)) return 'Mã không hợp lệ, đã dùng hoặc hết hạn. Hãy yêu cầu mã mới.'
+    return ''
+  }
+
+  function resetStudentPassword(studentCode, code, newPassword) {
+    const verificationError = verifyStudentPasswordReset(studentCode, code)
+    if (verificationError) return verificationError
+    const student = students.find((item) => item.studentCode === studentCode)
+    const request = passwordResetRequests[student.studentId]
     if (newPassword.length < 8 || newPassword.length > 128) return 'Mật khẩu mới cần từ 8 đến 128 ký tự.'
     setStudentPasswords((current) => ({ ...current, [student.studentId]: newPassword }))
     setPasswordResetRequests((current) => ({ ...current, [student.studentId]: { ...request, used: true } }))
@@ -123,7 +138,7 @@ export default function App() {
 
   function changeStudentPassword(studentId, currentPassword, newPassword) {
     const student = students.find((item) => item.studentId === studentId)
-    if (!student?.userId || student.accountDisabled) return 'Tài khoản chưa sẵn sàng để đổi mật khẩu.'
+    if (!student || getStudentAccountStatus(student) !== 'active') return 'Tài khoản chưa sẵn sàng để đổi mật khẩu.'
     if (currentPassword !== (studentPasswords[studentId] ?? demoPassword)) return 'Mật khẩu hiện tại không đúng.'
     if (newPassword.length < 8 || newPassword.length > 128) return 'Mật khẩu mới cần từ 8 đến 128 ký tự.'
     if (newPassword === currentPassword) return 'Hãy chọn mật khẩu mới khác mật khẩu hiện tại.'
@@ -142,7 +157,7 @@ export default function App() {
   function verifyDemoActivation(studentCode, activationCode) {
     const student = students.find((item) => item.studentCode === studentCode)
     if (!student) return { error: 'MSSV hoặc mã kích hoạt mẫu không đúng.' }
-    if (student.userId) return { error: 'Tài khoản này đã được kích hoạt trong phiên.' }
+    if (getStudentAccountStatus(student) === 'active') return { error: 'Tài khoản này đã được kích hoạt trong phiên.' }
     if (student.accountDisabled) return { error: 'Tài khoản mẫu đang bị vô hiệu hóa.' }
     const request = activationRequests[student.studentId]
     if (request) {
@@ -155,7 +170,7 @@ export default function App() {
 
   function issueDemoActivationCode(studentId) {
     const student = students.find((item) => item.studentId === studentId)
-    if (!inSuperAdmin || !student || student.userId || student.accountDisabled) {
+    if (!inSuperAdmin || !student || getStudentAccountStatus(student) === 'active' || student.accountDisabled) {
       return { error: 'Chỉ cấp mã thử cho hồ sơ chưa kích hoạt và chưa bị khóa.' }
     }
     const request = createDemoCode()
@@ -179,8 +194,8 @@ export default function App() {
     }
     const student = students.find((item) => item.studentCode === studentCode)
     setStudents((current) => current.map((item) => (
-      item.studentId === student.studentId && !item.userId
-        ? { ...item, userId: 'demo-activated-' + item.studentId, activationPending: false }
+      item.studentId === student.studentId && (!item.userId || item.activationPending)
+        ? { ...item, userId: item.userId ?? 'demo-activated-' + item.studentId, activationPending: false }
         : item
     )))
     setStudentPasswords((current) => ({ ...current, [student.studentId]: initialPassword }))
@@ -196,32 +211,34 @@ export default function App() {
 
   function changeManagementPassword(currentPassword, newPassword) {
     if (!['admin', 'superAdmin'].includes(managementRole) || previewLocation !== '#quan-tri-mau') return 'Đăng nhập tài khoản quản trị để đổi mật khẩu.'
-    if (managementRole === 'admin' && adminLocked) return 'Tài khoản Admin mẫu đang bị khóa.'
-    if (currentPassword !== (managementPasswords[managementRole] ?? demoPassword)) return 'Mật khẩu hiện tại không đúng.'
+    if (managementAccount?.disabled) return 'Tài khoản Admin mẫu đang bị khóa.'
+    if (currentPassword !== (managementPasswords[managementAccountId] ?? demoPassword)) return 'Mật khẩu hiện tại không đúng.'
     if (newPassword.length < 8 || newPassword.length > 128) return 'Mật khẩu mới cần từ 8 đến 128 ký tự.'
     if (currentPassword === newPassword) return 'Hãy chọn mật khẩu mới khác mật khẩu hiện tại.'
-    setManagementPasswords((current) => ({ ...current, [managementRole]: newPassword }))
+    setManagementPasswords((current) => ({ ...current, [managementAccountId]: newPassword }))
     appendAuditLogs([{
       action: 'Đổi mật khẩu',
       entityType: 'Accounts',
-      entityId: managementRole === 'admin' ? 'admin' : 'superadmin',
+      entityId: managementAccount.username,
       outcome: 'Success',
       reason: 'Đổi mật khẩu quản trị mẫu trong phiên.',
     }])
     return ''
   }
 
-  function startManagementPreview(role) {
-    if (role === 'admin' && adminLocked) return false
-    setManagementRole(role)
+  function startManagementPreview(role, username, password) {
+    const account = managementAccounts.find((item) => item.role === role && item.username.toLowerCase() === username.toLowerCase())
+    if (!account || password !== (managementPasswords[account.accountId] ?? demoPassword)) return 'Tên đăng nhập hoặc mật khẩu mẫu không đúng.'
+    if (account.disabled) return 'Tài khoản quản trị mẫu đang bị khóa.'
+    setManagementAccountId(account.accountId)
     setActiveSectionId('overview')
     setSuperAdminSection('accounts')
     window.location.hash = 'quan-tri-mau'
-    return true
+    return ''
   }
 
   function endManagementPreview() {
-    setManagementRole('')
+    setManagementAccountId('')
     window.location.hash = 'sinh-vien'
   }
 
@@ -253,7 +270,7 @@ export default function App() {
   function appendAuditLogs(entries, actor = null) {
     if (entries.length === 0) return
     const timestamp = new Date().toISOString()
-    const actorLabel = actor ?? (inSuperAdmin ? 'Super Admin (mô phỏng)' : 'Admin (mô phỏng)')
+    const actorLabel = actor ?? (managementAccount ? managementAccount.username + ' · ' + (managementRole === 'superAdmin' ? 'Super Admin' : 'Admin') + ' (mô phỏng)' : 'Admin (mô phỏng)')
     setAuditLogs((current) => {
       let nextId = Math.max(0, ...current.map((item) => item.auditLogId))
       return [...entries.map((entry) => ({
@@ -266,16 +283,43 @@ export default function App() {
     })
   }
 
-  function updateAdminLock(locked) {
-    if (!inSuperAdmin || adminLocked === locked) return
-    setAdminLocked(locked)
+  function updateAdminLock(accountId, locked) {
+    const account = managementAccounts.find((item) => item.accountId === accountId)
+    if (!inSuperAdmin || !account || accountId === managementAccountId || account.disabled === locked) return
+    setManagementAccounts((current) => current.map((item) => item.accountId === accountId ? { ...item, disabled: locked } : item))
     appendAuditLogs([{
       action: locked ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
       entityType: 'Accounts',
-      entityId: 'admin',
+      entityId: account.username,
       outcome: 'Success',
-      reason: locked ? 'Đã khóa tài khoản Admin mẫu.' : 'Đã mở khóa tài khoản Admin mẫu.',
+      reason: locked ? 'Đã khóa tài khoản quản trị mẫu.' : 'Đã mở khóa tài khoản quản trị mẫu.',
     }])
+  }
+
+  function saveManagementAccount(accountId, values) {
+    if (!inSuperAdmin) return { form: 'Chỉ Super Admin được quản lý tài khoản quản trị.' }
+    const account = managementAccounts.find((item) => item.accountId === accountId)
+    if (accountId && !account) return { form: 'Không tìm thấy tài khoản.' }
+    const username = values.username.trim()
+    const fullName = values.fullName.trim()
+    const errors = {}
+    if (!/^[A-Za-z][A-Za-z0-9._-]{2,49}$/.test(username)) errors.username = 'Tên đăng nhập cần 3–50 ký tự hợp lệ và bắt đầu bằng chữ.'
+    else if (managementAccounts.some((item) => item.accountId !== accountId && item.username.toLowerCase() === username.toLowerCase())) errors.username = 'Tên đăng nhập đã tồn tại.'
+    if (!fullName || fullName.length > 150) errors.fullName = 'Nhập tên hiển thị, tối đa 150 ký tự.'
+    if (!['admin', 'superAdmin'].includes(values.role)) errors.form = 'Vai trò không hợp lệ.'
+    if (accountId === managementAccountId && values.role !== account.role) errors.form = 'Không thể đổi vai trò tài khoản đang đăng nhập.'
+    if (!account && (values.password.length < 8 || values.password.length > 128)) errors.password = 'Mật khẩu thử cần từ 8 đến 128 ký tự.'
+    if (Object.keys(errors).length) return errors
+    const changes = { username, fullName, role: values.role }
+    if (account && Object.keys(changes).every((key) => changes[key] === account[key])) return {}
+    const id = accountId ?? crypto.randomUUID()
+    setManagementAccounts((current) => account ? current.map((item) => item.accountId === id ? { ...item, ...changes } : item) : [...current, { accountId: id, ...changes, disabled: false }])
+    if (!account) setManagementPasswords((current) => ({ ...current, [id]: values.password }))
+    appendAuditLogs([{
+      action: account ? 'Sửa tài khoản quản trị' : 'Tạo tài khoản quản trị', entityType: 'Accounts', entityId: username, outcome: 'Success',
+      reason: account ? `${account.username} → ${username}; ${account.fullName} → ${fullName}; vai trò ${account.role} → ${values.role}.` : `Tạo tài khoản mẫu ${username}, vai trò ${values.role}.`,
+    }])
+    return {}
   }
 
   function updateStudentProfile(studentId, values) {
@@ -303,6 +347,20 @@ export default function App() {
       outcome: 'Success',
       reason: changes.fullName,
     }])
+    return {}
+  }
+
+  function updateStudentEmail(studentId, email) {
+    const student = students.find((item) => item.studentId === studentId)
+    if (!student || getStudentAccountStatus(student) !== 'active') return { form: 'Đăng nhập tài khoản sinh viên đang sử dụng để sửa email.' }
+    const nextEmail = email.trim() || null
+    if (nextEmail && (nextEmail.length > 256 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextEmail))) return { email: 'Email không hợp lệ.' }
+    if (nextEmail === student.email) return {}
+    setStudents((current) => current.map((item) => item.studentId === studentId ? { ...item, email: nextEmail } : item))
+    appendAuditLogs([{
+      action: 'Sinh viên sửa email', entityType: 'Students', entityId: student.studentCode, outcome: 'Success',
+      reason: 'Sinh viên cập nhật email hồ sơ trong phiên mẫu; chưa xác minh địa chỉ email.',
+    }], student.studentCode + ' · Sinh viên (mô phỏng)')
     return {}
   }
 
@@ -540,12 +598,18 @@ export default function App() {
         email: row.email || null,
         className: row.className || null,
         cohortId: cohort.cohortId,
-        userId: null,
+        userId: 'demo-imported-' + nextId,
+        activationPending: true,
+        accountDisabled: false,
         isActive: true,
       })
       return { ...row, processingStatus: 'Imported' }
     })
     setStudents((current) => [...addedStudents, ...current])
+    appendAuditLogs(addedStudents.map((student) => ({
+      action: 'Tạo tài khoản chờ kích hoạt', entityType: 'Accounts', entityId: student.studentCode, outcome: 'Success',
+      reason: 'Tạo tài khoản mẫu sau nhập hồ sơ mới, tên đăng nhập là MSSV; chưa đặt mật khẩu hoặc gửi email.',
+    })))
     return completeImport(preview, rows, 'Students')
   }
 
@@ -562,6 +626,8 @@ export default function App() {
       duplicateRows,
       skippedRows,
       errorRows,
+      rows: rows.map((row) => ({ ...row })),
+      activityName: importType === 'Participations' ? activities.find((item) => item.activityId === preview.activityId)?.name ?? 'Hoạt động chưa xác định' : null,
       batchStatus: 'Completed',
     }
     setImportHistory((current) => [batch, ...current])
@@ -604,13 +670,21 @@ export default function App() {
     return completeImport(preview, rows, 'Participations')
   }
 
+  if (['#kich-hoat', '#dat-lai-mat-khau'].includes(previewRoute)) {
+    const params = new URLSearchParams(previewQuery)
+    return <StudentAccountLink key={previewLocation} type={previewRoute === '#kich-hoat' ? 'activation' : 'reset'}
+      studentCode={params.get('mssv') ?? ''} code={params.get('ma') ?? ''}
+      onVerifyActivation={verifyDemoActivation} onActivate={activateDemoStudent}
+      onVerifyReset={verifyStudentPasswordReset} onReset={resetStudentPassword} />
+  }
+
   if (showStudentPreview || showVerification) {
     const initialCode = new URLSearchParams(previewQuery).get('ma') ?? ''
     return (
       <>
         <div hidden={showVerification}>
           <StudentPortal students={students} cohorts={cohorts} activities={activities} participations={participations}
-            studentPasswords={studentPasswords} managementPasswords={managementPasswords} onChangePassword={changeStudentPassword}
+            studentPasswords={studentPasswords} onChangePassword={changeStudentPassword} onUpdateEmail={updateStudentEmail}
             certificates={certificates} notifications={notifications} onReadNotification={markNotificationRead}
             onManagementSignIn={startManagementPreview} onActivateDemoStudent={activateDemoStudent}
             onVerifyDemoActivation={verifyDemoActivation}
@@ -632,10 +706,10 @@ export default function App() {
           if (sectionId === 'workspace') setActiveSectionId('overview')
           setSuperAdminSection(sectionId)
         }} roleLabel="Super Admin · Bản xem thử"
-        accountIdentifier="superadmin" onDemoSignOut={endManagementPreview}
+        accountIdentifier={managementAccount.username} onDemoSignOut={endManagementPreview}
         onGoHome={() => setSuperAdminSection('accounts')} onChangePassword={changeManagementPassword}>
         {superAdminSection === 'accounts' && (
-          <SuperAdminAccounts students={students} adminLocked={adminLocked}
+          <SuperAdminAccounts students={students} managementAccounts={managementAccounts} currentAccountId={managementAccountId} onSaveManagementAccount={saveManagementAccount}
             onUpdateAdminLock={updateAdminLock} onUpdateStudentLock={updateStudentLock}
             onIssueActivationCode={issueDemoActivationCode} />
         )}
@@ -659,7 +733,7 @@ export default function App() {
         else setActiveSectionId(sectionId)
       }}
       roleLabel={inSuperAdmin ? 'Super Admin · Khu quản trị' : 'Admin cấp chứng nhận'}
-      accountIdentifier={inSuperAdmin ? 'superadmin' : 'admin'}
+      accountIdentifier={managementAccount?.username ?? 'admin'}
       onDemoSignOut={endManagementPreview}
       onGoHome={() => { if (inSuperAdmin) setSuperAdminSection('accounts'); else setActiveSectionId('overview') }}
       onChangePassword={managementRole && previewLocation === '#quan-tri-mau' ? changeManagementPassword : null}

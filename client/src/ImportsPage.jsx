@@ -33,6 +33,10 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
 })
 
 export default function ImportsPage({ activities, cohorts, students, participations, importHistory, onImportStudents, onImportParticipations }) {
+  const [selectedBatchId, setSelectedBatchId] = useState(null)
+  const [selectedRowStatus, setSelectedRowStatus] = useState('')
+  const selectedBatch = importHistory.find((batch) => batch.batchId === selectedBatchId)
+  const detailRows = selectedBatch?.rows?.filter((row) => !selectedRowStatus || (selectedRowStatus === 'Duplicate' ? row.isDuplicate && row.processingStatus === 'Skipped' : row.processingStatus === selectedRowStatus && !row.isDuplicate))
   const [importType, setImportType] = useState('Participations')
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -52,8 +56,9 @@ export default function ImportsPage({ activities, cohorts, students, participati
     setErrorReportError('')
   }
 
-  async function exportErrorReport() {
-    if (!errorRows.length || busy) return
+  async function exportErrorReport(source) {
+    const reportRows = source?.rows?.filter((row) => row.processingStatus === 'Error') ?? []
+    if (!reportRows.length || busy) return
     setExportingErrorReport(true)
     setErrorReportError('')
     try {
@@ -71,7 +76,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
       header.height = 30
       header.font = { bold: true, color: { argb: 'FFFFFFFF' } }
       header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F5FC4' } }
-      const rows = sheet.addRows(errorRows.map(({ rowNumber, studentCode, errorMessage }) => ({
+      const rows = sheet.addRows(reportRows.map(({ rowNumber, studentCode, errorMessage }) => ({
         rowNumber,
         studentCode: String(studentCode ?? ''),
         errorMessage,
@@ -83,7 +88,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
       const url = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
       const link = document.createElement('a')
       link.href = url
-      link.download = `bao-cao-loi-${preview.fileName.replace(/\.(xlsx|csv)$/i, '')}.xlsx`
+      link.download = `bao-cao-loi-${source.fileName.replace(/\.(xlsx|csv)$/i, '')}.xlsx`
       document.body.appendChild(link)
       try {
         link.click()
@@ -131,7 +136,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
   })
   const previewActivity = activities.find(({ activityId }) => String(activityId) === selectedActivity)
   const errorReportButton = errorRows.length > 0 && (
-    <button type="button" className="btn btn-outline-secondary" disabled={busy} onClick={exportErrorReport}>
+    <button type="button" className="btn btn-outline-secondary" disabled={busy} onClick={() => exportErrorReport(preview)}>
       {exportingErrorReport ? 'Đang tạo báo cáo lỗi…' : 'Tải báo cáo lỗi (.xlsx)'}
     </button>
   )
@@ -139,6 +144,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
   return (
     <>
       <h1 className="page-title mb-4">Nhập dữ liệu Excel</h1>
+      {errorReportError && <p className="alert alert-danger" role="alert">{errorReportError}</p>}
 
       <section className="card rounded-4 mb-4" aria-labelledby="import-settings">
         <div className="card-body p-3 p-md-4">
@@ -232,10 +238,9 @@ export default function ImportsPage({ activities, cohorts, students, participati
                   )}
                   {errorReportButton}
                 </div>
-                {errorReportError && <p className="alert alert-danger mt-3" role="alert">{errorReportError}</p>}
                 <p className="small text-body-secondary mt-3 mb-0">
                   {preview.confirmed
-                    ? 'Hồ sơ và lịch sử nhập chỉ lưu trong phiên hiện tại. Tài khoản chưa được tạo.'
+                    ? 'Đã tạo tài khoản mẫu chờ kích hoạt cho hồ sơ mới, tên đăng nhập là MSSV. Chưa đặt mật khẩu hoặc gửi email; cấp mã thử tại Super Admin → Quản lý tài khoản. Dữ liệu chỉ giữ trong phiên.'
                     : 'Chỉ các dòng hợp lệ được thêm. Dòng lỗi và trùng được bỏ qua. Dữ liệu hiện chỉ dùng để thử trên frontend.'}
                 </p>
               </>
@@ -291,7 +296,6 @@ export default function ImportsPage({ activities, cohorts, students, participati
                   )}
                   {errorReportButton}
                 </div>
-                {errorReportError && <p className="alert alert-danger mt-3" role="alert">{errorReportError}</p>}
                 <p className="small text-body-secondary mt-3 mb-0">
                   {preview.confirmed
                     ? 'Lượt mới có trạng thái Chờ duyệt. Thay đổi chỉ lưu trong phiên thử.'
@@ -333,6 +337,41 @@ export default function ImportsPage({ activities, cohorts, students, participati
               </select>
             </div>
           </div>
+          {selectedBatch && (
+            <section className="border rounded-3 p-3 mb-4" aria-labelledby="import-batch-detail-title">
+              <h3 id="import-batch-detail-title" className="h5 text-break">Chi tiết đợt #{selectedBatch.batchId} · {selectedBatch.fileName}</h3>
+              <p className="small text-body-secondary">{importTypes[selectedBatch.importType]} · {dateFormatter.format(new Date(selectedBatch.importedAt))}{selectedBatch.activityName ? ' · ' + selectedBatch.activityName : ''}</p>
+              <p>{selectedBatch.totalRows} dòng · {selectedBatch.successRows} thành công · {selectedBatch.duplicateRows} trùng · {selectedBatch.skippedRows} bỏ qua · {selectedBatch.errorRows} lỗi.</p>
+              <p className="small text-body-secondary">Kết quả tại thời điểm xác nhận nhập, chỉ giữ trong phiên này. Đổi thông tin sinh viên hoặc đọc lại tệp không thay đổi đợt đã lưu.</p>
+              {selectedBatch.rows ? <>
+                <label htmlFor="import-detail-status" className="form-label">Lọc kết quả dòng</label>
+                <select id="import-detail-status" className="form-select mb-3" disabled={busy} value={selectedRowStatus} onChange={(event) => setSelectedRowStatus(event.target.value)}>
+                  <option value="">Tất cả kết quả</option>
+                  {['Imported', 'Duplicate', 'Skipped', 'Error'].map((status) => <option value={status} key={status}>{rowStatuses[status].label}</option>)}
+                </select>
+                <p className="small" role="status">Hiển thị {detailRows.length}/{selectedBatch.rows.length} dòng.</p>
+                <div className="admin-table-scroll" role="region" aria-label="Kết quả từng dòng của đợt nhập" tabIndex={0}>
+                  <table className="table align-middle mb-0 admin-data-table import-history-table">
+                    <thead><tr>{['STT', 'Dòng gốc', 'MSSV', 'Họ và tên', ...(selectedBatch.importType === 'Students' ? ['Khóa', 'Email', 'Lớp'] : []), 'Kết quả', 'Chi tiết'].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
+                    <tbody>{detailRows.map((row, index) => <tr key={row.rowNumber}>
+                      <th scope="row">{index + 1}</th><td>{row.rowNumber}</td><td>{row.studentCode || '—'}</td><td>{row.fullName || '—'}</td>
+                      {selectedBatch.importType === 'Students' && <><td>{row.cohortCode || '—'}</td><td>{row.email || '—'}</td><td>{row.className || '—'}</td></>}
+                      <td><ImportRowStatus row={row} /></td><td>{row.errorMessage || '—'}</td>
+                    </tr>)}
+                    {detailRows.length === 0 && <tr><td colSpan={selectedBatch.importType === 'Students' ? 9 : 6} className="text-center text-body-secondary">Không có dòng phù hợp.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+                {selectedBatch.rows.some((row) => row.processingStatus === 'Error') && <div className="mt-3">
+                  <button type="button" className="btn btn-outline-secondary" disabled={busy} onClick={() => exportErrorReport(selectedBatch)}>
+                    {exportingErrorReport ? 'Đang tạo báo cáo lỗi…' : 'Tải báo cáo lỗi của đợt (.xlsx)'}
+                  </button>
+                  <p className="small text-body-secondary mt-2 mb-0">Xuất tất cả dòng lỗi của đợt, không phụ thuộc bộ lọc kết quả dòng.</p>
+                </div>}
+              </> : <p className="alert alert-info">Đợt mẫu cũ chỉ có số liệu tổng hợp, chưa có kết quả từng dòng để xem hoặc xuất lại. Các đợt bạn xác nhận nhập từ bây giờ sẽ lưu chi tiết trong phiên.</p>}
+              <button type="button" className="btn btn-outline-secondary mt-3" disabled={busy} onClick={() => { setSelectedBatchId(null); setSelectedRowStatus(''); setErrorReportError('') }}>Đóng chi tiết đợt</button>
+            </section>
+          )}
           <div className="admin-table-scroll" role="region" aria-label="Lịch sử các đợt nhập" tabIndex={0}>
             <table className="table align-middle mb-0 admin-data-table import-history-table">
               <thead>
@@ -346,6 +385,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                   <th scope="col" className="text-end">Bỏ qua</th>
                   <th scope="col" className="text-end">Lỗi</th>
                   <th scope="col" className="ps-4 ps-lg-5">Trạng thái</th>
+                  <th scope="col">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -360,11 +400,14 @@ export default function ImportsPage({ activities, cohorts, students, participati
                     <td className="text-end">{batch.skippedRows}</td>
                     <td className="text-end">{batch.errorRows}</td>
                     <td className="ps-4 ps-lg-5"><span className={batch.errorRows ? 'badge text-bg-warning' : 'badge text-bg-success'}>{batchStatuses[batch.batchStatus]}{batch.errorRows > 0 && ' · Có lỗi'}</span></td>
+                    <td><button type="button" className="btn btn-sm btn-outline-primary" disabled={busy}
+                      aria-label={'Xem chi tiết đợt ' + batch.batchId + ' · ' + batch.fileName}
+                      onClick={() => { setSelectedBatchId(batch.batchId); setSelectedRowStatus(''); setErrorReportError('') }}>Xem chi tiết</button></td>
                   </tr>
                 ))}
                 {visibleHistory.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="text-center text-body-secondary">Không tìm thấy đợt nhập phù hợp.</td>
+                    <td colSpan={10} className="text-center text-body-secondary">Không tìm thấy đợt nhập phù hợp.</td>
                   </tr>
                 )}
               </tbody>

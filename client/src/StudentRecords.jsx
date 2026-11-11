@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import CertificateDownloadPanel from './CertificateDownloadPanel.jsx'
 import { certificateStatuses } from './certificateStatuses.js'
 import CertificateVerificationLink from './CertificateVerificationLink.jsx'
 import { approvalStatuses } from './approvalStatuses.js'
@@ -8,6 +10,7 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
 })
 
 export default function StudentRecords({ page, activities, participations, certificates }) {
+  const [downloadRequest, setDownloadRequest] = useState(null)
   const showCertificates = page === 'certificates'
   const title = showCertificates ? 'Chứng nhận' : 'Lượt tham gia'
   const activitiesById = new Map(activities.map((item) => [item.activityId, item]))
@@ -27,6 +30,8 @@ export default function StudentRecords({ page, activities, participations, certi
       <div className="card-body p-3 p-md-4">
         <h1 id="student-records-title" className="page-title mb-3">{title}</h1>
         {showCertificates && <p className="text-body-secondary">Chứng nhận trong bản xem thử. Tệp PDF chưa được cung cấp.</p>}
+        {showCertificates && downloadRequest && <CertificateDownloadPanel key={downloadRequest.certificateIds.join(',')}
+          request={downloadRequest} certificates={certificates} onClose={() => setDownloadRequest(null)} />}
         {records.length === 0 ? (
           <p className="text-body-secondary mb-0">{showCertificates ? 'Bạn chưa có chứng nhận.' : 'Bạn chưa có lượt tham gia.'}</p>
         ) : (
@@ -51,6 +56,9 @@ export default function StudentRecords({ page, activities, participations, certi
                       <dt>Ngày phát hành</dt><dd className="mb-0">{certificate.issuedAt ? dateFormatter.format(new Date(certificate.issuedAt)) : 'Chưa phát hành'}</dd>
                     </dl>
                   )}
+                  {showCertificates && <button type="button" className="btn btn-sm btn-outline-primary mt-2" disabled={certificate.status !== 'Issued'}
+                    aria-label={'Tải PDF ' + certificate.certificateCode}
+                    onClick={() => setDownloadRequest({ format: 'pdf', certificateIds: [certificate.certificateId] })}>Tải PDF</button>}
                   {reason && <p className="mb-0 mt-2 text-break"><strong>{showCertificates ? 'Lý do thu hồi' : 'Lý do từ chối'}</strong> · {reason}</p>}
                   {showCertificates && certificate.certificateCode && ['Issued', 'Revoked'].includes(certificate.status) && (
                     <CertificateVerificationLink certificateCode={certificate.certificateCode} />
