@@ -6,9 +6,38 @@ const approvalStatuses = {
   Rejected: { label: 'Từ chối', badge: 'text-bg-danger' },
 }
 
-export default function ParticipationsPage({ activities, students, participations }) {
+export default function ParticipationsPage({ activities, students, participations, onReviewParticipation }) {
   const [selectedActivity, setSelectedActivity] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
+  const [review, setReview] = useState(null)
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const reviewParticipation = participations.find((item) => item.participationId === review?.participationId)
+  const reviewStudent = students.find((item) => item.studentId === reviewParticipation?.studentId)
+  const reviewActivity = activities.find((item) => item.activityId === reviewParticipation?.activityId)
+
+  function openReview(participationId, approvalStatus) {
+    setReview({ participationId, approvalStatus })
+    setReason('')
+    setError('')
+    setNotice('')
+  }
+
+  function submitReview(event) {
+    event.preventDefault()
+    if (review.approvalStatus === 'Rejected' && (!reason.trim() || reason.trim().length > 500)) {
+      setError('Nhập lý do từ chối từ 1 đến 500 ký tự.')
+      return
+    }
+    const result = onReviewParticipation(review.participationId, review.approvalStatus, reason)
+    if (!result.success) {
+      setError(result.message)
+      return
+    }
+    setNotice(`${review.approvalStatus === 'Approved' ? 'Đã duyệt' : 'Đã từ chối'} lượt tham gia của ${reviewStudent?.fullName ?? 'sinh viên'} (${reviewStudent?.studentCode ?? '—'}) trong hoạt động ${reviewActivity?.name ?? 'chưa xác định'}.`)
+    setReview(null)
+  }
   const visibleParticipations = participations.filter(({ activityId, approvalStatus }) => {
     const matchesActivity = selectedActivity === '' || String(activityId) === selectedActivity
     const matchesStatus = selectedStatus === '' || approvalStatus === selectedStatus
@@ -18,7 +47,47 @@ export default function ParticipationsPage({ activities, students, participation
   return (
     <>
       <h1 className="page-title mb-2">Lượt tham gia</h1>
-      <p className="text-body-secondary mb-4">Dữ liệu mẫu</p>
+      <p className="text-body-secondary mb-4">Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
+
+      {review && (
+        <form className="card rounded-4 mb-4" aria-labelledby="participation-review-title" onSubmit={submitReview} noValidate>
+          <div className="card-body p-3 p-md-4">
+            <h2 id="participation-review-title" className="h5">{review.approvalStatus === 'Approved' ? 'Duyệt lượt tham gia' : 'Từ chối lượt tham gia'}</h2>
+            <p className="mb-2"><strong>{reviewStudent?.studentCode ?? '—'} · {reviewStudent?.fullName ?? 'Chưa xác định'}</strong></p>
+            <p>{reviewActivity?.code} · {reviewActivity?.name ?? 'Chưa xác định'}</p>
+            {review.approvalStatus === 'Rejected' ? (
+              <div className="mb-3">
+                <label className="form-label" htmlFor="participation-reason">Lý do từ chối (bắt buộc)</label>
+                <textarea
+                  id="participation-reason"
+                  className={'form-control' + (error ? ' is-invalid' : '')}
+                  rows={3}
+                  maxLength={500}
+                  required
+                  autoFocus
+                  value={reason}
+                  onChange={(event) => { setReason(event.target.value); setError('') }}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby="participation-reason-help participation-review-error"
+                />
+                <div id="participation-reason-help" className="form-text">Tối đa 500 ký tự. Lý do sẽ được lưu cùng lượt tham gia.</div>
+              </div>
+            ) : (
+              <p className="text-body-secondary">Lượt tham gia sẽ chuyển sang Đã duyệt. Chức năng phát hành PDF chưa được kết nối.</p>
+            )}
+            <div id="participation-review-error" role={error ? 'alert' : undefined}>
+              {error && <p className="text-danger">{error}</p>}
+            </div>
+            <div className="d-flex flex-wrap gap-2">
+              <button type="submit" className={'btn ' + (review.approvalStatus === 'Approved' ? 'btn-primary' : 'btn-danger')}>
+                {review.approvalStatus === 'Approved' ? 'Xác nhận duyệt' : 'Xác nhận từ chối'}
+              </button>
+              <button type="button" className="btn btn-outline-secondary" onClick={() => setReview(null)} autoFocus={review.approvalStatus === 'Approved'}>Hủy</button>
+            </div>
+          </div>
+        </form>
+      )}
+      {notice && <p className="alert alert-success" role="status">{notice}</p>}
 
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
@@ -29,6 +98,7 @@ export default function ParticipationsPage({ activities, students, participation
                 id="participation-activity"
                 className="form-select"
                 value={selectedActivity}
+                disabled={Boolean(review)}
                 onChange={(event) => setSelectedActivity(event.target.value)}
               >
                 <option value="">Tất cả hoạt động</option>
@@ -43,6 +113,7 @@ export default function ParticipationsPage({ activities, students, participation
                 id="participation-status"
                 className="form-select"
                 value={selectedStatus}
+                disabled={Boolean(review)}
                 onChange={(event) => setSelectedStatus(event.target.value)}
               >
                 <option value="">Tất cả trạng thái</option>
@@ -61,10 +132,12 @@ export default function ParticipationsPage({ activities, students, participation
                   <th scope="col">Họ và tên</th>
                   <th scope="col">Hoạt động</th>
                   <th scope="col">Trạng thái duyệt</th>
+                  <th scope="col">Lý do từ chối</th>
+                  <th scope="col" className="text-nowrap">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {visibleParticipations.map(({ participationId, activityId, studentId, approvalStatus }) => {
+                {visibleParticipations.map(({ participationId, activityId, studentId, approvalStatus, rejectedReason }) => {
                   const student = students.find((item) => item.studentId === studentId)
                   const activity = activities.find((item) => item.activityId === activityId)
                   const status = approvalStatuses[approvalStatus]
@@ -75,12 +148,21 @@ export default function ParticipationsPage({ activities, students, participation
                       <td>{student?.fullName ?? 'Chưa xác định'}</td>
                       <td>{activity?.name ?? 'Chưa xác định'}</td>
                       <td><span className={'badge text-wrap ' + status.badge}>{status.label}</span></td>
+                      <td className="participation-reason">{rejectedReason || '—'}</td>
+                      <td>
+                        {approvalStatus === 'Pending' ? (
+                          <div className="d-flex flex-wrap gap-1">
+                            <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(review)} onClick={() => openReview(participationId, 'Approved')} aria-label={'Duyệt lượt tham gia của ' + student?.studentCode}>Duyệt</button>
+                            <button type="button" className="btn btn-sm btn-outline-danger" disabled={Boolean(review)} onClick={() => openReview(participationId, 'Rejected')} aria-label={'Từ chối lượt tham gia của ' + student?.studentCode}>Từ chối</button>
+                          </div>
+                        ) : <span className="text-body-secondary">Đã xử lý</span>}
+                      </td>
                     </tr>
                   )
                 })}
                 {visibleParticipations.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="text-center text-body-secondary">Không tìm thấy lượt tham gia phù hợp.</td>
+                    <td colSpan={6} className="text-center text-body-secondary">Không tìm thấy lượt tham gia phù hợp.</td>
                   </tr>
                 )}
               </tbody>

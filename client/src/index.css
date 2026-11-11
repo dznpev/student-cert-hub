@@ -214,9 +214,17 @@ body {
   border-radius: 0.875rem;
 }
 
-.activities-table,
-.participations-table {
+.activities-table {
   min-width: 38rem;
+}
+
+.participations-table {
+  min-width: 62rem;
+}
+
+.participation-reason {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .certificates-table {
