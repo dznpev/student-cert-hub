@@ -3,11 +3,12 @@ import AdminLayout from './AdminLayout.jsx'
 import ActivitiesPage from './ActivitiesPage.jsx'
 import CohortsPage from './CohortsPage.jsx'
 import DashboardPage from './DashboardPage.jsx'
+import StudentsPage from './StudentsPage.jsx'
 
 const sections = [
   { id: 'overview', title: 'Tổng quan', page: DashboardPage },
   { id: 'cohorts', title: 'Khóa tuyển sinh', page: CohortsPage },
-  { id: 'students', title: 'Sinh viên' },
+  { id: 'students', title: 'Sinh viên', page: StudentsPage },
   { id: 'activities', title: 'Hoạt động', page: ActivitiesPage },
   { id: 'participations', title: 'Lượt tham gia' },
   { id: 'certificates', title: 'Chứng nhận' },

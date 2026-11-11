@@ -120,6 +120,7 @@ body {
 
 .dashboard-chart-with-legend {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   align-items: center;
 }
@@ -127,7 +128,7 @@ body {
 .dashboard-chart-legend {
   display: grid;
   gap: 0.75rem;
-  font-size: 0.9375rem;
+  font-size: 1rem;
 }
 
 .dashboard-chart-legend-item {
@@ -184,7 +185,12 @@ body {
 
 @media (min-width: 1200px) {
   .dashboard-chart-with-legend {
-    grid-template-columns: minmax(0, 1fr) minmax(8rem, auto);
+    grid-template-columns: minmax(0, 19rem) minmax(10rem, 1fr);
+    column-gap: 1.5rem;
+  }
+
+  .dashboard-chart-with-legend .dashboard-chart-legend {
+    justify-self: center;
   }
 
   .cohorts-card {

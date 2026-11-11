@@ -1,8 +1,4 @@
-const sampleCohorts = [
-  { cohortCode: 'K24', cohortName: 'Khóa tuyển sinh 2024', isActive: true },
-  { cohortCode: 'K23', cohortName: 'Khóa tuyển sinh 2023', isActive: true },
-  { cohortCode: 'K22', cohortName: 'Khóa tuyển sinh 2022', isActive: false },
-]
+import { sampleCohorts } from './sampleCohorts.js'
 
 export default function CohortsPage() {
   return (
