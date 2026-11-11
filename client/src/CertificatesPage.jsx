@@ -14,6 +14,8 @@ export default function CertificatesPage({ cohorts, activities, students, partic
   const [search, setSearch] = useState('')
   const [selectedActivity, setSelectedActivity] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
+  const [issuedFrom, setIssuedFrom] = useState('')
+  const [issuedTo, setIssuedTo] = useState('')
   const [processing, setProcessing] = useState(null)
   const [outcome, setOutcome] = useState('success')
   const [reason, setReason] = useState('')
@@ -24,6 +26,8 @@ export default function CertificatesPage({ cohorts, activities, students, partic
   const studentsById = new Map(students.map((student) => [student.studentId, student]))
   const participationsById = new Map(participations.map((item) => [item.participationId, item]))
   const query = normalizeSearch(search.trim().replace(/\s+/g, ' '))
+  const hasIssuedDateFilter = Boolean(issuedFrom || issuedTo)
+  const invalidIssuedRange = Boolean(issuedFrom && issuedTo && issuedFrom > issuedTo)
 
   function openProcessing(certificateId, action) {
     setProcessing({ certificateId, action })
@@ -58,7 +62,13 @@ export default function CertificatesPage({ cohorts, activities, students, partic
       const matchesStatus = selectedStatus === '' || certificate.status === selectedStatus
       const matchesSearch = query === '' || [certificate.certificateCode, student?.studentCode, student?.fullName]
         .some((value) => normalizeSearch(String(value ?? '').replace(/\s+/g, ' ')).includes(query))
-      return matchesActivity && matchesStatus && matchesSearch
+      if (invalidIssuedRange || !matchesActivity || !matchesStatus || !matchesSearch) return false
+      if (!hasIssuedDateFilter) return true
+      if (!certificate.issuedAt) return false
+
+      // Compare the same UTC calendar day shown in the table.
+      const issuedDay = new Date(certificate.issuedAt).toISOString().slice(0, 10)
+      return (!issuedFrom || issuedDay >= issuedFrom) && (!issuedTo || issuedDay <= issuedTo)
     })
     .sort((left, right) => compareParticipations(left.participation, right.participation))
 
@@ -145,6 +155,29 @@ export default function CertificatesPage({ cohorts, activities, students, partic
               </select>
             </div>
           </div>
+          <fieldset className="mb-3" disabled={Boolean(processing)}>
+            <legend className="form-label">Ngày phát hành</legend>
+            <div className="row g-3">
+              <div className="col-12 col-sm-6 col-xl-3">
+                <label className="form-label" htmlFor="certificate-issued-from">Từ ngày</label>
+                <input id="certificate-issued-from" type="date" className="form-control"
+                  value={issuedFrom} onChange={(event) => setIssuedFrom(event.target.value)} />
+              </div>
+              <div className="col-12 col-sm-6 col-xl-3">
+                <label className="form-label" htmlFor="certificate-issued-to">Đến ngày</label>
+                <input id="certificate-issued-to" type="date"
+                  className={'form-control' + (invalidIssuedRange ? ' is-invalid' : '')}
+                  aria-invalid={invalidIssuedRange}
+                  aria-describedby={invalidIssuedRange ? 'certificate-issued-range-error' : undefined}
+                  value={issuedTo} onChange={(event) => setIssuedTo(event.target.value)} />
+                {invalidIssuedRange && (
+                  <div id="certificate-issued-range-error" className="invalid-feedback" role="alert">
+                    Đến ngày phải bằng hoặc sau Từ ngày.
+                  </div>
+                )}
+              </div>
+            </div>
+          </fieldset>
           <div className="admin-table-scroll" role="region" aria-label="Danh sách chứng nhận" tabIndex={0}>
             <table className="table align-middle mb-0 admin-data-table certificates-table">
               <caption className="visually-hidden">Danh sách chứng nhận mẫu</caption>
@@ -213,7 +246,9 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                 })}
                 {visibleCertificates.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="text-center text-body-secondary">Không tìm thấy chứng nhận phù hợp.</td>
+                    <td colSpan={9} className="text-center text-body-secondary">
+                      {invalidIssuedRange ? 'Hãy sửa khoảng ngày phát hành để xem kết quả.' : 'Không tìm thấy chứng nhận phù hợp.'}
+                    </td>
                   </tr>
                 )}
               </tbody>

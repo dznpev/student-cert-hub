@@ -4,12 +4,106 @@
   --admin-accent-dark: #244da4;
   --admin-border: #e3e7ef;
   --admin-workspace: #f5f6f8;
+  --admin-surface: #fff;
+  --admin-hover: #eaf0fc;
+}
+
+[data-bs-theme="dark"] {
+  --admin-ink: #e5e9f0;
+  --admin-border: #3b4350;
+  --admin-workspace: #171c24;
+  --admin-surface: #212529;
+  --admin-hover: #303c52;
+}
+
+[data-bs-theme="dark"] .student-login-screen {
+  background: linear-gradient(135deg, #182332, #202d42);
 }
 
 body {
   color: var(--admin-ink);
-  background: #fff;
+  background: var(--admin-surface);
   font-family: Inter, system-ui, sans-serif;
+}
+
+.template-sample-value {
+  color: #172235;
+  font-size: clamp(0.65rem, 1.2vw, 1rem);
+  font-weight: 500;
+  white-space: nowrap;
+  text-shadow: 0 0 3px #fff, 0 0 6px #fff;
+  pointer-events: none;
+}
+
+.template-version-button {
+  --bs-btn-color: #087386;
+  --bs-btn-border-color: #087386;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #087386;
+  --bs-btn-hover-border-color: #087386;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #065968;
+  --bs-btn-active-border-color: #065968;
+  --bs-btn-focus-shadow-rgb: 8, 115, 134;
+  --bs-btn-disabled-color: #087386;
+  --bs-btn-disabled-border-color: #087386;
+}
+
+[data-bs-theme="dark"] .template-version-button {
+  --bs-btn-color: #69d5e5;
+  --bs-btn-border-color: #69d5e5;
+  --bs-btn-hover-color: #172235;
+  --bs-btn-hover-bg: #69d5e5;
+  --bs-btn-hover-border-color: #69d5e5;
+  --bs-btn-active-color: #172235;
+  --bs-btn-active-bg: #9ae3ed;
+  --bs-btn-active-border-color: #9ae3ed;
+  --bs-btn-disabled-color: #69d5e5;
+  --bs-btn-disabled-border-color: #69d5e5;
+}
+
+.theme-icon {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.theme-icon svg {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: rotate(-60deg) scale(0.6);
+  transition: opacity 240ms ease, transform 300ms ease;
+}
+
+.theme-icon .theme-icon-moon {
+  transform: rotate(60deg) scale(0.6);
+}
+
+.theme-icon svg.is-visible {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(body, .admin-header, .admin-sidebar, #main-content, #student-main-content,
+    .student-portal, .card, .form-control, .form-select, .dropdown-item, .dropdown-divider,
+    .text-body-secondary, .table > :not(caption) > * > *) {
+    transition: background-color 280ms ease, color 280ms ease, border-color 280ms ease, box-shadow 280ms ease;
+  }
+
+  html :is(.student-portal, .admin-header) #portal-account-menu {
+    transition: opacity 160ms ease, transform 160ms ease-out, visibility 0s,
+      background-color 280ms ease, color 280ms ease, border-color 280ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-icon svg {
+    transition: none;
+  }
 }
 
 .student-portal-logo {
@@ -112,12 +206,12 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 0.25rem 1rem;
-  background: #fff;
+  background: var(--admin-surface);
   border-bottom: 1px solid var(--admin-border);
 }
 
 .admin-sidebar {
-  background: #fff;
+  background: var(--admin-surface);
   border-bottom: 1px solid var(--admin-border);
 }
 
@@ -161,7 +255,7 @@ body {
 }
 
 .admin-navigation .nav-link:hover {
-  background: #eaf0fc;
+  background: var(--admin-hover);
 }
 
 .admin-navigation .nav-link.active {
@@ -173,13 +267,13 @@ body {
   background: var(--admin-accent-dark);
 }
 
-#main-content {
+:is(#main-content, #student-main-content) {
   flex: 1;
   min-width: 0;
   background: var(--admin-workspace);
 }
 
-#main-content:focus-visible {
+:is(#main-content, #student-main-content):focus-visible {
   outline: 2px solid var(--admin-accent);
   outline-offset: -2px;
 }
@@ -297,7 +391,7 @@ body {
 }
 
 .activities-card {
-  background: #fff;
+  background: var(--admin-surface);
   border-color: var(--admin-border);
   border-radius: 0.875rem;
 }

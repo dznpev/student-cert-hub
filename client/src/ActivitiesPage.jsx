@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import ActivityForm from './ActivityForm.jsx'
 import { activityStatuses } from './activityStatuses.js'
-import { sampleCertificateTemplates } from './sampleCertificateTemplates.js'
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit',
@@ -10,7 +9,7 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function ActivitiesPage({ activities, onAddActivity, onUpdateActivity }) {
+export default function ActivitiesPage({ activities, templates, onAddActivity, onUpdateActivity }) {
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editingActivity, setEditingActivity] = useState(null)
@@ -35,6 +34,7 @@ export default function ActivitiesPage({ activities, onAddActivity, onUpdateActi
       {showForm && (
         <ActivityForm
           activities={activities}
+          templates={templates}
           initialActivity={editingActivity}
           onCancel={() => setShowForm(false)}
           onSave={(activity) => {
@@ -106,7 +106,7 @@ export default function ActivitiesPage({ activities, onAddActivity, onUpdateActi
                     <td>
                       {activity.templateId == null
                         ? 'Dùng mẫu mặc định'
-                        : sampleCertificateTemplates.find(({ templateId }) => templateId === activity.templateId)?.templateName ?? 'Chưa xác định'}
+                        : templates.find(({ templateId }) => templateId === activity.templateId)?.templateName ?? 'Chưa xác định'}
                     </td>
                     <td>
                       <span className={'badge text-wrap ' + activityStatuses[activity.status].badge}>

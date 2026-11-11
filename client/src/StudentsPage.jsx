@@ -1,17 +1,20 @@
 import { useRef, useState } from 'react'
 import { normalizeSearch } from './normalizeSearch.js'
 import { createStudentComparator } from './sortRecords.js'
+import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 
 export default function StudentsPage({ cohorts, students }) {
   const [search, setSearch] = useState('')
   const [selectedStudent, setSelectedStudent] = useState(null)
   const profileTrigger = useRef(null)
   const [selectedCohort, setSelectedCohort] = useState('')
+  const [selectedAccountStatus, setSelectedAccountStatus] = useState('')
   const query = normalizeSearch(search.trim().replace(/\s+/g, ' '))
-  const visibleStudents = students.filter(({ studentCode, fullName, className, cohortId }) => {
+  const visibleStudents = students.filter((student) => {
+    const { studentCode, fullName, className, cohortId } = student
     const matchesCohort = selectedCohort === '' || String(cohortId) === selectedCohort
     const matchesSearch = [studentCode, fullName, className ?? ''].some((field) => normalizeSearch(field).includes(query))
-    return matchesCohort && matchesSearch
+    return matchesCohort && matchesSearch && (!selectedAccountStatus || getStudentAccountStatus(student) === selectedAccountStatus)
   }).sort(createStudentComparator(cohorts))
 
   function closeProfile() {
@@ -27,7 +30,7 @@ export default function StudentsPage({ cohorts, students }) {
       ['Email', selectedStudent.email ?? 'Chưa có'],
       ['Lớp', selectedStudent.className ?? 'Chưa có'],
       ['Khóa tuyển sinh', cohort ? cohort.cohortCode + ' · ' + cohort.cohortName : 'Chưa xác định'],
-      ['Liên kết tài khoản', selectedStudent.userId ? 'Đã liên kết' : 'Chưa liên kết'],
+      ['Tình trạng tài khoản', studentAccountStatuses[getStudentAccountStatus(selectedStudent)].label],
     ]
 
     return (
@@ -86,6 +89,16 @@ export default function StudentsPage({ cohorts, students }) {
                 ))}
               </select>
             </div>
+            <div className="col-12 col-sm-6 col-xl-4">
+              <label className="form-label" htmlFor="student-account-status">Tình trạng tài khoản</label>
+              <select id="student-account-status" className="form-select" value={selectedAccountStatus}
+                onChange={(event) => setSelectedAccountStatus(event.target.value)}>
+                <option value="">Tất cả tình trạng</option>
+                {Object.entries(studentAccountStatuses).map(([value, { label }]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="admin-table-scroll" role="region" aria-label="Danh sách sinh viên" tabIndex={0}>
             <table className="table align-middle mb-0 admin-data-table students-table">
@@ -113,7 +126,7 @@ export default function StudentsPage({ cohorts, students }) {
               <tbody>
                 {visibleStudents.map((student) => {
                   const cohort = cohorts.find(({ cohortId }) => cohortId === student.cohortId)
-                  const hasAccount = student.userId !== null
+                  const accountStatus = studentAccountStatuses[getStudentAccountStatus(student)]
 
                   return (
                     <tr key={student.studentCode}>
@@ -123,8 +136,8 @@ export default function StudentsPage({ cohorts, students }) {
                       <td>{student.className ?? 'Chưa có'}</td>
                       <td>{cohort?.cohortCode ?? 'Chưa xác định'}</td>
                       <td>
-                        <span className={hasAccount ? 'badge text-bg-success' : 'badge text-bg-secondary'}>
-                          {hasAccount ? 'Đã liên kết' : 'Chưa liên kết'}
+                        <span className={'badge text-wrap ' + accountStatus.badge}>
+                          {accountStatus.label}
                         </span>
                       </td>
                       <td>

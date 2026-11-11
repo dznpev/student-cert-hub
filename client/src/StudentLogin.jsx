@@ -85,6 +85,10 @@ export default function StudentLogin({ students, onSignIn, onManagementSignIn, o
       setError('MSSV hoặc mật khẩu mẫu không đúng.')
       return
     }
+    if (student.accountDisabled) {
+      setError('Tài khoản sinh viên mẫu đang bị vô hiệu hóa.')
+      return
+    }
     onSignIn(String(student.studentId))
   }
 

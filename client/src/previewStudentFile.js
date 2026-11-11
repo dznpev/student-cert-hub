@@ -29,15 +29,17 @@ export async function previewStudentFile(file, cohorts, students) {
     if (className.length > 50) errors.push('Lớp tối đa 50 ký tự.')
     let processingStatus = 'Valid'
     let errorMessage = null
+    let isDuplicate = false
     if (errors.length) {
       processingStatus = 'Error'
       errorMessage = errors.join(' ')
     } else if (seen.has(studentCode) || knownStudents.has(studentCode)) {
       processingStatus = 'Skipped'
+      isDuplicate = true
       errorMessage = seen.has(studentCode) ? 'MSSV trùng trong tệp.' : 'MSSV đã có trong danh sách sinh viên.'
     }
     if (errors.length === 0) seen.add(studentCode)
-    return { rowNumber, studentCode, fullName, cohortCode, email, className, processingStatus, errorMessage }
+    return { rowNumber, studentCode, fullName, cohortCode, email, className, processingStatus, errorMessage, isDuplicate }
   })
 }
 

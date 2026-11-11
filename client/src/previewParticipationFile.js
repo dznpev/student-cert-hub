@@ -13,6 +13,7 @@ export async function previewParticipationFile(file, activityId, students, parti
     const student = students.find((item) => item.studentCode === studentCode)
     let processingStatus = 'Valid'
     let errorMessage = null
+    let isDuplicate = false
     if (hasFormula) {
       processingStatus = 'Error'
       errorMessage = 'Dòng có công thức. Hãy thay bằng giá trị.'
@@ -24,10 +25,11 @@ export async function previewParticipationFile(file, activityId, students, parti
       errorMessage = 'Không tìm thấy MSSV trong danh sách sinh viên.'
     } else if (seen.has(studentCode) || existingStudentIds.has(student.studentId)) {
       processingStatus = 'Skipped'
+      isDuplicate = true
       errorMessage = seen.has(studentCode) ? 'MSSV trùng trong tệp.' : 'Sinh viên đã có lượt tham gia trong hoạt động này.'
     }
     if (student && processingStatus !== 'Error') seen.add(studentCode)
-    return { rowNumber, studentCode, studentId: student?.studentId ?? null, fullName: student?.fullName ?? '', processingStatus, errorMessage }
+    return { rowNumber, studentCode, studentId: student?.studentId ?? null, fullName: student?.fullName ?? '', processingStatus, errorMessage, isDuplicate }
   })
 }
 

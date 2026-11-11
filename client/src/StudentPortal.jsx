@@ -1,14 +1,17 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import AccountMenu from './AccountMenu.jsx'
 import NotificationsPage from './NotificationsPage.jsx'
+import PortalSidebar from './PortalSidebar.jsx'
+import StudentOverview from './StudentOverview.jsx'
 import StudentRecords from './StudentRecords.jsx'
 import StudentLogin from './StudentLogin.jsx'
 import hutechLogo from './assets/hutech-logo.png'
 
 const studentPages = [
-  ['profile', 'Hồ sơ'],
-  ['participations', 'Lượt tham gia'],
-  ['certificates', 'Chứng nhận'],
+  { id: 'overview', title: 'Tổng quan' },
+  { id: 'profile', title: 'Hồ sơ' },
+  { id: 'participations', title: 'Lượt tham gia' },
+  { id: 'certificates', title: 'Chứng nhận' },
 ]
 
 export default function StudentPortal({ students, cohorts, activities, participations, certificates, notifications,
@@ -16,21 +19,26 @@ export default function StudentPortal({ students, cohorts, activities, participa
   const [studentId, setStudentId] = useState('')
   const [showPreviewPicker, setShowPreviewPicker] = useState(false)
   const [panel, setPanel] = useState('')
-  const [page, setPage] = useState('profile')
-  const student = students.find((item) => String(item.studentId) === studentId)
+  const [page, setPage] = useState('overview')
+  const mainRef = useRef(null)
+  const student = students.find((item) => String(item.studentId) === studentId && !item.accountDisabled)
   const cohort = cohorts.find((item) => item.cohortId === student?.cohortId)
   const inbox = notifications.filter((item) => item.studentId === student?.studentId)
   const unread = inbox.filter((item) => !item.isRead).length
+  const studentParticipations = student ? participations.filter((item) => item.studentId === student.studentId) : []
+  const participationIds = new Set(studentParticipations.map(({ participationId }) => participationId))
+  const studentCertificates = certificates.filter(({ participationId }) => participationIds.has(participationId))
 
   function selectStudent(id) {
     setStudentId(id)
     setPanel('')
-    setPage('profile')
+    setPage('overview')
   }
 
   function showPage(nextPage) {
     setPage(nextPage)
     setPanel('')
+    mainRef.current?.focus()
   }
 
   function signOut() {
@@ -45,9 +53,15 @@ export default function StudentPortal({ students, cohorts, activities, participa
   }
 
   return (
-    <div className="student-portal min-vh-100 bg-body-tertiary">
-      <header className="border-bottom bg-white">
-        <div className="container position-relative d-flex flex-wrap align-items-center justify-content-between gap-2 py-3"
+    <div className={`student-portal ${student ? 'admin-shell' : 'min-vh-100 bg-body-tertiary'}`}>
+      {student && (
+        <PortalSidebar navigationId="student-navigation" navigationLabel="Khu vực cá nhân"
+          sections={studentPages} activeSectionId={page} onSelectSection={showPage}>
+          {adminPreviewAvailable && <a href="#admin" className="btn btn-sm btn-outline-secondary mt-3 w-100">Quay lại quản trị</a>}
+        </PortalSidebar>
+      )}
+      <header className={student ? 'admin-header position-relative px-3 px-md-4 px-xl-5 py-3' : 'border-bottom bg-body'}>
+        <div className={`d-flex flex-wrap align-items-center justify-content-between gap-2 ${student ? 'w-100' : 'container position-relative py-3'}`}
           onKeyDown={(event) => {
             if (event.key !== 'Escape' || !panel) return
             const trigger = event.currentTarget.querySelector('button[aria-expanded="true"]')
@@ -55,8 +69,8 @@ export default function StudentPortal({ students, cohorts, activities, participa
             trigger?.focus()
           }}>
           <div className="d-flex flex-wrap align-items-center gap-3">
-            <img src={hutechLogo} alt="HUTECH" className="student-portal-logo" />
-            <span className="fw-semibold">Cổng sinh viên</span>
+            {!student && <img src={hutechLogo} alt="HUTECH" className="student-portal-logo" />}
+            <span className="brand-title">Cổng sinh viên</span>
           </div>
           {student && (
             <div className="d-flex align-items-center gap-2 ms-auto">
@@ -82,39 +96,32 @@ export default function StudentPortal({ students, cohorts, activities, participa
           </section>
         </div>
       </header>
-      <main className="container py-4" onClick={() => panel && setPanel('')}>
-        <div className="d-flex flex-wrap align-items-end gap-3 mb-4">
-          {!student && showPreviewPicker && <div>
-            <label className="form-label" htmlFor="notification-student">Hồ sơ xem thử</label>
-            <select className="form-select" id="notification-student" value={studentId}
-              onChange={(event) => selectStudent(event.target.value)}>
-              <option value="">Chọn sinh viên</option>
-              {students.map((item) => (
-                <option key={item.studentId} value={item.studentId}>{item.studentCode} · {item.fullName}</option>
-              ))}
-            </select>
-          </div>}
-          {!student && (
-            <button type="button" className="btn btn-outline-primary"
-              onClick={() => setShowPreviewPicker(false)}>
+      <main ref={mainRef} id={student ? 'student-main-content' : undefined} tabIndex={student ? -1 : undefined}
+        className={student ? 'p-3 p-md-4 p-xl-5' : 'container py-4'} onClick={() => panel && setPanel('')}>
+        {!student && (
+          <div className="d-flex flex-wrap align-items-end gap-3 mb-4">
+            <div>
+              <label className="form-label" htmlFor="notification-student">Hồ sơ xem thử</label>
+              <select className="form-select" id="notification-student" value={studentId}
+                onChange={(event) => selectStudent(event.target.value)}>
+                <option value="">Chọn sinh viên</option>
+                {students.filter(({ accountDisabled }) => !accountDisabled).map((item) => (
+                  <option key={item.studentId} value={item.studentId}>{item.studentCode} · {item.fullName}</option>
+                ))}
+              </select>
+            </div>
+            <button type="button" className="btn btn-outline-primary" onClick={() => setShowPreviewPicker(false)}>
               Về đăng nhập
             </button>
-          )}
-          {adminPreviewAvailable && <a href="#admin" className="btn btn-outline-secondary">Quay lại quản trị</a>}
-        </div>
-        {student && (
-          <nav className="d-flex flex-wrap gap-2 mb-3" aria-label="Khu vực cá nhân">
-            {studentPages.map(([id, label]) => (
-              <button key={id} type="button" className={'btn ' + (page === id ? 'btn-primary' : 'btn-outline-primary')}
-                aria-current={page === id ? 'page' : undefined} onClick={() => showPage(id)}>
-                {label}
-              </button>
-            ))}
-          </nav>
+            {adminPreviewAvailable && <a href="#admin" className="btn btn-outline-secondary">Quay lại quản trị</a>}
+          </div>
+        )}
+        {student && page === 'overview' && (
+          <StudentOverview student={student} participations={studentParticipations} certificates={studentCertificates} />
         )}
         {student && (page === 'participations' || page === 'certificates') && (
-          <StudentRecords page={page} studentId={student.studentId} activities={activities}
-            participations={participations} certificates={certificates} />
+          <StudentRecords page={page} activities={activities}
+            participations={studentParticipations} certificates={studentCertificates} />
         )}
         {student && (page === 'profile' || page === 'account') && (
           <section className="card rounded-4">

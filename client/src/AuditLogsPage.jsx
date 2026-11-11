@@ -5,6 +5,7 @@ const entityLabels = {
   Accounts: 'Tài khoản',
   ImportBatches: 'Đợt nhập',
   Certificates: 'Chứng nhận',
+  CertificateTemplates: 'Mẫu chứng nhận',
   ActivityParticipations: 'Lượt tham gia',
 }
 

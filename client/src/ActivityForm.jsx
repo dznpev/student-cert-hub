@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { activityStatuses } from './activityStatuses.js'
-import { sampleCertificateTemplates } from './sampleCertificateTemplates.js'
 
-export default function ActivityForm({ activities, initialActivity = null, onSave, onCancel }) {
+export default function ActivityForm({ activities, templates, initialActivity = null, onSave, onCancel }) {
   const [values, setValues] = useState(() => ({
     code: initialActivity?.code ?? '',
     status: initialActivity?.status ?? 'Draft',
@@ -32,7 +31,7 @@ export default function ActivityForm({ activities, initialActivity = null, onSav
     if (!values.startDate) nextErrors.startDate = 'Chọn ngày bắt đầu.'
     if (!values.endDate) nextErrors.endDate = 'Chọn ngày kết thúc.'
     else if (values.startDate && values.endDate < values.startDate) nextErrors.endDate = 'Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.'
-    if (values.templateId && values.templateId !== String(initialActivity?.templateId) && !sampleCertificateTemplates.some((template) => template.isActive && String(template.templateId) === values.templateId)) {
+    if (values.templateId && values.templateId !== String(initialActivity?.templateId) && !templates.some((template) => template.isActive && String(template.templateId) === values.templateId)) {
       nextErrors.templateId = 'Chọn một mẫu chứng nhận đang sử dụng.'
     }
     if (!Object.hasOwn(activityStatuses, values.status)) nextErrors.status = 'Chọn trạng thái hoạt động hợp lệ.'
@@ -84,15 +83,15 @@ export default function ActivityForm({ activities, initialActivity = null, onSav
               aria-describedby="activity-template-help activity-template-error"
             >
               <option value="">Dùng mẫu mặc định</option>
-              {initialActivity?.templateId != null && !sampleCertificateTemplates.some((template) => template.isActive && template.templateId === initialActivity.templateId) && (
+              {initialActivity?.templateId != null && !templates.some((template) => template.isActive && template.templateId === initialActivity.templateId) && (
                 <option value={initialActivity.templateId} disabled>Mẫu hiện tại (đã ngừng sử dụng)</option>
               )}
-              {sampleCertificateTemplates.filter(({ isActive }) => isActive).map(({ templateId, templateName, version }) => (
+              {templates.filter(({ isActive }) => isActive).map(({ templateId, templateName, version }) => (
                 <option key={templateId} value={templateId}>{templateName} · Phiên bản {version}</option>
               ))}
             </select>
             <div id="activity-template-help" className="form-text">
-              Nếu dùng mặc định, hệ thống chọn mẫu mặc định tại thời điểm phát hành.
+              Nếu dùng mặc định, hệ thống chọn mẫu hiện tại khi tạo yêu cầu chứng nhận.
             </div>
             <div id="activity-template-error" className="invalid-feedback" role={errors.templateId ? 'alert' : undefined}>{errors.templateId}</div>
           </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { previewStudentFile } from './previewStudentFile.js'
 import { previewParticipationFile } from './previewParticipationFile.js'
+import { summarizeImportRows } from './summarizeImportRows.js'
 
 const importTypes = {
   Students: 'Hồ sơ sinh viên',
@@ -11,11 +12,17 @@ const rowStatuses = {
   Valid: { label: 'Hợp lệ', badge: 'text-bg-success' },
   Imported: { label: 'Đã nhập', badge: 'text-bg-success' },
   Skipped: { label: 'Bỏ qua', badge: 'text-bg-warning' },
+  Duplicate: { label: 'Trùng', badge: 'text-bg-warning' },
   Error: { label: 'Lỗi', badge: 'text-bg-danger' },
 }
 
 const batchStatuses = {
   Completed: 'Hoàn tất',
+}
+
+function ImportRowStatus({ row }) {
+  const status = rowStatuses[row.isDuplicate && row.processingStatus === 'Skipped' ? 'Duplicate' : row.processingStatus]
+  return <span className={'badge ' + status.badge}>{status.label}</span>
 }
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
@@ -32,10 +39,63 @@ export default function ImportsPage({ activities, cohorts, students, participati
   const [fileError, setFileError] = useState('')
   const [reading, setReading] = useState(false)
   const [selectedActivity, setSelectedActivity] = useState('')
+  const [exportingErrorReport, setExportingErrorReport] = useState(false)
+  const [errorReportError, setErrorReportError] = useState('')
+  const errorRows = preview?.rows.filter(({ processingStatus }) => processingStatus === 'Error') ?? []
+  const counts = preview ? summarizeImportRows(preview.rows) : null
+  const countDetails = counts && `${counts.duplicateRows} trùng · ${counts.skippedRows} bỏ qua · ${counts.errorRows} lỗi`
+  const busy = reading || exportingErrorReport
 
   function resetPreview() {
     setPreview(null)
     setFileError('')
+    setErrorReportError('')
+  }
+
+  async function exportErrorReport() {
+    if (!errorRows.length || busy) return
+    setExportingErrorReport(true)
+    setErrorReportError('')
+    try {
+      const { default: ExcelJS } = await import('exceljs')
+      const workbook = new ExcelJS.Workbook()
+      const sheet = workbook.addWorksheet('Dòng lỗi')
+      sheet.views = [{ state: 'frozen', ySplit: 1, showGridLines: false }]
+      sheet.properties.defaultRowHeight = 22
+      sheet.columns = [
+        { header: 'Dòng gốc', key: 'rowNumber', width: 15, style: { alignment: { horizontal: 'center', vertical: 'middle' } } },
+        { header: 'MSSV', key: 'studentCode', width: 25, style: { numFmt: '@', alignment: { vertical: 'middle', wrapText: true } } },
+        { header: 'Chi tiết lỗi', key: 'errorMessage', width: 72, style: { alignment: { vertical: 'middle', wrapText: true } } },
+      ]
+      const header = sheet.getRow(1)
+      header.height = 30
+      header.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+      header.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F5FC4' } }
+      const rows = sheet.addRows(errorRows.map(({ rowNumber, studentCode, errorMessage }) => ({
+        rowNumber,
+        studentCode: String(studentCode ?? ''),
+        errorMessage,
+      })))
+      rows.forEach((row, index) => {
+        if (index % 2 === 0) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4FC' } }
+      })
+      const buffer = await workbook.xlsx.writeBuffer()
+      const url = URL.createObjectURL(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `bao-cao-loi-${preview.fileName.replace(/\.(xlsx|csv)$/i, '')}.xlsx`
+      document.body.appendChild(link)
+      try {
+        link.click()
+      } finally {
+        link.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      }
+    } catch {
+      setErrorReportError('Không tạo được báo cáo lỗi. Bạn hãy thử lại.')
+    } finally {
+      setExportingErrorReport(false)
+    }
   }
 
   async function readFile() {
@@ -70,6 +130,11 @@ export default function ImportsPage({ activities, cohorts, students, participati
     return matchesFile && matchesType
   })
   const previewActivity = activities.find(({ activityId }) => String(activityId) === selectedActivity)
+  const errorReportButton = errorRows.length > 0 && (
+    <button type="button" className="btn btn-outline-secondary" disabled={busy} onClick={exportErrorReport}>
+      {exportingErrorReport ? 'Đang tạo báo cáo lỗi…' : 'Tải báo cáo lỗi (.xlsx)'}
+    </button>
+  )
 
   return (
     <>
@@ -81,7 +146,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
           <div className="row g-3 mb-3">
             <div className="col-12 col-md-6 col-xl-4">
               <label className="form-label" htmlFor="import-type">Loại dữ liệu</label>
-              <select id="import-type" className="form-select" value={importType} disabled={reading} onChange={(event) => { setImportType(event.target.value); resetPreview() }}>
+              <select id="import-type" className="form-select" value={importType} disabled={busy} onChange={(event) => { setImportType(event.target.value); resetPreview() }}>
                 {Object.entries(importTypes).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
@@ -90,7 +155,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
             {importType === 'Participations' && (
               <div className="col-12 col-md-6 col-xl-4">
                 <label className="form-label" htmlFor="import-activity">Hoạt động</label>
-                <select id="import-activity" className="form-select" value={selectedActivity} disabled={reading} onChange={(event) => { setSelectedActivity(event.target.value); resetPreview() }}>
+                <select id="import-activity" className="form-select" value={selectedActivity} disabled={busy} onChange={(event) => { setSelectedActivity(event.target.value); resetPreview() }}>
                   <option value="" disabled>Chọn hoạt động</option>
                   {activities.map(({ activityId, code, name }) => (
                     <option key={activityId} value={activityId}>{code} · {name}</option>
@@ -100,7 +165,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
             )}
             <div className="col-12 col-md-6 col-xl-4">
               <label className="form-label" htmlFor="import-file">Tệp dữ liệu</label>
-              <input id="import-file" className="form-control" type="file" accept=".xlsx,.csv" disabled={reading} onChange={(event) => { setFile(event.target.files[0] ?? null); resetPreview() }} aria-describedby="import-file-help" />
+              <input id="import-file" className="form-control" type="file" accept=".xlsx,.csv" disabled={busy} onChange={(event) => { setFile(event.target.files[0] ?? null); resetPreview() }} aria-describedby="import-file-help" />
               <div id="import-file-help" className="form-text">.xlsx (sheet đầu tiên) hoặc CSV UTF-8. Bản thử tối đa 5 MB, 1.000 dòng. Giữ MSSV dạng văn bản để bảo toàn số 0 đầu.</div>
             </div>
           </div>
@@ -111,7 +176,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
             <p className="small text-body-secondary">Cột bắt buộc: MSSV. Họ tên sẽ được đối chiếu từ danh sách Sinh viên theo MSSV.</p>
           )}
           {fileError && <p className="alert alert-danger" role="alert">{fileError}</p>}
-          <button type="button" className="btn btn-primary admin-primary-button" disabled={reading} onClick={readFile}>
+          <button type="button" className="btn btn-primary admin-primary-button" disabled={busy} onClick={readFile}>
             {reading ? 'Đang đọc tệp…' : 'Xem trước tệp'}
           </button>
         </div>
@@ -125,11 +190,11 @@ export default function ImportsPage({ activities, cohorts, students, participati
               <>
                 {preview.confirmed && (
                   <p className={preview.batch.errorRows ? 'alert alert-warning' : 'alert alert-success'} role="status">
-                    Đã nhập {preview.batch.successRows} hồ sơ trong phiên thử · {preview.batch.skippedRows} bỏ qua · {preview.batch.errorRows} lỗi.
+                    Đã nhập {counts.successRows} hồ sơ trong phiên thử · {countDetails}.
                   </p>
                 )}
                 <p className="text-body-secondary">
-                  {preview.fileName} · {preview.rows.length} dòng · {preview.rows.filter((row) => row.processingStatus === (preview.confirmed ? 'Imported' : 'Valid')).length} {preview.confirmed ? 'đã nhập' : 'hợp lệ'} · {preview.rows.filter((row) => row.processingStatus === 'Skipped').length} bỏ qua · {preview.rows.filter((row) => row.processingStatus === 'Error').length} lỗi
+                  {preview.fileName} · {counts.totalRows} dòng{!preview.confirmed && ` · ${counts.validRows} hợp lệ · ${countDetails}`}
                 </p>
                 <div className="admin-table-scroll" role="region" aria-label="Xem trước hồ sơ sinh viên" tabIndex={0}>
                   <table className="table align-middle mb-0 admin-data-table import-history-table">
@@ -147,23 +212,27 @@ export default function ImportsPage({ activities, cohorts, students, participati
                           <td>{row.cohortCode || '—'}</td>
                           <td>{row.email || '—'}</td>
                           <td>{row.className || '—'}</td>
-                          <td><span className={'badge ' + rowStatuses[row.processingStatus].badge}>{rowStatuses[row.processingStatus].label}</span></td>
+                          <td><ImportRowStatus row={row} /></td>
                           <td>{row.errorMessage ?? '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                {!preview.confirmed && (
-                  <button
-                    type="button"
-                    className="btn btn-primary admin-primary-button mt-3"
-                    disabled={!preview.rows.some(({ processingStatus }) => processingStatus === 'Valid')}
-                    onClick={() => setPreview(onImportStudents(preview))}
-                  >
-                    Xác nhận nhập hồ sơ hợp lệ
-                  </button>
-                )}
+                <div className="d-flex flex-wrap gap-2 mt-3">
+                  {!preview.confirmed && (
+                    <button
+                      type="button"
+                      className="btn btn-primary admin-primary-button"
+                      disabled={busy || counts.validRows === 0}
+                      onClick={() => setPreview(onImportStudents(preview))}
+                    >
+                      Xác nhận nhập hồ sơ hợp lệ
+                    </button>
+                  )}
+                  {errorReportButton}
+                </div>
+                {errorReportError && <p className="alert alert-danger mt-3" role="alert">{errorReportError}</p>}
                 <p className="small text-body-secondary mt-3 mb-0">
                   {preview.confirmed
                     ? 'Hồ sơ và lịch sử nhập chỉ lưu trong phiên hiện tại. Tài khoản chưa được tạo.'
@@ -183,10 +252,12 @@ export default function ImportsPage({ activities, cohorts, students, participati
               <>
                 {preview.confirmed && (
                   <p className={preview.batch.errorRows ? 'alert alert-warning' : 'alert alert-success'} role="status">
-                    Đã nhập {preview.batch.successRows} lượt tham gia · {preview.batch.skippedRows} bỏ qua · {preview.batch.errorRows} lỗi.
+                    Đã nhập {counts.successRows} lượt tham gia · {countDetails}.
                   </p>
                 )}
-                <p className="text-body-secondary">{preview.fileName} · {previewActivity?.name} · {preview.rows.length} dòng</p>
+                <p className="text-body-secondary">
+                  {preview.fileName} · {previewActivity?.name} · {counts.totalRows} dòng{!preview.confirmed && ` · ${counts.validRows} hợp lệ · ${countDetails}`}
+                </p>
                 <div className="admin-table-scroll" role="region" aria-label="Xem trước lượt tham gia" tabIndex={0}>
                   <table className="table align-middle mb-0 admin-data-table import-preview-table">
                     <thead>
@@ -200,23 +271,27 @@ export default function ImportsPage({ activities, cohorts, students, participati
                           <th scope="row">{index + 1}</th>
                           <td>{row.studentCode || '—'}</td>
                           <td>{row.fullName || '—'}</td>
-                          <td><span className={'badge ' + rowStatuses[row.processingStatus].badge}>{rowStatuses[row.processingStatus].label}</span></td>
+                          <td><ImportRowStatus row={row} /></td>
                           <td>{row.errorMessage ?? '—'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                {!preview.confirmed && (
-                  <button
-                    type="button"
-                    className="btn btn-primary admin-primary-button mt-3"
-                    disabled={!preview.rows.some(({ processingStatus }) => processingStatus === 'Valid')}
-                    onClick={() => setPreview(onImportParticipations(preview))}
-                  >
-                    Xác nhận nhập lượt tham gia hợp lệ
-                  </button>
-                )}
+                <div className="d-flex flex-wrap gap-2 mt-3">
+                  {!preview.confirmed && (
+                    <button
+                      type="button"
+                      className="btn btn-primary admin-primary-button"
+                      disabled={busy || counts.validRows === 0}
+                      onClick={() => setPreview(onImportParticipations(preview))}
+                    >
+                      Xác nhận nhập lượt tham gia hợp lệ
+                    </button>
+                  )}
+                  {errorReportButton}
+                </div>
+                {errorReportError && <p className="alert alert-danger mt-3" role="alert">{errorReportError}</p>}
                 <p className="small text-body-secondary mt-3 mb-0">
                   {preview.confirmed
                     ? 'Lượt mới có trạng thái Chờ duyệt. Thay đổi chỉ lưu trong phiên thử.'

@@ -61,6 +61,7 @@ export async function createDashboardReport({ cohorts, students, activities, par
     ['Khóa tuyển sinh', cohort?.cohortCode ?? 'Tất cả khóa'],
     ['Hoạt động', activity ? `${activity.code} · ${activity.name}` : 'Tất cả hoạt động'],
     ['Ngày tổ chức', period],
+    ['Trạng thái chứng nhận', certificateStatuses.find(({ status }) => status === filters.selectedCertificateStatus)?.label ?? 'Tất cả trạng thái'],
   ]
   scope.forEach(([label, value], index) => {
     const row = index + 4
@@ -93,7 +94,7 @@ export async function createDashboardReport({ cohorts, students, activities, par
   overview.mergeCells('A19:D19')
   overview.getCell('A19').value = 'THAM GIA THEO KHÓA'
   styleHeader(overview.getRow(19))
-  overview.getRow(20).values = ['Khóa', 'Hồ sơ sinh viên', 'Sinh viên có lượt', 'Tỷ lệ tham gia']
+  overview.getRow(20).values = ['Khóa', 'Sinh viên đang hoạt động', 'Trong số đó có lượt', 'Tỷ lệ tham gia']
   styleBody(overview.getRow(20), true)
   overview.getRow(20).font = { name: 'Calibri', size: 11, bold: true }
   summary.cohortParticipation.forEach((item, index) => {
@@ -107,10 +108,10 @@ export async function createDashboardReport({ cohorts, students, activities, par
   })
   const noteRow = 22 + summary.cohortParticipation.length
   overview.mergeCells(`A${noteRow}:D${noteRow}`)
-  overview.getCell(`A${noteRow}`).value = 'Tỷ lệ = sinh viên có lượt tham gia / hồ sơ sinh viên của khóa. Trạng thái chứng nhận tính tại thời điểm xuất.'
+  overview.getCell(`A${noteRow}`).value = 'Tỷ lệ = sinh viên đang hoạt động có lượt khớp bộ lọc / tổng sinh viên đang hoạt động của khóa. Trạng thái chứng nhận tính tại thời điểm xuất.'
   styleBody(overview.getRow(noteRow))
   overview.getCell(`A${noteRow}`).font = { name: 'Calibri', size: 10, italic: true, color: { argb: 'FF68768A' } }
-  overview.getRow(noteRow).height = 32
+  overview.getRow(noteRow).height = 44
 
   const detail = workbook.addWorksheet('Lượt tham gia')
   setupSheet(detail, [7, 16, 28, 11, 40, 20, 32, 22, 19])
@@ -120,7 +121,8 @@ export async function createDashboardReport({ cohorts, students, activities, par
   summary.scopedParticipations.sort(createParticipationComparator(cohorts, activities, students)).forEach((participation, index) => {
     const student = students.find((item) => item.studentId === participation.studentId)
     const event = activities.find((item) => item.activityId === participation.activityId)
-    const certificate = certificates.find((item) => item.participationId === participation.participationId)
+    const certificate = certificates.find((item) => item.participationId === participation.participationId
+      && (!filters.selectedCertificateStatus || item.status === filters.selectedCertificateStatus))
     const eventLabel = `${event.code} · ${event.name}`
     const row = detail.addRow([
       index + 1, String(student.studentCode), student.fullName,

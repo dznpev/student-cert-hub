@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { demoManagementAccounts } from './demoManagementAccounts.js'
 import { normalizeSearch } from './normalizeSearch.js'
+import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 
 const roles = { admin: 'Admin', superAdmin: 'Super Admin', student: 'Sinh viên' }
 const statuses = {
   demo: { label: 'Tài khoản mẫu', badge: 'text-bg-primary' },
   locked: { label: 'Đã khóa', badge: 'text-bg-danger' },
-  linked: { label: 'Đã liên kết', badge: 'text-bg-success' },
-  unlinked: { label: 'Chưa liên kết', badge: 'text-bg-secondary' },
+  ...studentAccountStatuses,
 }
 
-export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdminLock }) {
+export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdminLock, onUpdateStudentLock }) {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
@@ -21,13 +21,18 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
     ...Object.entries(demoManagementAccounts).map(([accountRole, account]) => ({
       id: accountRole, identifier: account.username, name: account.label, role: accountRole,
       status: accountRole === 'admin' && adminLocked ? 'locked' : 'demo',
+      canToggleLock: accountRole === 'admin',
+      locked: accountRole === 'admin' && adminLocked,
     })),
     ...students.map((student) => ({
       id: 'student-' + student.studentId,
       identifier: student.studentCode,
       name: student.fullName,
       role: 'student',
-      status: student.userId ? 'linked' : 'unlinked',
+      studentId: student.studentId,
+      status: getStudentAccountStatus(student),
+      canToggleLock: Boolean(student.userId),
+      locked: Boolean(student.accountDisabled),
     })),
   ]
   const visibleRows = rows.filter((row) => (
@@ -35,21 +40,25 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
     && normalizeSearch(row.identifier + ' ' + row.name).includes(query)
   ))
 
+  function confirmAccountLock() {
+    const { role: accountRole, studentId, identifier, locked } = confirmLock
+    if (accountRole === 'admin') onUpdateAdminLock(!locked)
+    else onUpdateStudentLock(studentId, !locked)
+    setNotice(`Đã ${locked ? 'mở khóa' : 'khóa'} tài khoản ${identifier}.`)
+    setConfirmLock(null)
+  }
+
   return (
     <>
       <h1 className="page-title mb-2">Quản lý tài khoản</h1>
-      <p className="text-body-secondary mb-4">Danh sách xem thử gồm tài khoản quản trị mẫu và trạng thái liên kết của hồ sơ sinh viên.</p>
+      <p className="text-body-secondary mb-4">Danh sách tài khoản và hồ sơ sinh viên dùng thử. Trạng thái khóa được lưu trong phiên hiện tại.</p>
       {confirmLock !== null && (
-        <section className="alert alert-warning" aria-labelledby="confirm-admin-lock">
-          <h2 id="confirm-admin-lock" className="h6">{confirmLock ? 'Khóa tài khoản admin?' : 'Mở khóa tài khoản admin?'}</h2>
-          <p>{confirmLock ? 'Tài khoản Admin mẫu sẽ bị chặn đăng nhập trong phiên này.' : 'Tài khoản Admin mẫu có thể đăng nhập lại trong phiên này.'}</p>
+        <section className="alert alert-warning" aria-labelledby="confirm-account-lock">
+          <h2 id="confirm-account-lock" className="h6">{confirmLock.locked ? 'Mở khóa' : 'Khóa'} tài khoản {confirmLock.identifier}?</h2>
+          <p>{confirmLock.locked ? 'Tài khoản mẫu có thể đăng nhập lại trong phiên này.' : 'Tài khoản mẫu sẽ bị chặn đăng nhập trong phiên này.'}</p>
           <div className="d-flex flex-wrap gap-2">
-            <button type="button" className={'btn ' + (confirmLock ? 'btn-danger' : 'btn-primary')}
-              onClick={() => {
-                onUpdateAdminLock(confirmLock)
-                setNotice(confirmLock ? 'Đã khóa tài khoản admin.' : 'Đã mở khóa tài khoản admin.')
-                setConfirmLock(null)
-              }}>{confirmLock ? 'Xác nhận khóa' : 'Xác nhận mở khóa'}</button>
+            <button type="button" className={'btn ' + (confirmLock.locked ? 'btn-primary' : 'btn-danger')}
+              onClick={confirmAccountLock}>{confirmLock.locked ? 'Xác nhận mở khóa' : 'Xác nhận khóa'}</button>
             <button type="button" className="btn btn-outline-secondary" autoFocus onClick={() => setConfirmLock(null)}>Hủy</button>
           </div>
         </section>
@@ -94,11 +103,12 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
                     <td>{row.name}</td>
                     <td>{roles[row.role]}</td>
                     <td><span className={'badge text-wrap ' + statuses[row.status].badge}>{statuses[row.status].label}</span></td>
-                    <td>{row.role === 'admin' && (
-                      <button type="button" className={'btn btn-sm ' + (adminLocked ? 'btn-outline-primary' : 'btn-outline-danger')}
+                    <td>{row.canToggleLock && (
+                      <button type="button" className={'btn btn-sm ' + (row.locked ? 'btn-outline-primary' : 'btn-outline-danger')}
                         disabled={confirmLock !== null}
-                        onClick={() => { setNotice(''); setConfirmLock(!adminLocked) }}>
-                        {adminLocked ? 'Mở khóa' : 'Khóa'}
+                        aria-label={`${row.locked ? 'Mở khóa' : 'Khóa'} tài khoản ${row.identifier}`}
+                        onClick={() => { setNotice(''); setConfirmLock(row) }}>
+                        {row.locked ? 'Mở khóa' : 'Khóa'}
                       </button>
                     )}</td>
                   </tr>

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { ThemeContext } from './themeContext.js'
 import {
   ArcElement, BarController, BarElement, CategoryScale, Chart,
   DoughnutController, LinearScale, Tooltip,
@@ -14,7 +15,7 @@ Chart.register(
 
 const numberFormat = new Intl.NumberFormat('vi-VN')
 const percentFormat = new Intl.NumberFormat('vi-VN', { style: 'percent', maximumFractionDigits: 1 })
-const emptyFilters = { selectedCohort: '', selectedActivity: '', fromDate: '', toDate: '' }
+const emptyFilters = { selectedCohort: '', selectedActivity: '', fromDate: '', toDate: '', selectedCertificateStatus: '' }
 const formatDate = (value) => value.split('-').reverse().join('/')
 
 function formatChartValue(value, percentages) {
@@ -29,7 +30,7 @@ const percentageLabels = {
     const values = chart.data.datasets[0].data
 
     ctx.save()
-    ctx.fillStyle = '#172235'
+    ctx.fillStyle = chart.options.color
     ctx.font = '600 14px system-ui, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'bottom'
@@ -42,13 +43,17 @@ const percentageLabels = {
 
 function DashboardChart({ title, type, labels, values, colors, percentages = false }) {
   const canvasRef = useRef(null)
+  const { theme } = useContext(ThemeContext)
 
   useEffect(() => {
+    const textColor = theme === 'dark' ? '#e5e9f0' : '#475569'
+    const gridColor = theme === 'dark' ? '#3b4350' : '#e3e7ef'
     const chart = new Chart(canvasRef.current, {
       type,
       data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
       plugins: percentages ? [percentageLabels] : [],
       options: {
+        color: textColor,
         responsive: true,
         maintainAspectRatio: false,
         animation: false,
@@ -61,18 +66,19 @@ function DashboardChart({ title, type, labels, values, colors, percentages = fal
           },
         },
         scales: percentages ? {
-          x: { ticks: { color: '#475569', font: { size: 14 } } },
+          x: { ticks: { color: textColor, font: { size: 14 } }, grid: { color: gridColor } },
           y: {
             min: 0,
             max: 100,
-            ticks: { stepSize: 25, color: '#475569', font: { size: 14 }, callback: (value) => value + '%' },
+            ticks: { stepSize: 25, color: textColor, font: { size: 14 }, callback: (value) => value + '%' },
+            grid: { color: gridColor },
           },
         } : undefined,
       },
     })
 
     return () => chart.destroy()
-  }, [type, labels, values, colors, percentages])
+  }, [type, labels, values, colors, percentages, theme])
 
   const summary = labels.map((label, index) => {
     return label + ' ' + formatChartValue(values[index], percentages)
@@ -112,9 +118,10 @@ export default function DashboardPage({ cohorts, students, activities, participa
   const [exportNotice, setExportNotice] = useState('')
   const [exportError, setExportError] = useState('')
   const hasDraftChanges = Object.keys(emptyFilters).some((field) => filters[field] !== draftFilters[field])
-  const { selectedCohort, selectedActivity, fromDate, toDate } = filters
+  const { selectedCohort, selectedActivity, fromDate, toDate, selectedCertificateStatus } = filters
   const cohort = cohorts.find(({ cohortId }) => String(cohortId) === selectedCohort)
   const activity = activities.find(({ activityId }) => String(activityId) === selectedActivity)
+  const statusLabel = certificateStatuses.find(({ status }) => status === selectedCertificateStatus)?.label ?? 'Tất cả trạng thái chứng nhận'
   const dateSummary = fromDate && toDate ? `${formatDate(fromDate)} – ${formatDate(toDate)}`
     : fromDate ? `Từ ${formatDate(fromDate)}` : toDate ? `Đến ${formatDate(toDate)}` : 'Toàn bộ thời gian'
   const { studentCount, activityCount, participationCount, uniqueStudents, certificateCounts, cohortParticipation } = summarizeDashboard({
@@ -140,9 +147,9 @@ export default function DashboardPage({ cohorts, students, activities, participa
     setExportError('')
   }
   const metrics = [
-    ['Hồ sơ sinh viên', studentCount, 'Chưa phân loại trạng thái hoạt động của sinh viên'],
-    ['Hoạt động', activityCount, cohort ? 'Hoạt động có lượt tham gia của khóa trong phạm vi lọc' : 'Hoạt động trong phạm vi lọc'],
-    ['Lượt tham gia', participationCount, 'Gồm Chờ duyệt, Đã duyệt và Từ chối'],
+    ['Sinh viên đang hoạt động', studentCount, 'Tính theo khóa tuyển sinh'],
+    ['Hoạt động', activityCount, cohort || selectedCertificateStatus ? 'Hoạt động có lượt tham gia khớp bộ lọc' : 'Hoạt động trong phạm vi lọc'],
+    ['Lượt tham gia', participationCount, selectedCertificateStatus ? 'Có chứng nhận khớp trạng thái đã chọn' : 'Gồm Chờ duyệt, Đã duyệt và Từ chối'],
     ['Sinh viên có lượt tham gia', uniqueStudents, 'Mỗi sinh viên chỉ tính một lần'],
     ['Chứng nhận hiệu lực', certificateCounts.Issued],
     ['Chứng nhận bị thu hồi', certificateCounts.Revoked],
@@ -174,13 +181,13 @@ export default function DashboardPage({ cohorts, students, activities, participa
     <>
       <h1 className="page-title mb-2">Tổng quan</h1>
       <p className="text-body-secondary mb-3">
-        Dữ liệu frontend trong phiên hiện tại · {dateSummary} · {activity ? `${activity.code} · ${activity.name}` : 'Tất cả hoạt động'} · {cohort ? cohort.cohortCode : 'Tất cả khóa'}
+        Dữ liệu frontend trong phiên hiện tại · {dateSummary} · {activity ? `${activity.code} · ${activity.name}` : 'Tất cả hoạt động'} · {cohort ? cohort.cohortCode : 'Tất cả khóa'} · {statusLabel}
       </p>
 
       <form className="mb-4" onSubmit={applyFilters} aria-label="Bộ lọc tổng quan">
       <fieldset disabled={exporting}>
-      <div className="row g-3">
-        <div className="col-12 col-sm-6 col-xl-3">
+      <div className="row g-3 align-items-end">
+        <div className="col-12 col-sm-6 col-xl-2">
           <label className="form-label" htmlFor="dashboard-cohort">Khóa tuyển sinh</label>
           <select
             id="dashboard-cohort"
@@ -194,11 +201,18 @@ export default function DashboardPage({ cohorts, students, activities, participa
             ))}
           </select>
         </div>
-        <div className="col-12 col-sm-6 col-xl-5">
+        <div className="col-12 col-sm-6 col-xl-3">
           <label className="form-label" htmlFor="dashboard-activity">Hoạt động</label>
           <select id="dashboard-activity" className="form-select" value={draftFilters.selectedActivity} onChange={(event) => updateFilter('selectedActivity', event.target.value)}>
             <option value="">Tất cả hoạt động</option>
             {activities.map(({ activityId, code, name }) => <option key={activityId} value={activityId}>{code} · {name}</option>)}
+          </select>
+        </div>
+        <div className="col-12 col-sm-6 col-xl-3">
+          <label className="form-label" htmlFor="dashboard-certificate-status">Trạng thái chứng nhận</label>
+          <select id="dashboard-certificate-status" className="form-select" value={draftFilters.selectedCertificateStatus} onChange={(event) => updateFilter('selectedCertificateStatus', event.target.value)}>
+            <option value="">Tất cả trạng thái</option>
+            {certificateStatuses.map(({ status, label }) => <option key={status} value={status}>{label}</option>)}
           </select>
         </div>
         <div className="col-12 col-sm-6 col-xl-2">
@@ -223,8 +237,8 @@ export default function DashboardPage({ cohorts, students, activities, participa
       {exportNotice && <p className="alert alert-success" role="status">{exportNotice}</p>}
       {exportError && <p className="alert alert-danger" role="alert">{exportError}</p>}
 
-      <p className="small text-body-secondary mb-4">Tỷ lệ theo khóa = số sinh viên có ít nhất một lượt tham gia / tổng hồ sơ sinh viên của khóa. Tính cả lượt Chờ duyệt, Đã duyệt và Từ chối; giữ dữ liệu của khóa ngừng sử dụng. Tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
-      <p className="small text-body-secondary mb-4">Hồ sơ sinh viên và mẫu số tỷ lệ chỉ lọc theo khóa. Các chỉ số tham gia/chứng nhận theo hoạt động trong khoảng ngày tổ chức; trạng thái chứng nhận là trạng thái hiện tại, không phải lịch sử trạng thái tại ngày đó.</p>
+      <p className="small text-body-secondary mb-4">Tỷ lệ theo khóa = số sinh viên đang hoạt động có lượt khớp bộ lọc / tổng số sinh viên đang hoạt động của khóa. Tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
+      <p className="small text-body-secondary mb-4">Tổng sinh viên đang hoạt động chỉ lọc theo khóa. Số lượt tham gia và chứng nhận vẫn tính cả lịch sử. Khi chọn trạng thái chứng nhận, chỉ tính lượt có chứng nhận đang ở trạng thái đó.</p>
       {activityCount === 0 && <p className="alert alert-info" role="status">Không có hoạt động phù hợp trong phạm vi đã áp dụng.</p>}
 
       <div className="row g-3 mb-4">
@@ -245,7 +259,7 @@ export default function DashboardPage({ cohorts, students, activities, participa
         <div className="row g-3">
           <div className="col-12 col-xl-7">
             <DashboardChart
-              title="Tỷ lệ sinh viên có lượt tham gia theo khóa"
+              title="Tỷ lệ tham gia của sinh viên đang hoạt động theo khóa"
               type="bar"
               labels={cohortParticipation.map(({ cohortId }) => cohorts.find((item) => item.cohortId === cohortId)?.cohortCode ?? String(cohortId))}
               values={cohortParticipation.map((cohort) => cohort.studentCount === 0 ? 0 : cohort.uniqueStudents / cohort.studentCount * 100)}

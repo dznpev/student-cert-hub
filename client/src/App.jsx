@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore } from 'react'
 import AdminLayout from './AdminLayout.jsx'
 import ActivitiesPage from './ActivitiesPage.jsx'
 import AuditLogsPage from './AuditLogsPage.jsx'
+import CertificateTemplatesPage from './CertificateTemplatesPage.jsx'
 import CertificatesPage from './CertificatesPage.jsx'
 import CertificateVerification from './CertificateVerification.jsx'
 import CohortsPage from './CohortsPage.jsx'
@@ -17,6 +18,7 @@ import { sampleActivities } from './sampleActivities.js'
 import { sampleStudents } from './sampleStudents.js'
 import { sampleParticipations } from './sampleParticipations.js'
 import { sampleImportHistory } from './sampleImportHistory.js'
+import { summarizeImportRows } from './summarizeImportRows.js'
 import { reviewParticipations } from './reviewParticipations.js'
 import { sampleCertificates } from './sampleCertificates.js'
 import { sampleCertificateTemplates } from './sampleCertificateTemplates.js'
@@ -33,6 +35,17 @@ const sections = [
   { id: 'certificates', title: 'Chứng nhận', page: CertificatesPage },
   { id: 'imports', title: 'Nhập dữ liệu Excel', page: ImportsPage },
   { id: 'audit', title: 'Nhật ký hệ thống', page: AuditLogsPage },
+]
+
+const superAdminSections = [
+  { id: 'workspace', title: 'Khu quản trị' },
+  { id: 'accounts', title: 'Quản lý tài khoản' },
+  { id: 'templates', title: 'Mẫu chứng nhận' },
+  { id: 'audit', title: 'Nhật ký hệ thống' },
+]
+const superAdminWorkspaceSections = [
+  { id: 'back-to-super-admin', title: 'Về Super Admin' },
+  ...sections,
 ]
 
 function subscribeToHash(callback) {
@@ -60,6 +73,7 @@ export default function App() {
   const [students, setStudents] = useState(sampleStudents)
   const [participations, setParticipations] = useState(sampleParticipations)
   const [certificates, setCertificates] = useState(sampleCertificates)
+  const [templates, setTemplates] = useState(sampleCertificateTemplates)
   const [importHistory, setImportHistory] = useState(sampleImportHistory)
   const [activities, setActivities] = useState(sampleActivities)
   const [auditLogs, setAuditLogs] = useState(sampleAuditLogs)
@@ -122,9 +136,10 @@ export default function App() {
     )))
   }
 
-  function appendAuditLogs(entries, actorLabel = 'Admin (mô phỏng)') {
+  function appendAuditLogs(entries) {
     if (entries.length === 0) return
     const timestamp = new Date().toISOString()
+    const actorLabel = inSuperAdmin ? 'Super Admin (mô phỏng)' : 'Admin (mô phỏng)'
     setAuditLogs((current) => {
       let nextId = Math.max(0, ...current.map((item) => item.auditLogId))
       return [...entries.map((entry) => ({
@@ -146,7 +161,101 @@ export default function App() {
       entityId: 'admin',
       outcome: 'Success',
       reason: locked ? 'Đã khóa tài khoản Admin mẫu.' : 'Đã mở khóa tài khoản Admin mẫu.',
-    }], 'Super Admin (mô phỏng)')
+    }])
+  }
+
+  function updateStudentLock(studentId, locked) {
+    const student = students.find((item) => item.studentId === studentId)
+    if (!inSuperAdmin || !student?.userId || Boolean(student.accountDisabled) === locked) return
+
+    setStudents((current) => current.map((item) => item.studentId === studentId
+      ? { ...item, accountDisabled: locked }
+      : item))
+    appendAuditLogs([{
+      action: locked ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+      entityType: 'Accounts',
+      entityId: student.studentCode,
+      outcome: 'Success',
+      reason: student.fullName,
+    }])
+  }
+
+  function addCertificateTemplate(name, templateFile, fieldPositions) {
+    const templateName = name.trim()
+    if (!inSuperAdmin || !templateFile || !templateName) return 'Nhập tên và chọn tệp mẫu.'
+    const nameKey = templateName.toLocaleLowerCase('vi-VN')
+    if (templates.some((item) => item.templateName.toLocaleLowerCase('vi-VN') === nameKey)) {
+      return 'Tên mẫu đã tồn tại. Hãy chọn tên khác.'
+    }
+
+    const templateId = Math.max(0, ...templates.map((item) => item.templateId)) + 1
+    setTemplates((current) => [...current, { templateId, templateName, templateFile, fieldPositions, version: 1, isActive: true, isDefault: false }])
+    appendAuditLogs([{
+      action: 'Thêm mẫu chứng nhận',
+      entityType: 'CertificateTemplates',
+      entityId: String(templateId),
+      outcome: 'Success',
+      reason: templateName,
+    }])
+    return ''
+  }
+
+  function addCertificateTemplateVersion(templateId, templateFile, fieldPositions) {
+    const template = templates.find((item) => item.templateId === templateId)
+    if (!inSuperAdmin || !template || !templateFile) return 'Không tìm thấy mẫu hoặc tệp phiên bản mới.'
+
+    const version = template.version + 1
+    setTemplates((current) => current.map((item) => item.templateId === templateId ? {
+      ...item,
+      version,
+      templateFile,
+      fieldPositions,
+      previousVersions: [...(item.previousVersions ?? []), {
+        version: item.version, templateFile: item.templateFile, fieldPositions: item.fieldPositions,
+      }],
+    } : item))
+    appendAuditLogs([{
+      action: 'Thêm phiên bản mẫu',
+      entityType: 'CertificateTemplates',
+      entityId: String(templateId),
+      outcome: 'Success',
+      reason: `${template.templateName} · v${version}`,
+    }])
+    return ''
+  }
+
+  function updateCertificateTemplateStatus(templateId, isActive) {
+    const template = templates.find((item) => item.templateId === templateId)
+    if (!inSuperAdmin || !template) return 'Không tìm thấy mẫu chứng nhận.'
+    if (!isActive && template.isDefault) return 'Chọn mẫu mặc định khác trước khi ngừng sử dụng mẫu này.'
+    if (template.isActive === isActive) return ''
+
+    setTemplates((current) => current.map((item) => item.templateId === templateId ? { ...item, isActive } : item))
+    appendAuditLogs([{
+      action: isActive ? 'Sử dụng lại mẫu' : 'Ngừng sử dụng mẫu',
+      entityType: 'CertificateTemplates',
+      entityId: String(templateId),
+      outcome: 'Success',
+      reason: template.templateName,
+    }])
+    return ''
+  }
+
+  function setDefaultCertificateTemplate(templateId) {
+    const template = templates.find((item) => item.templateId === templateId)
+    if (!inSuperAdmin || !template?.isActive || template.isDefault) return
+
+    setTemplates((current) => current.map((item) => ({
+      ...item,
+      isDefault: item.templateId === templateId,
+    })))
+    appendAuditLogs([{
+      action: 'Đổi mẫu mặc định',
+      entityType: 'CertificateTemplates',
+      entityId: String(templateId),
+      outcome: 'Success',
+      reason: `${template.templateName} · Phiên bản ${template.version}`,
+    }])
   }
 
   function addCohort({ cohortCode, cohortName }) {
@@ -196,7 +305,7 @@ export default function App() {
     })
     if (approvalStatus === 'Approved') {
       const approvedIds = result.results.filter((item) => item.success).map((item) => item.participationId)
-      const queued = queueCertificates(certificates, result.participations, approvedIds, activities, sampleCertificateTemplates)
+      const queued = queueCertificates(certificates, result.participations, approvedIds, activities, templates)
       setCertificates(queued)
       const existingIds = new Set(certificates.map((item) => item.certificateId))
       logEntries.push(...queued.filter((item) => !existingIds.has(item.certificateId)).map((item) => ({
@@ -228,7 +337,7 @@ export default function App() {
   }
 
   function handleProcessCertificate(certificateId, action, reason = '') {
-    const result = processCertificate(certificates, certificateId, action, participations, activities, sampleCertificateTemplates, reason)
+    const result = processCertificate(certificates, certificateId, action, participations, activities, templates, reason)
     if (result.success) setCertificates(result.certificates)
     const certificate = result.certificates.find((item) => item.certificateId === certificateId)
     if (result.success && ['Issued', 'Revoked'].includes(certificate?.status)) {
@@ -261,7 +370,7 @@ export default function App() {
     const rows = preview.rows.map((row) => {
       if (row.processingStatus !== 'Valid') return row
       if (knownCodes.has(row.studentCode)) {
-        return { ...row, processingStatus: 'Skipped', errorMessage: 'MSSV đã có trong danh sách sinh viên.' }
+        return { ...row, processingStatus: 'Skipped', isDuplicate: true, errorMessage: 'MSSV đã có trong danh sách sinh viên.' }
       }
       const cohort = cohorts.find((item) => item.cohortCode.toUpperCase() === row.cohortCode)
       if (!cohort?.isActive) {
@@ -277,6 +386,7 @@ export default function App() {
         className: row.className || null,
         cohortId: cohort.cohortId,
         userId: null,
+        isActive: true,
       })
       return { ...row, processingStatus: 'Imported' }
     })
@@ -285,25 +395,26 @@ export default function App() {
   }
 
   function completeImport(preview, rows, importType) {
+    const { totalRows, successRows, duplicateRows, skippedRows, errorRows } = summarizeImportRows(rows)
     const batch = {
       batchId: Math.max(0, ...importHistory.map(({ batchId }) => batchId)) + 1,
       fileName: preview.fileName,
       importType,
       activityId: importType === 'Participations' ? preview.activityId : null,
       importedAt: new Date().toISOString(),
-      totalRows: rows.length,
-      successRows: rows.filter(({ processingStatus }) => processingStatus === 'Imported').length,
-      duplicateRows: 0,
-      skippedRows: rows.filter(({ processingStatus }) => processingStatus === 'Skipped').length,
-      errorRows: rows.filter(({ processingStatus }) => processingStatus === 'Error').length,
+      totalRows,
+      successRows,
+      duplicateRows,
+      skippedRows,
+      errorRows,
       batchStatus: 'Completed',
     }
     setImportHistory((current) => [batch, ...current])
     appendAuditLogs([{
       action: importType === 'Students' ? 'Nhập hồ sơ sinh viên' : 'Nhập lượt tham gia',
       entityType: 'ImportBatches', entityId: String(batch.batchId),
-      outcome: batch.successRows === 0 ? 'Failure' : batch.errorRows > 0 || batch.skippedRows > 0 ? 'Partial' : 'Success',
-      reason: `${batch.fileName}: ${batch.successRows} dòng thành công, ${batch.skippedRows} dòng bỏ qua, ${batch.errorRows} dòng lỗi.`,
+      outcome: successRows === 0 ? 'Failure' : successRows < totalRows ? 'Partial' : 'Success',
+      reason: `${batch.fileName}: ${successRows} dòng thành công, ${duplicateRows} dòng trùng, ${skippedRows} dòng bỏ qua, ${errorRows} dòng lỗi.`,
     }])
     return { ...preview, rows, confirmed: true, batch }
   }
@@ -322,7 +433,7 @@ export default function App() {
         return { ...row, processingStatus: 'Error', errorMessage: 'Không tìm thấy hoạt động hoặc hồ sơ sinh viên.' }
       }
       if (knownIds.has(student.studentId)) {
-        return { ...row, processingStatus: 'Skipped', errorMessage: 'Sinh viên đã có lượt tham gia trong hoạt động này.' }
+        return { ...row, processingStatus: 'Skipped', isDuplicate: true, errorMessage: 'Sinh viên đã có lượt tham gia trong hoạt động này.' }
       }
       knownIds.add(student.studentId)
       nextId += 1
@@ -356,25 +467,39 @@ export default function App() {
     )
   }
 
-  if (inSuperAdmin) {
+  if (inSuperAdmin && superAdminSection !== 'workspace') {
     return (
-      <AdminLayout key="super-admin" sections={[{ id: 'accounts', title: 'Quản lý tài khoản' }, { id: 'audit', title: 'Nhật ký hệ thống' }]}
-        activeSectionId={superAdminSection} onSelectSection={setSuperAdminSection} roleLabel="Super Admin · Bản xem thử"
+      <AdminLayout key="super-admin" sections={superAdminSections}
+        activeSectionId={superAdminSection} onSelectSection={(sectionId) => {
+          if (sectionId === 'workspace') setActiveSectionId('overview')
+          setSuperAdminSection(sectionId)
+        }} roleLabel="Super Admin · Bản xem thử"
         accountIdentifier="superadmin" onDemoSignOut={endManagementPreview}>
-        {superAdminSection === 'audit' ? <AuditLogsPage auditLogs={auditLogs} />
-          : <SuperAdminAccounts students={students} adminLocked={adminLocked} onUpdateAdminLock={updateAdminLock} />}
+        {superAdminSection === 'accounts' && (
+          <SuperAdminAccounts students={students} adminLocked={adminLocked}
+            onUpdateAdminLock={updateAdminLock} onUpdateStudentLock={updateStudentLock} />
+        )}
+        {superAdminSection === 'templates' && (
+          <CertificateTemplatesPage templates={templates} onSetDefault={setDefaultCertificateTemplate}
+            onAddTemplate={addCertificateTemplate} onAddVersion={addCertificateTemplateVersion}
+            onUpdateStatus={updateCertificateTemplateStatus} />
+        )}
+        {superAdminSection === 'audit' && <AuditLogsPage auditLogs={auditLogs} />}
       </AdminLayout>
     )
   }
 
   return (
     <AdminLayout
-      key="admin"
-      sections={sections}
+      key={inSuperAdmin ? 'super-admin' : 'admin'}
+      sections={inSuperAdmin ? superAdminWorkspaceSections : sections}
       activeSectionId={activeSectionId}
-      onSelectSection={setActiveSectionId}
-      roleLabel="Admin cấp chứng nhận"
-      accountIdentifier="admin"
+      onSelectSection={(sectionId) => {
+        if (sectionId === 'back-to-super-admin') setSuperAdminSection('accounts')
+        else setActiveSectionId(sectionId)
+      }}
+      roleLabel={inSuperAdmin ? 'Super Admin · Khu quản trị' : 'Admin cấp chứng nhận'}
+      accountIdentifier={inSuperAdmin ? 'superadmin' : 'admin'}
       onDemoSignOut={endManagementPreview}
     >
       {ActivePage ? (
@@ -383,6 +508,7 @@ export default function App() {
           auditLogs={auditLogs}
           participations={participations}
           certificates={certificates}
+          templates={templates}
           onProcessCertificate={handleProcessCertificate}
           onReviewParticipation={reviewParticipation}
           onReviewParticipations={reviewParticipationBatch}

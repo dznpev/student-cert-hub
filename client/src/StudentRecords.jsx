@@ -7,12 +7,12 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh',
 })
 
-export default function StudentRecords({ page, studentId, activities, participations, certificates }) {
+export default function StudentRecords({ page, activities, participations, certificates }) {
   const showCertificates = page === 'certificates'
   const title = showCertificates ? 'Chứng nhận' : 'Lượt tham gia'
   const activitiesById = new Map(activities.map((item) => [item.activityId, item]))
   const certificatesByParticipation = new Map(certificates.map((item) => [item.participationId, item]))
-  const records = participations.filter((item) => item.studentId === studentId)
+  const records = participations
     .map((participation) => ({
       participation,
       activity: activitiesById.get(participation.activityId),
