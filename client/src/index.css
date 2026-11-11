@@ -1,0 +1,193 @@
+:root {
+  --admin-ink: #172235;
+  --admin-accent: #2f5fc4;
+  --admin-accent-dark: #244da4;
+  --admin-border: #e3e7ef;
+  --admin-workspace: #f5f6f8;
+}
+
+body {
+  color: var(--admin-ink);
+  background: #fff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.admin-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  background: #fff;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-sidebar {
+  background: #fff;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-sidebar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand-logo {
+  display: block;
+  width: clamp(7.25rem, 13vw, 10rem);
+  height: auto;
+}
+
+.brand-title {
+  font-weight: 700;
+  font-size: clamp(0.875rem, 2vw, 1.125rem);
+}
+
+.brand-role {
+  margin-inline-start: auto;
+  color: var(--admin-ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.admin-menu-toggle {
+  --bs-btn-color: var(--admin-accent);
+  --bs-btn-border-color: var(--admin-accent);
+  --bs-btn-hover-bg: var(--admin-accent);
+  --bs-btn-hover-border-color: var(--admin-accent);
+  --bs-btn-active-bg: var(--admin-accent-dark);
+  --bs-btn-active-border-color: var(--admin-accent-dark);
+}
+
+.admin-navigation .nav-link {
+  color: var(--admin-ink);
+  font-weight: 500;
+}
+
+.admin-navigation .nav-link:hover {
+  background: #eaf0fc;
+}
+
+.admin-navigation .nav-link.active {
+  background: var(--admin-accent);
+  color: #fff;
+}
+
+.admin-navigation .nav-link.active:hover {
+  background: var(--admin-accent-dark);
+}
+
+#main-content {
+  flex: 1;
+  min-width: 0;
+  background: var(--admin-workspace);
+}
+
+#main-content:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: -2px;
+}
+
+.page-title {
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  font-weight: 700;
+}
+
+.content-card {
+  max-width: 56rem;
+}
+
+.content-card,
+.cohorts-card,
+.dashboard-card {
+  border-color: var(--admin-border);
+  border-radius: 0.875rem;
+}
+
+.dashboard-chart {
+  position: relative;
+  min-width: 0;
+  height: 19rem;
+}
+
+.dashboard-chart-with-legend {
+  display: grid;
+  gap: 1rem;
+  align-items: center;
+}
+
+.dashboard-chart-legend {
+  display: grid;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+}
+
+.dashboard-chart-legend-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-chart-swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 0.2rem;
+}
+
+.activities-card {
+  background: #fff;
+  border-color: var(--admin-border);
+  border-radius: 0.875rem;
+}
+
+.activities-table {
+  min-width: 38rem;
+}
+
+.admin-primary-button {
+  --bs-btn-bg: var(--admin-accent);
+  --bs-btn-border-color: var(--admin-accent);
+  --bs-btn-hover-bg: var(--admin-accent-dark);
+  --bs-btn-hover-border-color: var(--admin-accent-dark);
+  --bs-btn-active-bg: var(--admin-accent-dark);
+  --bs-btn-active-border-color: var(--admin-accent-dark);
+  --bs-btn-disabled-bg: var(--admin-accent);
+  --bs-btn-disabled-border-color: var(--admin-accent);
+}
+
+@media (min-width: 992px) {
+  .admin-shell {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .admin-sidebar {
+    grid-row: 1 / span 2;
+    border-bottom: 0;
+    border-right: 1px solid var(--admin-border);
+  }
+
+  .admin-sidebar-top {
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1200px) {
+  .dashboard-chart-with-legend {
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, auto);
+  }
+
+  .cohorts-card {
+    width: 66.6667%;
+  }
+}
