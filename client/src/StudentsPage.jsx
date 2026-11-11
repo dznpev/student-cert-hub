@@ -2,27 +2,40 @@ import { useRef, useState } from 'react'
 import { normalizeSearch } from './normalizeSearch.js'
 import { createStudentComparator } from './sortRecords.js'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
+import StudentProfileForm from './StudentProfileForm.jsx'
 
-export default function StudentsPage({ cohorts, students }) {
+export default function StudentsPage({ cohorts, students, onUpdateStudentActive, onUpdateStudentProfile }) {
   const [search, setSearch] = useState('')
-  const [selectedStudent, setSelectedStudent] = useState(null)
+  const [selectedStudentId, setSelectedStudentId] = useState(null)
+  const [confirmProfileStatus, setConfirmProfileStatus] = useState(false)
+  const [editingProfile, setEditingProfile] = useState(false)
+  const selectedStudent = students.find(({ studentId }) => studentId === selectedStudentId)
   const profileTrigger = useRef(null)
   const [selectedCohort, setSelectedCohort] = useState('')
   const [selectedAccountStatus, setSelectedAccountStatus] = useState('')
+  const [selectedProfileStatus, setSelectedProfileStatus] = useState('')
   const query = normalizeSearch(search.trim().replace(/\s+/g, ' '))
   const visibleStudents = students.filter((student) => {
     const { studentCode, fullName, className, cohortId } = student
     const matchesCohort = selectedCohort === '' || String(cohortId) === selectedCohort
     const matchesSearch = [studentCode, fullName, className ?? ''].some((field) => normalizeSearch(field).includes(query))
-    return matchesCohort && matchesSearch && (!selectedAccountStatus || getStudentAccountStatus(student) === selectedAccountStatus)
+    const matchesProfile = selectedProfileStatus === ''
+      || (student.isActive !== false) === (selectedProfileStatus === 'active')
+    return matchesCohort && matchesSearch && matchesProfile && (!selectedAccountStatus || getStudentAccountStatus(student) === selectedAccountStatus)
   }).sort(createStudentComparator(cohorts))
 
   function closeProfile() {
-    setSelectedStudent(null)
-    requestAnimationFrame(() => profileTrigger.current?.focus())
+    setSelectedStudentId(null)
+    setConfirmProfileStatus(false)
+    setEditingProfile(false)
+    requestAnimationFrame(() => {
+      const target = profileTrigger.current?.isConnected ? profileTrigger.current : document.getElementById('student-search')
+      target?.focus()
+    })
   }
 
   if (selectedStudent) {
+    const isActive = selectedStudent.isActive !== false
     const cohort = cohorts.find(({ cohortId }) => cohortId === selectedStudent.cohortId)
     const fields = [
       ['MSSV', selectedStudent.studentCode],
@@ -31,6 +44,7 @@ export default function StudentsPage({ cohorts, students }) {
       ['Lớp', selectedStudent.className ?? 'Chưa có'],
       ['Khóa tuyển sinh', cohort ? cohort.cohortCode + ' · ' + cohort.cohortName : 'Chưa xác định'],
       ['Tình trạng tài khoản', studentAccountStatuses[getStudentAccountStatus(selectedStudent)].label],
+      ['Tình trạng hồ sơ', isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'],
     ]
 
     return (
@@ -42,6 +56,15 @@ export default function StudentsPage({ cohorts, students }) {
         <p className="text-body-secondary mb-4">Dữ liệu mẫu</p>
         <section className="card rounded-4" aria-label={'Hồ sơ ' + selectedStudent.fullName}>
           <div className="card-body p-3 p-md-4">
+            {editingProfile ? (
+              <StudentProfileForm student={selectedStudent} cohorts={cohorts} onCancel={() => setEditingProfile(false)}
+                onSave={(values) => {
+                  const errors = onUpdateStudentProfile(selectedStudent.studentId, values)
+                  if (!Object.keys(errors).length) setEditingProfile(false)
+                  return errors
+                }} />
+            ) : (
+              <>
             <dl className="row g-3 mb-0">
               {fields.map(([label, value]) => (
                 <div className="col-12 col-md-6" key={label}>
@@ -50,6 +73,30 @@ export default function StudentsPage({ cohorts, students }) {
                 </div>
               ))}
             </dl>
+            {confirmProfileStatus ? (
+              <section className="alert alert-warning mt-4 mb-0" aria-labelledby="student-profile-status-title">
+                <h2 id="student-profile-status-title" className="h6">
+                  {isActive ? 'Ngừng sử dụng' : 'Sử dụng lại'} hồ sơ {selectedStudent.studentCode}?
+                </h2>
+                <p>KPI và tỷ lệ tham gia sẽ cập nhật theo trạng thái hồ sơ trong phiên.</p>
+                <div className="d-flex flex-wrap gap-2">
+                  <button type="button" className={'btn ' + (isActive ? 'btn-danger' : 'btn-success')}
+                    onClick={() => {
+                      onUpdateStudentActive(selectedStudent.studentId, !isActive)
+                      setConfirmProfileStatus(false)
+                    }}>Xác nhận</button>
+                  <button type="button" className="btn btn-outline-secondary" autoFocus onClick={() => setConfirmProfileStatus(false)}>Hủy</button>
+                </div>
+              </section>
+            ) : (
+              <div className="d-flex flex-wrap gap-2 mt-4">
+                <button type="button" className="btn btn-primary" onClick={() => setEditingProfile(true)}>Sửa hồ sơ</button>
+                <button type="button" className={'btn ' + (isActive ? 'btn-outline-danger' : 'btn-outline-success')}
+                  onClick={() => setConfirmProfileStatus(true)}>{isActive ? 'Ngừng sử dụng hồ sơ' : 'Sử dụng lại hồ sơ'}</button>
+              </div>
+            )}
+              </>
+            )}
           </div>
         </section>
       </>
@@ -64,7 +111,7 @@ export default function StudentsPage({ cohorts, students }) {
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
-            <div className="col-12 col-sm-7 col-xl-5">
+            <div className="col-12 col-sm-6 col-xl-4">
               <label className="form-label" htmlFor="student-search">Tìm kiếm</label>
               <input
                 id="student-search"
@@ -75,7 +122,7 @@ export default function StudentsPage({ cohorts, students }) {
                 onChange={(event) => setSearch(event.target.value)}
               />
             </div>
-            <div className="col-12 col-sm-5 col-xl-3">
+            <div className="col-12 col-sm-6 col-xl-2">
               <label className="form-label" htmlFor="student-cohort">Khóa tuyển sinh</label>
               <select
                 id="student-cohort"
@@ -89,7 +136,7 @@ export default function StudentsPage({ cohorts, students }) {
                 ))}
               </select>
             </div>
-            <div className="col-12 col-sm-6 col-xl-4">
+            <div className="col-12 col-sm-6 col-xl-3">
               <label className="form-label" htmlFor="student-account-status">Tình trạng tài khoản</label>
               <select id="student-account-status" className="form-select" value={selectedAccountStatus}
                 onChange={(event) => setSelectedAccountStatus(event.target.value)}>
@@ -97,6 +144,15 @@ export default function StudentsPage({ cohorts, students }) {
                 {Object.entries(studentAccountStatuses).map(([value, { label }]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
+              </select>
+            </div>
+            <div className="col-12 col-sm-6 col-xl-3">
+              <label className="form-label" htmlFor="student-profile-status">Tình trạng hồ sơ</label>
+              <select id="student-profile-status" className="form-select" value={selectedProfileStatus}
+                onChange={(event) => setSelectedProfileStatus(event.target.value)}>
+                <option value="">Tất cả hồ sơ</option>
+                <option value="active">Đang sử dụng</option>
+                <option value="inactive">Ngừng sử dụng</option>
               </select>
             </div>
           </div>
@@ -152,7 +208,7 @@ export default function StudentsPage({ cohorts, students }) {
                           }}
                           onClick={(event) => {
                             profileTrigger.current = event.currentTarget
-                            setSelectedStudent(student)
+                            setSelectedStudentId(student.studentId)
                           }}
                         >
                           Xem hồ sơ

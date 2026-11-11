@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import hutechLogo from './assets/hutech-logo.png'
 
-export default function PortalSidebar({ navigationId, navigationLabel, sections, activeSectionId, onSelectSection, children }) {
+export default function PortalSidebar({ navigationId, navigationLabel, sections, activeSectionId, onSelectSection, onHome, children }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div className="admin-sidebar">
       <div className="admin-sidebar-top px-3 py-3">
-        <img className="brand-logo" src={hutechLogo} alt="HUTECH" width="927" height="234" />
+        {onHome ? (
+          <button type="button" className="border-0 bg-transparent p-0" aria-label="HUTECH — Về trang chủ"
+            onClick={() => { setMenuOpen(false); onHome() }}>
+            <img className="brand-logo" src={hutechLogo} alt="HUTECH" width="927" height="234" />
+          </button>
+        ) : <img className="brand-logo" src={hutechLogo} alt="HUTECH" width="927" height="234" />}
         <button type="button" className="btn btn-sm btn-outline-primary admin-menu-toggle d-lg-none"
           aria-controls={navigationId} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
           Menu

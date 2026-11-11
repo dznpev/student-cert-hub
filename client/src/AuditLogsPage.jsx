@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { normalizeSearch } from './normalizeSearch.js'
 
 const entityLabels = {
+  Students: 'Sinh viên',
   Accounts: 'Tài khoản',
   ImportBatches: 'Đợt nhập',
   Certificates: 'Chứng nhận',

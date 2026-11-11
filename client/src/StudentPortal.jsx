@@ -5,6 +5,7 @@ import PortalSidebar from './PortalSidebar.jsx'
 import StudentOverview from './StudentOverview.jsx'
 import StudentRecords from './StudentRecords.jsx'
 import StudentLogin from './StudentLogin.jsx'
+import PasswordChangeForm from './PasswordChangeForm.jsx'
 import hutechLogo from './assets/hutech-logo.png'
 
 const studentPages = [
@@ -13,13 +14,20 @@ const studentPages = [
   { id: 'participations', title: 'Lượt tham gia' },
   { id: 'certificates', title: 'Chứng nhận' },
 ]
+const studentAccountPages = [
+  { id: 'profile', title: 'Hồ sơ' },
+  { id: 'account', title: 'Tài khoản' },
+  { id: 'password', title: 'Đổi mật khẩu' },
+]
 
 export default function StudentPortal({ students, cohorts, activities, participations, certificates, notifications,
-  onReadNotification, onManagementSignIn, onActivateDemoStudent, adminPreviewAvailable }) {
+  studentPasswords, managementPasswords, onChangePassword, onReadNotification, onManagementSignIn, onActivateDemoStudent, onVerifyDemoActivation, onRequestReset, onResetPassword, adminPreviewAvailable }) {
   const [studentId, setStudentId] = useState('')
   const [showPreviewPicker, setShowPreviewPicker] = useState(false)
   const [panel, setPanel] = useState('')
   const [page, setPage] = useState('overview')
+  const [signedIn, setSignedIn] = useState(false)
+  const [accountSectionOpen, setAccountSectionOpen] = useState(false)
   const mainRef = useRef(null)
   const student = students.find((item) => String(item.studentId) === studentId && !item.accountDisabled)
   const cohort = cohorts.find((item) => item.cohortId === student?.cohortId)
@@ -33,6 +41,7 @@ export default function StudentPortal({ students, cohorts, activities, participa
     setStudentId(id)
     setPanel('')
     setPage('overview')
+    setAccountSectionOpen(false)
   }
 
   function showPage(nextPage) {
@@ -42,13 +51,26 @@ export default function StudentPortal({ students, cohorts, activities, participa
   }
 
   function signOut() {
+    setSignedIn(false)
     selectStudent('')
     setShowPreviewPicker(false)
   }
 
+  function openAccountPage(nextPage) {
+    setAccountSectionOpen(true)
+    showPage(nextPage)
+  }
+
+  function goHome() {
+    setAccountSectionOpen(false)
+    showPage('overview')
+  }
+
   if (!student && !showPreviewPicker) {
-    return <StudentLogin students={students} onSignIn={selectStudent} onManagementSignIn={onManagementSignIn}
-      onActivateDemoStudent={onActivateDemoStudent} adminPreviewAvailable={adminPreviewAvailable}
+    return <StudentLogin students={students} studentPasswords={studentPasswords} managementPasswords={managementPasswords}
+      onSignIn={(id) => { setSignedIn(true); selectStudent(id) }} onManagementSignIn={onManagementSignIn}
+      onActivateDemoStudent={onActivateDemoStudent} onVerifyDemoActivation={onVerifyDemoActivation} adminPreviewAvailable={adminPreviewAvailable}
+      onRequestReset={onRequestReset} onResetPassword={onResetPassword}
       onPreview={() => setShowPreviewPicker(true)} />
   }
 
@@ -56,7 +78,8 @@ export default function StudentPortal({ students, cohorts, activities, participa
     <div className={`student-portal ${student ? 'admin-shell' : 'min-vh-100 bg-body-tertiary'}`}>
       {student && (
         <PortalSidebar navigationId="student-navigation" navigationLabel="Khu vực cá nhân"
-          sections={studentPages} activeSectionId={page} onSelectSection={showPage}>
+          sections={accountSectionOpen ? studentAccountPages : studentPages}
+          activeSectionId={page} onSelectSection={showPage} onHome={goHome}>
           {adminPreviewAvailable && <a href="#admin" className="btn btn-sm btn-outline-secondary mt-3 w-100">Quay lại quản trị</a>}
         </PortalSidebar>
       )}
@@ -85,7 +108,7 @@ export default function StudentPortal({ students, cohorts, activities, participa
               </button>
               <AccountMenu identifier={student.studentCode} open={panel === 'account'}
                 onToggle={() => setPanel(panel === 'account' ? '' : 'account')}
-                onProfile={() => showPage('profile')} onAccount={() => showPage('account')}
+                onProfile={() => openAccountPage('profile')} onAccount={() => openAccountPage('account')}
                 onSignOut={signOut} />
             </div>
           )}
@@ -135,6 +158,17 @@ export default function StudentPortal({ students, cohorts, activities, participa
                   <><dt>Email</dt><dd>{student.email || 'Chưa có'}</dd><dt>Phiên</dt><dd>Xem thử</dd></>
                 )}
               </dl>
+            </div>
+          </section>
+        )}
+        {student && page === 'password' && (
+          <section className="card rounded-4">
+            <div className="card-body p-3 p-md-4">
+              <h1 className="page-title mb-3">Đổi mật khẩu</h1>
+              {signedIn ? (
+                <PasswordChangeForm key={student.studentId}
+                  onChangePassword={(currentPassword, newPassword) => onChangePassword(student.studentId, currentPassword, newPassword)} />
+              ) : <p className="text-body-secondary mb-0">Đăng nhập bằng MSSV để đổi mật khẩu mẫu.</p>}
             </div>
           </section>
         )}

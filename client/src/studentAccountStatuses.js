@@ -7,7 +7,7 @@ export const studentAccountStatuses = {
   unlinked: { label: 'Chưa liên kết', badge: 'text-bg-secondary' },
 }
 
-export function getStudentAccountStatus({ studentCode, userId, accountDisabled }) {
+export function getStudentAccountStatus({ studentCode, userId, accountDisabled, activationPending }) {
   if (userId) return accountDisabled ? 'disabled' : 'active'
-  return studentCode === demoStudentActivation.studentCode ? 'pending' : 'unlinked'
+  return activationPending || studentCode === demoStudentActivation.studentCode ? 'pending' : 'unlinked'
 }

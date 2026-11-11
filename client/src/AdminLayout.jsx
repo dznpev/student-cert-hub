@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import AccountMenu from './AccountMenu.jsx'
 import PortalSidebar from './PortalSidebar.jsx'
+import PasswordChangeForm from './PasswordChangeForm.jsx'
+
+const accountSections = [
+  { id: 'profile', title: 'Hồ sơ' },
+  { id: 'account', title: 'Tài khoản' },
+  { id: 'password', title: 'Đổi mật khẩu' },
+]
 
 export default function AdminLayout({
   sections,
@@ -9,6 +16,8 @@ export default function AdminLayout({
   roleLabel,
   accountIdentifier,
   onDemoSignOut,
+  onGoHome,
+  onChangePassword,
   children,
 }) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
@@ -30,7 +39,9 @@ export default function AdminLayout({
   return (
     <div className="admin-shell">
       <PortalSidebar navigationId="admin-navigation" navigationLabel="Điều hướng quản trị"
-        sections={sections} activeSectionId={activeSectionId} onSelectSection={selectSection} />
+        sections={accountPage ? accountSections : sections} activeSectionId={accountPage || activeSectionId}
+        onSelectSection={accountPage ? showAccountPage : selectSection}
+        onHome={() => { setAccountPage(''); setAccountMenuOpen(false); onGoHome(); document.getElementById('main-content').focus() }} />
 
       <header className="admin-header px-3 px-md-4 px-xl-5 py-3">
         <div className="brand-title">Quản lý chứng nhận sinh viên</div>
@@ -55,13 +66,17 @@ export default function AdminLayout({
         {accountPage && (
           <section className="card content-card rounded-4">
             <div className="card-body p-3 p-md-4">
-              <h1 className="page-title mb-3">{accountPage === 'profile' ? 'Hồ sơ' : 'Tài khoản'}</h1>
+              <h1 className="page-title mb-3">{accountSections.find(({ id }) => id === accountPage)?.title}</h1>
+              {accountPage === 'password' ? (
+                onChangePassword ? <PasswordChangeForm onChangePassword={onChangePassword} />
+                  : <p>Đăng nhập bằng tài khoản quản trị mẫu để đổi mật khẩu.</p>
+              ) : (
               <dl>
                 <dt>Tên đăng nhập</dt><dd>{accountIdentifier}</dd>
                 <dt>Vai trò</dt><dd>{roleLabel}</dd>
               </dl>
+              )}
               {accountPage === 'account' && <p className="text-body-secondary">Tài khoản mẫu của Student Cert Hub.</p>}
-              <button type="button" className="btn btn-outline-secondary" onClick={() => showAccountPage('')}>Quay lại</button>
             </div>
           </section>
         )}

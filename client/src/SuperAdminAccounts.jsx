@@ -10,12 +10,15 @@ const statuses = {
   ...studentAccountStatuses,
 }
 
-export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdminLock, onUpdateStudentLock }) {
+export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdminLock, onUpdateStudentLock, onIssueActivationCode }) {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
   const [confirmLock, setConfirmLock] = useState(null)
   const [notice, setNotice] = useState('')
+  const [activationTarget, setActivationTarget] = useState(null)
+  const [issuedActivation, setIssuedActivation] = useState(null)
+  const [activationError, setActivationError] = useState('')
   const query = normalizeSearch(search.trim())
   const rows = [
     ...Object.entries(demoManagementAccounts).map(([accountRole, account]) => ({
@@ -32,6 +35,7 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
       studentId: student.studentId,
       status: getStudentAccountStatus(student),
       canToggleLock: Boolean(student.userId),
+      canIssueActivation: !student.userId && !student.accountDisabled,
       locked: Boolean(student.accountDisabled),
     })),
   ]
@@ -64,6 +68,31 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
         </section>
       )}
       {notice && <p className="alert alert-success" role="status">{notice}</p>}
+      {activationTarget && (
+        <section className="alert alert-warning" aria-labelledby="activation-issue-title">
+          <h2 id="activation-issue-title" className="h6">Cấp mã kích hoạt mới cho {activationTarget.identifier}?</h2>
+          <p>Mã thử mới có hạn 15 phút, dùng một lần và thay thế mã trước trong phiên. Mã sẽ hiển thị tại đây để kiểm tra luồng.</p>
+          {activationError && <p className="text-danger" role="alert">{activationError}</p>}
+          <div className="d-flex flex-wrap gap-2">
+            <button type="button" className="btn btn-primary" onClick={() => {
+              const result = onIssueActivationCode(activationTarget.studentId)
+              setActivationError(result.error)
+              if (result.error) return
+              setIssuedActivation(result)
+              setActivationTarget(null)
+            }}>Cấp mã mới</button>
+            <button type="button" className="btn btn-outline-secondary" autoFocus onClick={() => setActivationTarget(null)}>Hủy</button>
+          </div>
+        </section>
+      )}
+      {issuedActivation && (
+        <section className="alert alert-info" aria-labelledby="activation-issued-title">
+          <h2 id="activation-issued-title" className="h6">Mã thử cho MSSV {issuedActivation.studentCode}</h2>
+          <p className="text-break mb-2"><code id="issued-activation-code">{issuedActivation.code}</code></p>
+          <p className="small mb-2">Hết hạn lúc {new Date(issuedActivation.expiresAt).toLocaleTimeString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}. Mã chỉ dùng để thử trong phiên hiện tại.</p>
+          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setIssuedActivation(null)}>Ẩn mã</button>
+        </section>
+      )}
       <section className="card rounded-4" aria-label="Danh sách tài khoản và hồ sơ">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
@@ -105,12 +134,21 @@ export default function SuperAdminAccounts({ students, adminLocked, onUpdateAdmi
                     <td><span className={'badge text-wrap ' + statuses[row.status].badge}>{statuses[row.status].label}</span></td>
                     <td>{row.canToggleLock && (
                       <button type="button" className={'btn btn-sm ' + (row.locked ? 'btn-outline-primary' : 'btn-outline-danger')}
-                        disabled={confirmLock !== null}
+                        disabled={confirmLock !== null || activationTarget !== null}
                         aria-label={`${row.locked ? 'Mở khóa' : 'Khóa'} tài khoản ${row.identifier}`}
                         onClick={() => { setNotice(''); setConfirmLock(row) }}>
                         {row.locked ? 'Mở khóa' : 'Khóa'}
                       </button>
-                    )}</td>
+                    )}
+                      {row.canIssueActivation && (
+                        <button type="button" className="btn btn-sm btn-outline-primary"
+                          disabled={confirmLock !== null || activationTarget !== null}
+                          aria-label={`Cấp mã kích hoạt ${row.identifier}`}
+                          onClick={() => { setActivationTarget(row); setActivationError(''); setIssuedActivation(null); setNotice('') }}>
+                          Cấp mã kích hoạt
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {visibleRows.length === 0 && <tr><td colSpan={5} className="text-center text-body-secondary">Không tìm thấy mục phù hợp.</td></tr>}
