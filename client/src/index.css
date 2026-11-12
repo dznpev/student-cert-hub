@@ -1,4 +1,5 @@
 :root {
+  --bs-body-font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
   --admin-ink: #172235;
   --admin-accent: #2f5fc4;
   --admin-accent-dark: #244da4;
@@ -23,7 +24,7 @@
 body {
   color: var(--admin-ink);
   background: var(--admin-surface);
-  font-family: Inter, system-ui, sans-serif;
+  font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
 }
 
 .template-sample-value {

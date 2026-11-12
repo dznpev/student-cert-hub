@@ -23,7 +23,7 @@ const sampleValues = {
   qrCode: 'Vị trí mã QR',
 }
 
-const fontFamilies = ['Arial', 'Times New Roman', 'Calibri', 'Cambria', 'Verdana', 'Courier New']
+const fontFamilies = ['Be Vietnam Pro', 'Arial', 'Times New Roman', 'Calibri', 'Cambria', 'Verdana', 'Courier New']
 const alignments = { left: 'Căn trái', center: 'Căn giữa', right: 'Căn phải' }
 const horizontalOffsets = { left: '0', center: '-50%', right: '-100%' }
 const imageAnchors = { left: 0, center: 50, right: 100 }

@@ -12,6 +12,7 @@ Chart.register(
   ArcElement, BarController, BarElement, CategoryScale,
   DoughnutController, LinearScale, Tooltip,
 )
+Chart.defaults.font.family = "'Be Vietnam Pro', system-ui, -apple-system, sans-serif"
 
 const numberFormat = new Intl.NumberFormat('vi-VN')
 const percentFormat = new Intl.NumberFormat('vi-VN', { style: 'percent', maximumFractionDigits: 1 })
@@ -31,7 +32,7 @@ const percentageLabels = {
 
     ctx.save()
     ctx.fillStyle = chart.options.color
-    ctx.font = '600 14px system-ui, sans-serif'
+    ctx.font = '600 14px "Be Vietnam Pro", system-ui, -apple-system, sans-serif'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'bottom'
     bars.forEach((bar, index) => {
