@@ -1,3 +1,5 @@
+import PortalTopbar from './PortalTopbar.jsx'
+import PortalFooter from './PortalFooter.jsx'
 import { useState } from 'react'
 import AccountMenu from './AccountMenu.jsx'
 import PortalSidebar from './PortalSidebar.jsx'
@@ -43,8 +45,8 @@ export default function AdminLayout({
         onSelectSection={accountPage ? showAccountPage : selectSection}
         onHome={() => { setAccountPage(''); setAccountMenuOpen(false); onGoHome(); document.getElementById('main-content').focus() }} />
 
-      <header className="admin-header px-3 px-md-4 px-xl-5 py-3">
-        <div className="brand-title">Quản lý chứng nhận sinh viên</div>
+      <PortalTopbar title="Quản lý chứng nhận sinh viên"
+        context={(accountPage ? accountSections : sections).find(({ id }) => id === (accountPage || activeSectionId))?.title}>
         <div className="d-flex align-items-center flex-wrap gap-2"
           onKeyDown={(event) => {
             if (event.key !== 'Escape' || !accountMenuOpen) return
@@ -58,7 +60,7 @@ export default function AdminLayout({
             onProfile={() => showAccountPage('profile')} onAccount={() => showAccountPage('account')}
             onSignOut={onDemoSignOut} />
         </div>
-      </header>
+      </PortalTopbar>
 
       <main id="main-content" tabIndex={-1} className="p-3 p-md-4 p-xl-5"
         onClick={() => accountMenuOpen && setAccountMenuOpen(false)}>
@@ -81,6 +83,7 @@ export default function AdminLayout({
           </section>
         )}
       </main>
+      <PortalFooter />
     </div>
   )
 }

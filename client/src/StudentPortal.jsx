@@ -1,3 +1,5 @@
+import PortalTopbar from './PortalTopbar.jsx'
+import PortalFooter from './PortalFooter.jsx'
 import { useRef, useState } from 'react'
 import AccountMenu from './AccountMenu.jsx'
 import NotificationsPage from './NotificationsPage.jsx'
@@ -84,7 +86,7 @@ export default function StudentPortal({ students, cohorts, activities, participa
   }
 
   return (
-    <div className={`student-portal ${student ? 'admin-shell' : 'min-vh-100 bg-body-tertiary'}`}>
+    <div className={`student-portal ${student ? 'admin-shell' : 'portal-preview bg-body-tertiary'}`}>
       {student && (
         <PortalSidebar navigationId="student-navigation" navigationLabel="Khu vực cá nhân"
           sections={accountSectionOpen ? studentAccountPages : studentPages}
@@ -92,18 +94,16 @@ export default function StudentPortal({ students, cohorts, activities, participa
           {adminPreviewAvailable && <a href="#admin" className="btn btn-sm btn-outline-secondary mt-3 w-100">Quay lại quản trị</a>}
         </PortalSidebar>
       )}
-      <header className={student ? 'admin-header position-relative px-3 px-md-4 px-xl-5 py-3' : 'border-bottom bg-body'}>
-        <div className={`d-flex flex-wrap align-items-center justify-content-between gap-2 ${student ? 'w-100' : 'container position-relative py-3'}`}
+      <PortalTopbar title={student ? 'Cổng sinh viên' : 'Student Cert Hub'}
+        context={student ? (accountSectionOpen ? studentAccountPages : studentPages).find(({ id }) => id === page)?.title : 'Chọn hồ sơ xem thử'}>
+        <div className="d-flex align-items-center gap-2 ms-auto"
           onKeyDown={(event) => {
             if (event.key !== 'Escape' || !panel) return
             const trigger = event.currentTarget.querySelector('button[aria-expanded="true"]')
             setPanel('')
             trigger?.focus()
           }}>
-          <div className="d-flex flex-wrap align-items-center gap-3">
-            {!student && <img src={hutechLogo} alt="HUTECH" className="student-portal-logo" />}
-            <span className="brand-title">Cổng sinh viên</span>
-          </div>
+          {!student && <img src={hutechLogo} alt="HUTECH" className="student-portal-logo" />}
           {student && (
             <div className="d-flex align-items-center gap-2 ms-auto">
               <button type="button" className="btn btn-outline-primary position-relative rounded-circle student-bell"
@@ -127,7 +127,7 @@ export default function StudentPortal({ students, cohorts, activities, participa
             <NotificationsPage notifications={inbox} onReadNotification={onReadNotification} />
           </section>
         </div>
-      </header>
+      </PortalTopbar>
       <main ref={mainRef} id={student ? 'student-main-content' : undefined} tabIndex={student ? -1 : undefined}
         className={student ? 'p-3 p-md-4 p-xl-5' : 'container py-4'} onClick={() => panel && setPanel('')}>
         {!student && (
@@ -195,6 +195,7 @@ export default function StudentPortal({ students, cohorts, activities, participa
           </section>
         )}
       </main>
+      <PortalFooter />
     </div>
   )
 }

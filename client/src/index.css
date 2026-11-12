@@ -232,6 +232,38 @@ body {
   border-bottom: 1px solid var(--admin-border);
 }
 
+.portal-topbar {
+  position: relative;
+  z-index: 10;
+}
+
+.portal-topbar-heading {
+  min-width: 0;
+}
+
+.portal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1rem;
+  background: var(--admin-surface);
+  border-top: 1px solid var(--admin-border);
+  font-size: .875rem;
+}
+
+.portal-preview {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-shell > main,
+.portal-preview > main {
+  flex: 1;
+  min-width: 0;
+}
+
 .admin-sidebar {
   background: var(--admin-surface);
   border-bottom: 1px solid var(--admin-border);
@@ -477,13 +509,18 @@ body {
   .admin-shell {
     display: grid;
     grid-template-columns: 15rem minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto 1fr auto;
   }
 
   .admin-sidebar {
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
     border-bottom: 0;
     border-right: 1px solid var(--admin-border);
+  }
+
+  .admin-shell > .portal-topbar {
+    position: sticky;
+    top: 0;
   }
 
   .admin-sidebar-top {

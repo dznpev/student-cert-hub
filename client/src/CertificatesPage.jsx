@@ -14,8 +14,8 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
 
 export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate }) {
   const [selectedIds, setSelectedIds] = useState([])
-  const [snapshotPreview, setSnapshotPreview] = useState(null)
-  const snapshotCertificate = certificates.find((item) => item.certificateId === snapshotPreview?.certificateId)
+  const [snapshotCertificateId, setSnapshotCertificateId] = useState(null)
+  const snapshotCertificate = certificates.find((item) => item.certificateId === snapshotCertificateId)
   const [downloadRequest, setDownloadRequest] = useState(null)
   const [search, setSearch] = useState('')
   const [selectedActivity, setSelectedActivity] = useState('')
@@ -39,7 +39,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
     setFilter(value)
     setSelectedIds([])
     setDownloadRequest(null)
-    setSnapshotPreview(null)
+    setSnapshotCertificateId(null)
   }
 
   function openProcessing(certificateId, action) {
@@ -133,8 +133,8 @@ export default function CertificatesPage({ cohorts, activities, students, partic
         </form>
       )}
       {notice && <p className="alert alert-info text-break" role="status">{notice}</p>}
-      {snapshotCertificate && <CertificateSnapshotPreview key={snapshotPreview.url ?? snapshotCertificate.certificateId}
-        certificate={snapshotCertificate} filePreview={snapshotPreview.url} onClose={() => setSnapshotPreview(null)} />}
+      {snapshotCertificate && <CertificateSnapshotPreview key={snapshotCertificate.certificateId}
+        certificate={snapshotCertificate} onClose={() => setSnapshotCertificateId(null)} />}
 
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
@@ -251,7 +251,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                       <td><span className={'badge text-wrap ' + statusInfo.badge}>{statusInfo.label}</span></td>
                       <td>{templateName ? `${templateName} · v${templateVersion}` : 'Chưa có thông tin mẫu'}
                         <button type="button" className="btn btn-sm btn-outline-secondary d-block mt-2" disabled={Boolean(processing)}
-                          aria-label={'Xem bản mẫu ' + certificateCode} onClick={() => setSnapshotPreview({ certificateId, url: certificate.templateSnapshot?.templateFile ? URL.createObjectURL(certificate.templateSnapshot.templateFile) : null })}>Xem bản mẫu</button>
+                          aria-label={'Xem bản mẫu ' + certificateCode} onClick={() => setSnapshotCertificateId(certificateId)}>Xem bản mẫu</button>
                       </td>
                       <td>{status === 'Generating'
                         ? 'Đã ghi nhận yêu cầu, chờ xử lý mô phỏng.'

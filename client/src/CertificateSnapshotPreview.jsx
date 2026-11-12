@@ -3,13 +3,25 @@ import CertificateTemplateImage from './CertificateTemplateImage.jsx'
 
 const CertificateTemplatePdf = lazy(() => import('./CertificateTemplatePdf.jsx'))
 
-export default function CertificateSnapshotPreview({ certificate, filePreview, onClose }) {
+export default function CertificateSnapshotPreview({ certificate, onClose }) {
   const file = certificate.templateSnapshot?.templateFile
+  const [filePreview, setFilePreview] = useState(null)
   const [previewError, setPreviewError] = useState('')
 
   useEffect(() => {
-    if (filePreview) return () => URL.revokeObjectURL(filePreview)
-  }, [filePreview])
+    if (!file) return
+    let active = true
+    let url
+    queueMicrotask(() => {
+      if (!active) return
+      url = URL.createObjectURL(file)
+      setFilePreview(url)
+    })
+    return () => {
+      active = false
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [file])
 
   return (
     <section className="card rounded-4 mb-4" aria-labelledby="certificate-snapshot-title">
