@@ -1,3 +1,4 @@
+import PortalIcon from './PortalIcon.jsx'
 import { useState } from 'react'
 import hutechLogo from './assets/hutech-logo.png'
 
@@ -26,7 +27,8 @@ export default function PortalSidebar({ navigationId, navigationLabel, sections,
               <button type="button" className={`nav-link w-100 text-start ${id === activeSectionId ? 'active' : ''}`}
                 aria-current={id === activeSectionId ? 'page' : undefined}
                 onClick={() => { setMenuOpen(false); onSelectSection(id) }}>
-                {title}
+                <PortalIcon name={id} />
+                <span>{title}</span>
               </button>
             </li>
           ))}

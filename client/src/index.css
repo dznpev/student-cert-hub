@@ -304,6 +304,9 @@ body {
 }
 
 .admin-navigation .nav-link {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
   color: var(--admin-ink);
   font-weight: 500;
 }
@@ -312,13 +315,64 @@ body {
   background: var(--admin-hover);
 }
 
-.admin-navigation .nav-link.active {
-  background: var(--admin-accent);
-  color: #fff;
+.admin-navigation .nav-link.active,
+.admin-navigation .nav-link.active:hover {
+  background: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary-text-emphasis);
+  box-shadow: inset 3px 0 currentColor;
+  font-weight: 700;
 }
 
-.admin-navigation .nav-link.active:hover {
-  background: var(--admin-accent-dark);
+.portal-icon {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.portal-metric-card {
+  padding: .875rem 1rem;
+}
+
+.portal-metric-label {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.portal-metric-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: .6rem;
+  color: var(--bs-primary-text-emphasis);
+  background: var(--bs-primary-bg-subtle);
+}
+
+.portal-metric-icon-success {
+  color: var(--bs-success-text-emphasis);
+  background: var(--bs-success-bg-subtle);
+}
+
+.portal-metric-icon-warning {
+  color: var(--bs-warning-text-emphasis);
+  background: var(--bs-warning-bg-subtle);
+}
+
+.portal-metric-icon-danger {
+  color: var(--bs-danger-text-emphasis);
+  background: var(--bs-danger-bg-subtle);
+}
+
+.portal-metric-value {
+  margin: .2rem 0 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
 }
 
 :is(#main-content, #student-main-content) {

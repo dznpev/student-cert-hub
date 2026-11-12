@@ -1,3 +1,4 @@
+import PortalMetricCard from './PortalMetricCard.jsx'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { ThemeContext } from './themeContext.js'
 import {
@@ -13,6 +14,11 @@ Chart.register(
   DoughnutController, LinearScale, Tooltip,
 )
 Chart.defaults.font.family = "'Be Vietnam Pro', system-ui, -apple-system, sans-serif"
+
+const metricAppearance = [
+  ['students'], ['activities'], ['participations'], ['profile'],
+  ['certificates', 'success'], ['revoked', 'warning'], ['error', 'danger'],
+]
 
 const numberFormat = new Intl.NumberFormat('vi-VN')
 const percentFormat = new Intl.NumberFormat('vi-VN', { style: 'percent', maximumFractionDigits: 1 })
@@ -245,11 +251,8 @@ export default function DashboardPage({ cohorts, students, activities, participa
       <div className="row g-3 mb-4">
         {metrics.map(([label, value, note], index) => (
           <div className={index < 4 ? 'col-12 col-sm-6 col-xl-3' : 'col-12 col-sm-6 col-xl-4'} key={label}>
-            <dl className="card dashboard-card h-100 mb-0 p-3">
-              <dt className="fw-medium">{label}</dt>
-              <dd className="fs-3 fw-bold mb-0">{numberFormat.format(value)}</dd>
-              {note && <dd className="small text-body-secondary mb-0">{note}</dd>}
-            </dl>
+            <PortalMetricCard label={label} value={numberFormat.format(value)} note={note}
+              icon={metricAppearance[index][0]} tone={metricAppearance[index][1]} />
           </div>
         ))}
       </div>
