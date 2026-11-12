@@ -1,4 +1,4 @@
-export function reviewParticipations(participations, participationIds, approvalStatus, reason = '') {
+export function reviewParticipations(participations, participationIds, approvalStatus, reason = '', actor = {}) {
   const rejectedReason = reason.trim()
   const byId = new Map(participations.map((item) => [item.participationId, item]))
   const results = [...new Set(participationIds)].map((participationId) => {
@@ -23,7 +23,8 @@ export function reviewParticipations(participations, participationIds, approvalS
         approvalStatus,
         rejectedReason: approvalStatus === 'Rejected' ? rejectedReason : null,
         approvedAt: approvalStatus === 'Approved' ? updatedAt : null,
-        approvedBy: null,
+        approvedBy: approvalStatus === 'Approved' ? actor.actorUserId ?? null : null,
+        approvedByLabel: approvalStatus === 'Approved' ? actor.actorLabel ?? null : null,
         updatedAt,
       }
       : item),

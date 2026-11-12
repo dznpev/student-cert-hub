@@ -77,6 +77,12 @@ export default function App() {
   const [managementAccountId, setManagementAccountId] = useState('')
   const managementAccount = managementAccounts.find((account) => account.accountId === managementAccountId)
   const managementRole = managementAccount?.role ?? ''
+  const managementActor = {
+    actorUserId: managementAccount?.accountId ?? null,
+    actorLabel: managementAccount
+      ? managementAccount.username + ' · ' + (managementRole === 'superAdmin' ? 'Super Admin' : 'Admin') + ' (mô phỏng)'
+      : 'Admin (xem thử trực tiếp)',
+  }
   const adminLocked = Boolean(managementAccounts.find((account) => account.accountId === 'admin')?.disabled)
   const [superAdminSection, setSuperAdminSection] = useState('accounts')
   const inSuperAdmin = previewLocation === '#quan-tri-mau' && managementRole === 'superAdmin'
@@ -270,14 +276,14 @@ export default function App() {
   function appendAuditLogs(entries, actor = null) {
     if (entries.length === 0) return
     const timestamp = new Date().toISOString()
-    const actorLabel = actor ?? (managementAccount ? managementAccount.username + ' · ' + (managementRole === 'superAdmin' ? 'Super Admin' : 'Admin') + ' (mô phỏng)' : 'Admin (mô phỏng)')
+    const actorLabel = actor ?? managementActor.actorLabel
     setAuditLogs((current) => {
       let nextId = Math.max(0, ...current.map((item) => item.auditLogId))
       return [...entries.map((entry) => ({
         ...entry,
         auditLogId: ++nextId,
         timestamp,
-        actorUserId: null,
+        actorUserId: actor === null ? managementActor.actorUserId : null,
         actorLabel,
       })), ...current]
     })
@@ -502,7 +508,7 @@ export default function App() {
   }
 
   function reviewParticipationBatch(participationIds, approvalStatus, reason = '') {
-    const result = reviewParticipations(participations, participationIds, approvalStatus, reason)
+    const result = reviewParticipations(participations, participationIds, approvalStatus, reason, managementActor)
     setParticipations(result.participations)
     const logEntries = result.results.map((item) => {
       const participation = participations.find((entry) => entry.participationId === item.participationId)
@@ -550,7 +556,7 @@ export default function App() {
   }
 
   function handleProcessCertificate(certificateId, action, reason = '') {
-    const result = processCertificate(certificates, certificateId, action, participations, activities, templates, reason)
+    const result = processCertificate(certificates, certificateId, action, participations, activities, templates, reason, managementActor)
     if (result.success) setCertificates(result.certificates)
     const certificate = result.certificates.find((item) => item.certificateId === certificateId)
     if (result.success && ['Issued', 'Revoked'].includes(certificate?.status)) {

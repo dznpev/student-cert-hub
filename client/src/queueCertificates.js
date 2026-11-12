@@ -1,3 +1,15 @@
+function captureTemplateSnapshot(template, version = template?.version) {
+  if (!template) return null
+  const source = template.version === version
+    ? template
+    : template.previousVersions?.find((item) => item.version === version)
+  if (!source) return null
+  return {
+    templateFile: source.templateFile ?? null,
+    fieldPositions: structuredClone(source.fieldPositions ?? {}),
+  }
+}
+
 export function queueCertificates(certificates, participations, participationIds, activities, templates) {
   const existingIds = new Set(certificates.map((item) => item.participationId))
   const requestedIds = new Set(participationIds)
@@ -20,6 +32,7 @@ export function queueCertificates(certificates, participations, participationIds
       templateId: template?.templateId ?? null,
       templateName: template?.templateName ?? null,
       templateVersion: template?.version ?? null,
+      templateSnapshot: captureTemplateSnapshot(template),
       createdAt: new Date().toISOString(),
       issuedAt: null,
       filePath: null,
@@ -31,7 +44,7 @@ export function queueCertificates(certificates, participations, participationIds
   return [...addedCertificates, ...certificates]
 }
 
-export function processCertificate(certificates, certificateId, action, participations, activities, templates, reason = '') {
+export function processCertificate(certificates, certificateId, action, participations, activities, templates, reason = '', actor = {}) {
   const certificate = certificates.find((item) => item.certificateId === certificateId)
   const requiredStatus = action === 'revoke' ? 'Issued' : action === 'retry' ? 'Failed' : 'Generating'
   if (!certificate || !['success', 'failure', 'retry', 'revoke'].includes(action)
@@ -50,7 +63,13 @@ export function processCertificate(certificates, certificateId, action, particip
     if (!revocationReason || revocationReason.length > 500) {
       return { success: false, message: 'Nhập lý do thu hồi từ 1 đến 500 ký tự.', certificates }
     }
-    changes = { status: 'Revoked', revokedAt: timestamp, revokedBy: null, revocationReason }
+    changes = {
+      status: 'Revoked',
+      revokedAt: timestamp,
+      revokedBy: actor.actorUserId ?? null,
+      revokedByLabel: actor.actorLabel ?? null,
+      revocationReason,
+    }
     message = 'Đã thu hồi chứng nhận trong phiên mô phỏng. Lý do: ' + revocationReason
   } else if (action === 'retry') {
     changes = { status: 'Generating', lastError: null, issuedAt: null, filePath: null }
@@ -70,6 +89,9 @@ export function processCertificate(certificates, certificateId, action, particip
       templateId: template?.templateId ?? null,
       templateName: template?.templateName ?? null,
       templateVersion: template?.version ?? null,
+      templateSnapshot: certificate.templateSnapshot ?? captureTemplateSnapshot(
+        templates.find((item) => item.templateId === template?.templateId), template?.version,
+      ),
       status: failed ? 'Failed' : 'Issued',
       lastError: failed ? lastError : null,
       issuedAt: failed ? null : timestamp,
@@ -80,6 +102,8 @@ export function processCertificate(certificates, certificateId, action, particip
   const processingHistory = [...(certificate.processingHistory ?? []), {
     action: action === 'revoke' ? 'Revoked' : action === 'retry' ? 'Retry' : 'Generate',
     timestamp,
+    actorUserId: actor.actorUserId ?? null,
+    actorLabel: actor.actorLabel ?? null,
     outcome: changes.status,
     message,
     previousError: action === 'retry' ? certificate.lastError ?? null : null,

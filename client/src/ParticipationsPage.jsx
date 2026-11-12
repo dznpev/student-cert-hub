@@ -209,7 +209,7 @@ export default function ParticipationsPage({ cohorts, activities, students, part
                 </tr>
               </thead>
               <tbody>
-                {visibleParticipations.map(({ participationId, activityId, studentId, approvalStatus, rejectedReason }) => {
+                {visibleParticipations.map(({ participationId, activityId, studentId, approvalStatus, rejectedReason, approvedByLabel, approvedAt }) => {
                   const student = students.find((item) => item.studentId === studentId)
                   const activity = activities.find((item) => item.activityId === activityId)
                   const status = approvalStatuses[approvalStatus]
@@ -226,7 +226,12 @@ export default function ParticipationsPage({ cohorts, activities, students, part
                       <th scope="row">{student?.studentCode ?? '—'}</th>
                       <td>{student?.fullName ?? 'Chưa xác định'}</td>
                       <td>{activity?.name ?? 'Chưa xác định'}</td>
-                      <td><span className={'badge text-wrap ' + status.badge}>{status.label}</span></td>
+                      <td><span className={'badge text-wrap ' + status.badge}>{status.label}</span>
+                        {approvalStatus === 'Approved' && <div className="small text-body-secondary mt-2">
+                          <div>Người duyệt: {approvedByLabel || 'Chưa có thông tin'}</div>
+                          {approvedAt && <div>{new Date(approvedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</div>}
+                        </div>}
+                      </td>
                       <td className="participation-reason">{rejectedReason || '—'}</td>
                       <td>
                         {approvalStatus === 'Pending' ? (

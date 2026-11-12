@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import CertificateDownloadPanel from './CertificateDownloadPanel.jsx'
+import CertificateSnapshotPreview from './CertificateSnapshotPreview.jsx'
 import { certificateStatuses } from './certificateStatuses.js'
 import { createParticipationComparator } from './sortRecords.js'
 import { normalizeSearch } from './normalizeSearch.js'
@@ -13,6 +14,8 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
 
 export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate }) {
   const [selectedIds, setSelectedIds] = useState([])
+  const [snapshotPreview, setSnapshotPreview] = useState(null)
+  const snapshotCertificate = certificates.find((item) => item.certificateId === snapshotPreview?.certificateId)
   const [downloadRequest, setDownloadRequest] = useState(null)
   const [search, setSearch] = useState('')
   const [selectedActivity, setSelectedActivity] = useState('')
@@ -36,6 +39,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
     setFilter(value)
     setSelectedIds([])
     setDownloadRequest(null)
+    setSnapshotPreview(null)
   }
 
   function openProcessing(certificateId, action) {
@@ -129,6 +133,8 @@ export default function CertificatesPage({ cohorts, activities, students, partic
         </form>
       )}
       {notice && <p className="alert alert-info text-break" role="status">{notice}</p>}
+      {snapshotCertificate && <CertificateSnapshotPreview key={snapshotPreview.url ?? snapshotCertificate.certificateId}
+        certificate={snapshotCertificate} filePreview={snapshotPreview.url} onClose={() => setSnapshotPreview(null)} />}
 
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
@@ -225,7 +231,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
               </thead>
               <tbody>
                 {visibleCertificates.map(({ certificate, participation, student }) => {
-                  const { certificateId, certificateCode, issuedAt, status, templateName, templateVersion, lastError, processingHistory = [], revokedAt, revocationReason } = certificate
+                  const { certificateId, certificateCode, issuedAt, status, templateName, templateVersion, lastError, processingHistory = [], revokedAt, revocationReason, revokedByLabel } = certificate
                   const activity = activities.find((item) => item.activityId === participation?.activityId)
                   const statusInfo = certificateStatuses.find((item) => item.status === status)
 
@@ -243,12 +249,16 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                       <td>{activity?.name ?? 'Chưa xác định'}</td>
                       <td>{issuedAt ? dateFormatter.format(new Date(issuedAt)) : '—'}</td>
                       <td><span className={'badge text-wrap ' + statusInfo.badge}>{statusInfo.label}</span></td>
-                      <td>{templateName ? `${templateName} · v${templateVersion}` : 'Chưa có thông tin mẫu'}</td>
+                      <td>{templateName ? `${templateName} · v${templateVersion}` : 'Chưa có thông tin mẫu'}
+                        <button type="button" className="btn btn-sm btn-outline-secondary d-block mt-2" disabled={Boolean(processing)}
+                          aria-label={'Xem bản mẫu ' + certificateCode} onClick={() => setSnapshotPreview({ certificateId, url: certificate.templateSnapshot?.templateFile ? URL.createObjectURL(certificate.templateSnapshot.templateFile) : null })}>Xem bản mẫu</button>
+                      </td>
                       <td>{status === 'Generating'
                         ? 'Đã ghi nhận yêu cầu, chờ xử lý mô phỏng.'
                         : status === 'Failed' ? lastError || 'Dữ liệu lỗi mẫu, chưa có chi tiết lỗi.' : 'Dữ liệu chứng nhận mẫu, chưa có tệp PDF thật.'}
                         {status === 'Revoked' && (
                           <div className="mt-2" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                            <div><strong>Người thu hồi:</strong> {revokedByLabel || 'Chưa có thông tin'}</div>
                             <div><strong>Lý do thu hồi:</strong> {revocationReason || 'Chưa có thông tin trong dữ liệu mẫu.'}</div>
                             <div><strong>Thời điểm:</strong> {revokedAt ? new Date(revokedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}</div>
                           </div>
@@ -260,6 +270,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                               {processingHistory.map((entry, index) => (
                                 <li key={index}>
                                   {new Date(entry.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} · {entry.action === 'Revoked' ? 'Thu hồi' : entry.action === 'Retry' ? 'Thử lại' : 'Xử lý'} · {entry.message}
+                                  {entry.actorLabel && <div>Người xử lý: {entry.actorLabel}</div>}
                                   {entry.previousError && <div>Lỗi trước đó: {entry.previousError}</div>}
                                 </li>
                               ))}
