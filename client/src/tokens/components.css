@@ -539,3 +539,621 @@
     animation-duration: 0.01ms !important;
   }
 }
+
+/* App shell (§6.2, §6.9.4) ------------------------------------------------
+ * Three-row grid: topbar / content / footer, with the sidebar spanning all
+ * three rows in the 238px first column. Below 992px the sidebar turns into an
+ * off-canvas overlay and the content takes the full width.
+ */
+
+.portal-shell {
+  display: grid;
+  grid-template-columns: 238px minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  background: var(--ws-page-bg);
+}
+
+.portal-sidebar {
+  display: flex;
+  flex-direction: column;
+  grid-row: 1 / span 3;
+  grid-column: 1;
+  min-width: 0;
+  background-color: var(--ws-sidebar);
+  border-right: 1px solid var(--ws-line);
+  transition: transform var(--ws-dur-normal) ease;
+}
+
+.portal-sidebar__brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ws-s4);
+  padding: var(--ws-s6);
+  border-bottom: 1px solid var(--ws-line);
+}
+
+.portal-sidebar__logo-button {
+  display: inline-flex;
+  flex: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--ws-r-card);
+  cursor: pointer;
+}
+
+/* Logo chip (§8.3): --ws-on-brand is pure white in both themes, so the blue
+   HUTECH wordmark always sits on white and never drops to 2.12:1. */
+.portal-logo-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ws-s2) var(--ws-s4);
+  background-color: var(--ws-on-brand);
+  border-radius: var(--ws-r-card);
+}
+
+.portal-logo-chip__img {
+  display: block;
+  width: 70px;
+  height: auto;
+}
+
+.portal-sidebar__names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-s1);
+  min-width: 0;
+}
+
+.portal-sidebar__product {
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: var(--ws-t-card);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.portal-sidebar__brandline {
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* The mobile overlay trigger is fixed: an off-canvas panel must never hide
+   its own only trigger (R31). It is revealed by the <992px media query. */
+.portal-sidebar__toggle {
+  display: none;
+}
+
+.portal-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ws-s2);
+  min-height: 0;
+  padding: var(--ws-s5) var(--ws-s4) var(--ws-s7);
+  overflow-y: auto;
+}
+
+.portal-nav__group-label {
+  margin: 0;
+  padding: var(--ws-s6) var(--ws-s4) var(--ws-s2);
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.portal-nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portal-nav__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s4);
+  width: 100%;
+  padding: var(--ws-s4);
+  color: var(--ws-fg-2);
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--ws-r-sm);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-card);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) ease, color var(--ws-dur-fast) ease;
+}
+
+.portal-nav__item:hover {
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+}
+
+.portal-nav__item:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: -2px;
+}
+
+.portal-nav__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  color: inherit;
+  opacity: .75;
+}
+
+.portal-nav__icon .portal-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.portal-nav__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-nav__badge {
+  margin-left: auto;
+  padding: var(--ws-s1) var(--ws-s3);
+  color: var(--ws-on-brand);
+  background-color: var(--ws-hutech);
+  border-radius: var(--ws-r-pill);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.portal-nav__item--active {
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+}
+
+.portal-nav__item--active .portal-nav__icon {
+  opacity: 1;
+}
+
+/* 3px left tick on the selected item (§6.2, §7.3) */
+.portal-nav__item--active::before {
+  position: absolute;
+  top: var(--ws-s2);
+  bottom: var(--ws-s2);
+  left: 0;
+  width: 3px;
+  background-color: var(--ws-hutech);
+  border-radius: 0 var(--ws-r-pill) var(--ws-r-pill) 0;
+  content: '';
+}
+
+.portal-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  grid-row: 1;
+  grid-column: 2;
+  align-items: center;
+  gap: var(--ws-s4) var(--ws-s7);
+  min-height: 58px;
+  padding: 0 var(--ws-s8);
+  background-color: var(--ws-panel);
+  border-bottom: 1px solid var(--ws-line);
+}
+
+.portal-topbar__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-s1);
+  min-width: 0;
+}
+
+.portal-topbar__title {
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: var(--ws-t-lead);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.portal-topbar__context {
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-sub);
+}
+
+.portal-topbar__search {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--ws-s3);
+  min-width: 0;
+  max-width: 340px;
+  height: 34px;
+  padding: 0 var(--ws-s4);
+  color: var(--ws-control);
+  background-color: var(--ws-chip-bg);
+  border-radius: var(--ws-r-sm);
+}
+
+.portal-topbar__search:focus-within {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.portal-search__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  color: var(--ws-fg);
+  background: none;
+  border: 0;
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+}
+
+.portal-search__input::placeholder {
+  color: var(--ws-muted);
+  opacity: 1;
+}
+
+.portal-search__input:focus-visible {
+  outline: none;
+}
+
+.portal-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s4);
+  min-width: 0;
+  margin-left: auto;
+}
+
+.portal-topbar__note {
+  margin: 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-chip);
+}
+
+.portal-main {
+  grid-row: 2;
+  grid-column: 2;
+  min-width: 0;
+  padding: var(--ws-s8) var(--ws-s9);
+}
+
+.portal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  grid-row: 3;
+  grid-column: 2;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ws-s2) var(--ws-s7);
+  padding: var(--ws-s6) var(--ws-s9);
+  color: var(--ws-fg-2);
+  background-color: var(--ws-panel);
+  border-top: 1px solid var(--ws-line);
+  font-size: var(--ws-t-sub);
+}
+
+.portal-footer__brand {
+  color: var(--ws-fg);
+  font-weight: 600;
+}
+
+.portal-footer__muted {
+  color: var(--ws-fg-2);
+  font-weight: 400;
+}
+
+.portal-footer__link {
+  color: var(--ws-hutech);
+  text-decoration: none;
+}
+
+.portal-footer__link:hover {
+  text-decoration: underline;
+}
+
+.portal-footer__link:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+/* Account menu (§6.2 topbar account block) -------------------------------- */
+
+.portal-account-menu__wrap {
+  position: relative;
+}
+
+.portal-account-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ws-s3);
+  min-height: 40px;
+  padding: var(--ws-s1) var(--ws-s4) var(--ws-s1) var(--ws-s1);
+  color: var(--ws-fg);
+  background-color: transparent;
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-pill);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) ease, border-color var(--ws-dur-fast) ease;
+}
+
+.portal-account-menu__trigger:hover {
+  background-color: var(--ws-hutech-l);
+  border-color: var(--ws-hutech-border);
+}
+
+.portal-account-menu__trigger:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.portal-account-menu__avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: var(--ws-on-brand);
+  background-color: var(--ws-hutech);
+  border-radius: var(--ws-r-sm);
+}
+
+.portal-account-menu__name {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-account-menu__caret {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.portal-account-menu {
+  position: absolute;
+  top: calc(100% + var(--ws-s2));
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: var(--ws-s2);
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-card);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-account-menu[aria-hidden="true"] {
+  display: none;
+}
+
+.portal-account-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s3);
+  width: 100%;
+  padding: var(--ws-s3) var(--ws-s4);
+  color: var(--ws-fg-2);
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--ws-r-sm);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) ease, color var(--ws-dur-fast) ease;
+}
+
+.portal-account-menu__item:hover {
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+}
+
+.portal-account-menu__item:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: -2px;
+}
+
+.portal-account-menu__theme-icon {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.portal-account-menu__theme-icon svg {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.portal-account-menu__theme-icon svg.is-visible {
+  opacity: 1;
+}
+
+.portal-account-menu__divider {
+  margin: var(--ws-s2) 0;
+  border: 0;
+  border-top: 1px solid var(--ws-line);
+}
+
+/* Shell dark rules (§7.3, §8.3) -------------------------------------------
+ * Blue TEXT on a dark surface uses --ws-hutech-text. They follow the shared
+ * dark catch-all above, so the equal-specificity rings here win the tie.
+ */
+
+[data-bs-theme="dark"] .portal-nav__item:hover,
+[data-bs-theme="dark"] .portal-nav__item--active {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-nav__item:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-topbar__search {
+  color: var(--ws-control-idle);
+}
+
+[data-bs-theme="dark"] .portal-topbar__search:focus-within {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-account-menu__trigger:focus-visible,
+[data-bs-theme="dark"] .portal-sidebar__logo-button:focus-visible,
+[data-bs-theme="dark"] .portal-sidebar__toggle:focus-visible,
+[data-bs-theme="dark"] .portal-footer__link:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-account-menu__item:hover {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-footer__link {
+  color: var(--ws-hutech-text);
+}
+
+/* Responsive (§6.2, §12.2) ----------------------------------------------- */
+
+@media (min-width: 992px) {
+  .portal-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .portal-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 40;
+    width: 238px;
+    border-right: 1px solid var(--ws-line);
+    /* Off-canvas: keep the links out of the tab order until the overlay opens. */
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+
+  .portal-sidebar--open {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: var(--ws-shadow-panel);
+  }
+
+  .portal-sidebar__brand {
+    padding-inline-start: calc(var(--ws-s10) + var(--ws-s7));
+  }
+
+  /* Fixed trigger with a compensating transform: the sidebar is a transformed
+     containing block, so translating the button by the panel width keeps it on
+     screen at the viewport's left edge both open and closed (R31). */
+  .portal-sidebar__toggle {
+    position: fixed;
+    top: var(--ws-s6);
+    left: var(--ws-s2);
+    z-index: 60;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 var(--ws-s3);
+    color: var(--ws-fg);
+    background-color: var(--ws-panel);
+    border: 1px solid var(--ws-line);
+    border-radius: var(--ws-r-sm);
+    font-family: var(--ws-font-body);
+    font-size: var(--ws-t-chip);
+    font-weight: 600;
+    visibility: visible;
+    cursor: pointer;
+    transition: transform var(--ws-dur-normal) ease;
+  }
+
+  .portal-sidebar:not(.portal-sidebar--open) .portal-sidebar__toggle {
+    transform: translateX(238px);
+  }
+
+  .portal-topbar,
+  .portal-main,
+  .portal-footer {
+    grid-column: 1 / -1;
+  }
+
+  .portal-topbar {
+    padding-inline-start: calc(var(--ws-s10) + var(--ws-s7));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .portal-topbar {
+    padding-right: var(--ws-s5);
+    padding-left: calc(var(--ws-s10) + var(--ws-s7));
+  }
+
+  .portal-topbar__context {
+    display: none;
+  }
+
+  /* Only the magnifier remains on the narrowest screens (§6.2). */
+  .portal-topbar__search {
+    flex: none;
+    justify-content: center;
+    width: 34px;
+    padding: 0;
+  }
+
+  .portal-search__input {
+    display: none;
+  }
+
+  .portal-account-menu__name {
+    display: none;
+  }
+
+  .portal-main {
+    padding: var(--ws-s7) var(--ws-s5);
+  }
+
+  .portal-footer {
+    padding: var(--ws-s6) var(--ws-s5);
+  }
+}
