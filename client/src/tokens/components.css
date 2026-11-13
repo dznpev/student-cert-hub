@@ -480,10 +480,14 @@
 [data-bs-theme="dark"] .btn-outline-primary {
   --bs-btn-color: var(--ws-hutech-text);
   --bs-btn-border-color: var(--ws-hutech-text);
-  --bs-btn-hover-color: var(--ws-hutech-text);
-  --bs-btn-hover-border-color: var(--ws-hutech-text);
-  --bs-btn-active-color: var(--ws-hutech-text);
-  --bs-btn-active-border-color: var(--ws-hutech-text);
+  /* Pressed state pairs the brand fill with the on-scrim label, exactly like
+     the hover rule below. These stay on the base selector because Bootstrap
+     reads the active slots from the element for `.btn-check:checked + .btn`
+     too, and the light rule's tinted background + blue text pair would be
+     illegible on dark. */
+  --bs-btn-active-color: var(--ws-on-scrim);
+  --bs-btn-active-bg: var(--ws-hutech);
+  --bs-btn-active-border-color: var(--ws-hutech);
   --bs-btn-disabled-color: var(--ws-hutech-text);
   --bs-btn-disabled-border-color: var(--ws-hutech-text);
 }
@@ -500,18 +504,24 @@
 
 /* Hover state of the outline button (§7.1). Bootstrap paints :hover from the
    --bs-btn-hover-* slots, so the brief's --bs-btn-color/--bs-btn-bg values are
-   repeated there — otherwise the rule would declare state that never renders. */
+   repeated there — otherwise the rule would declare state that never renders.
+   The border follows the fill; the pressed slots live on the base rule above. */
 [data-bs-theme="dark"] .btn-outline-primary:hover {
   --bs-btn-color: var(--ws-on-scrim);
   --bs-btn-bg: var(--ws-hutech);
   --bs-btn-hover-color: var(--ws-on-scrim);
   --bs-btn-hover-bg: var(--ws-hutech);
+  --bs-btn-hover-border-color: var(--ws-hutech);
 }
 
-/* Catch-all focus ring: blue TEXT on a dark surface must be --ws-hutech-text.
-   Declared after the per-element dark rules so it also wins their equal-
-   specificity ties (AC-02, AC-10). */
-[data-bs-theme="dark"] :focus-visible {
+/* Catch-all: elements with no dark-specific ring of their own still paint one
+   in the light-blue text token. The explicit `[data-bs-theme="dark"] .x:focus-
+   visible` rules above are at least as specific, so they keep their own token;
+   this rule only decides for elements that have none. The template editor
+   overlay is excluded through :not() — it sits on the certificate image, a
+   light surface in both themes, so it keeps its scoped dashed ring (§6.11)
+   instead of a light-blue ring that would fall below AC-10 on white. */
+[data-bs-theme="dark"] :focus-visible:not(.template-field-overlay) {
   outline-color: var(--ws-hutech-text);
 }
 
