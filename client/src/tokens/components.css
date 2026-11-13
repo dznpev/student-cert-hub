@@ -1,0 +1,484 @@
+/*
+ * HUTECH shared component styles.
+ *
+ * Every colour here is a var(--ws-*) token: this file must never hold a raw
+ * colour literal (tokens/index.css is the only place allowed to do that).
+ * Geometry uses the radius and spacing scales from §5.3 / §5.5, with the fixed
+ * component sizes of §5.7 where the scale has no matching step.
+ *
+ * References: §6.3 panel, §6.5 table, §6.6 chip, §6.7 filters, §6.8.1 page
+ * header, §7 component states, §12.2 empty state.
+ */
+
+/* Panel (§6.3) ------------------------------------------------------------ */
+
+.portal-panel {
+  overflow: hidden;
+  background-color: var(--ws-panel);
+  border-radius: var(--ws-r);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s4);
+  padding: var(--ws-s5) var(--ws-s6);
+  border-bottom: 1px solid var(--ws-line);
+}
+
+.portal-panel__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--ws-hutech);
+}
+
+.portal-panel__icon .portal-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.portal-panel__title {
+  margin: 0;
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: var(--ws-t-base);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.portal-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s3);
+  margin-left: auto;
+}
+
+/* 26x26 icon button inside a panel header (§6.3, states in §7.6) */
+.portal-panel__actions .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--ws-control);
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--ws-r-tick);
+  transition: background-color var(--ws-dur-fast) ease, color var(--ws-dur-fast) ease;
+}
+
+.portal-panel__actions .btn-icon .portal-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.portal-panel__actions .btn-icon:hover {
+  color: var(--ws-fg);
+  background-color: var(--ws-chip-bg);
+}
+
+.portal-panel__actions .btn-icon:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.portal-panel__actions .btn-icon:active {
+  background-color: var(--ws-chip-bg);
+}
+
+.portal-panel__actions .btn-icon:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.portal-panel__body {
+  padding: 0 0 var(--ws-s2);
+}
+
+/* Page header (§6.8.1) ---------------------------------------------------- */
+
+.portal-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ws-s7);
+  margin-bottom: var(--ws-s5);
+}
+
+.portal-page-header__text {
+  min-width: 0;
+}
+
+.portal-page-header__title {
+  margin: 0;
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.25px;
+}
+
+.portal-page-header__description {
+  margin: var(--ws-s3) 0 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-card);
+  line-height: 1.5;
+}
+
+.portal-page-header__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ws-s4);
+}
+
+/* Status chip (§6.6, palette in §5.2) ------------------------------------- */
+
+.portal-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 3px 9px;
+  color: var(--ws-muted);
+  white-space: nowrap;
+  background-color: var(--ws-chip-bg);
+  border-radius: var(--ws-r-pill);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .02em;
+}
+
+.portal-chip--success {
+  color: var(--ws-success);
+  background-color: var(--ws-success-l);
+}
+
+.portal-chip--warn {
+  color: var(--ws-warn);
+  background-color: var(--ws-warn-l);
+}
+
+.portal-chip--danger {
+  color: var(--ws-accent);
+  background-color: var(--ws-accent-l);
+}
+
+.portal-chip--info {
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+}
+
+.portal-chip--mute {
+  color: var(--ws-muted);
+  background-color: var(--ws-chip-bg);
+}
+
+/* Chip inside a selectable row must still show a focus ring (§7.4) */
+.portal-table tr:focus-visible .portal-chip,
+.portal-table tr[aria-selected="true"]:focus-visible .portal-chip {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+/* Table (§6.5) ------------------------------------------------------------ */
+
+.admin-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: var(--ws-r-card);
+}
+
+.admin-table-scroll:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.portal-table {
+  width: 100%;
+  color: var(--ws-fg-2);
+  border-collapse: collapse;
+  font-size: var(--ws-t-chip);
+}
+
+.portal-table thead th {
+  padding: var(--ws-s4) var(--ws-s6);
+  color: var(--ws-control-idle);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--ws-line);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.portal-table td,
+.portal-table tbody th {
+  padding: var(--ws-s4) var(--ws-s6);
+  color: var(--ws-fg-2);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--ws-line);
+}
+
+/* Row header holds data, not a column label: it follows the emphasised cell */
+.portal-table tbody th {
+  color: var(--ws-fg);
+  text-align: left;
+  font-weight: 600;
+}
+
+.portal-table tbody tr {
+  transition: background-color var(--ws-dur-fast) ease;
+}
+
+.portal-table tbody tr:hover {
+  background-color: var(--ws-chip-bg);
+}
+
+/* Emphasised column: certificate code, full name (§6.5) */
+.portal-table__cell-strong {
+  color: var(--ws-fg);
+  font-weight: 600;
+}
+
+.portal-table a {
+  color: var(--ws-hutech);
+  text-decoration: none;
+}
+
+.portal-table a:hover {
+  text-decoration: underline;
+}
+
+/* Sticky action column, driven by a wide min-width table (§6.5) */
+.portal-table--sticky-actions :is(th, td):last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  white-space: nowrap;
+  background-color: var(--ws-panel);
+  border-left: 1px solid var(--ws-line);
+  box-shadow: -6px 0 12px -10px var(--ws-control);
+}
+
+.portal-table--sticky-actions tbody tr:hover td:last-child {
+  background-color: var(--ws-chip-bg);
+}
+
+/* Buttons (§6.7, §7.1) ---------------------------------------------------- */
+
+.btn {
+  border-radius: var(--ws-r-sm);
+  transition: color var(--ws-dur-fast) ease, background-color var(--ws-dur-fast) ease,
+    border-color var(--ws-dur-fast) ease;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.btn-primary {
+  --bs-btn-color: var(--ws-on-brand);
+  --bs-btn-bg: var(--ws-hutech);
+  --bs-btn-border-color: var(--ws-hutech);
+  --bs-btn-hover-color: var(--ws-on-brand);
+  --bs-btn-hover-bg: var(--ws-hutech-d);
+  --bs-btn-hover-border-color: var(--ws-hutech-d);
+  --bs-btn-active-color: var(--ws-on-brand);
+  --bs-btn-active-bg: var(--ws-hutech-d);
+  --bs-btn-active-border-color: var(--ws-hutech-d);
+  --bs-btn-disabled-color: var(--ws-on-brand);
+  --bs-btn-disabled-bg: var(--ws-hutech);
+  --bs-btn-disabled-border-color: var(--ws-hutech);
+  --bs-btn-focus-box-shadow: none;
+}
+
+.btn-primary:disabled,
+.btn-primary.disabled {
+  opacity: .45;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--ws-hutech);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--ws-hutech);
+  --bs-btn-hover-color: var(--ws-hutech-d);
+  --bs-btn-hover-bg: var(--ws-hutech-l);
+  --bs-btn-hover-border-color: var(--ws-hutech);
+  --bs-btn-active-color: var(--ws-hutech-d);
+  --bs-btn-active-bg: var(--ws-hutech-l);
+  --bs-btn-active-border-color: var(--ws-hutech);
+  --bs-btn-disabled-color: var(--ws-hutech);
+  --bs-btn-disabled-border-color: var(--ws-hutech);
+  --bs-btn-focus-box-shadow: none;
+}
+
+/* Filter field (§6.7, states in §7.2) ------------------------------------- */
+
+.fld {
+  height: 32px;
+  padding: 0 var(--ws-s4);
+  color: var(--ws-fg);
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+  line-height: 1.4;
+  transition: border-color var(--ws-dur-fast) ease, background-color var(--ws-dur-fast) ease;
+}
+
+.fld::placeholder {
+  color: var(--ws-muted);
+  opacity: 1;
+}
+
+.fld:hover {
+  border-color: var(--ws-hutech-border);
+}
+
+.fld:focus-visible {
+  border-color: var(--ws-hutech);
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.fld:disabled {
+  color: var(--ws-control-idle);
+  background-color: var(--ws-chip-bg);
+  cursor: not-allowed;
+}
+
+.fld.is-invalid,
+.fld[aria-invalid="true"] {
+  border-color: var(--ws-accent);
+}
+
+/* Empty state (§12.2) ----------------------------------------------------- */
+
+.portal-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--ws-s4);
+  padding: var(--ws-s9) var(--ws-s7);
+  text-align: center;
+}
+
+.portal-empty-state__icon {
+  display: inline-flex;
+  color: var(--ws-control);
+}
+
+.portal-empty-state__icon .portal-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.portal-empty-state__description {
+  margin: 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-card);
+}
+
+.portal-empty-state__hint {
+  margin: 0;
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-chip);
+}
+
+.portal-empty-state__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s4);
+}
+
+/* Dark mode (§5.2, §8.2) --------------------------------------------------
+ * Only colours that need a different token are overridden here: backgrounds,
+ * borders and body text already follow the tokens declared in tokens/index.css.
+ * Blue TEXT on a dark surface must use --ws-hutech-text, never --ws-hutech.
+ */
+
+[data-bs-theme="dark"] .portal-panel__icon {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-panel__actions .btn-icon:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-chip--success {
+  color: var(--ws-success-text);
+}
+
+[data-bs-theme="dark"] .portal-chip--warn {
+  color: var(--ws-warn-text);
+}
+
+[data-bs-theme="dark"] .portal-chip--danger {
+  color: var(--ws-accent-text);
+}
+
+[data-bs-theme="dark"] .portal-chip--info {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-table tr:focus-visible .portal-chip,
+[data-bs-theme="dark"] .portal-table tr[aria-selected="true"]:focus-visible .portal-chip {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .admin-table-scroll:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-table a {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .btn:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  --bs-btn-color: var(--ws-hutech-text);
+  --bs-btn-border-color: var(--ws-hutech-text);
+  --bs-btn-hover-color: var(--ws-hutech-text);
+  --bs-btn-hover-border-color: var(--ws-hutech-text);
+  --bs-btn-active-color: var(--ws-hutech-text);
+  --bs-btn-active-border-color: var(--ws-hutech-text);
+  --bs-btn-disabled-color: var(--ws-hutech-text);
+  --bs-btn-disabled-border-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .fld:focus-visible {
+  border-color: var(--ws-hutech-text);
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .fld.is-invalid,
+[data-bs-theme="dark"] .fld[aria-invalid="true"] {
+  border-color: var(--ws-accent-text);
+}
+
+/* Motion (§5.6) ----------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .fld,
+  .portal-panel__actions .btn-icon,
+  .portal-table tbody tr {
+    transition: none;
+  }
+}
