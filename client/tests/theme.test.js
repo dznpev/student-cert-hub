@@ -69,6 +69,30 @@ describe('chế độ tối — quy tắc bắt buộc', () => {
     expect(css).toMatch(/\[data-bs-theme="dark"\]\s*:focus-visible:not\(\.template-field-overlay\)/)
   })
 
+  it('quy tắc chung đứng trước các focus ring riêng của chế độ tối', () => {
+    const css = stripComments(read('tokens/components.css'))
+    const catchAll = css.indexOf('[data-bs-theme="dark"] :focus-visible:not(.template-field-overlay)')
+    expect(catchAll).toBeGreaterThan(-1)
+    // Every explicit dark ring must follow the catch-all so it wins the tie.
+    const explicitRings = [...css.matchAll(/\[data-bs-theme="dark"\][^{]*:focus-visible[^{]*\{/g)]
+      .map((match) => match.index)
+      .filter((index) => !css.startsWith('[data-bs-theme="dark"] :focus-visible:not(', index))
+    expect(explicitRings.length).toBeGreaterThan(0)
+    for (const index of explicitRings) expect(index).toBeGreaterThan(catchAll)
+  })
+
+  it('nút outline tối khai báo hover slots trên quy tắc gốc để focus bàn phím đọc được', () => {
+    const css = stripComments(read('tokens/components.css'))
+    // `.btn:focus-visible` is painted from the hover slots: they must not live
+    // under `:hover` alone or the keyboard focus label falls back to the light
+    // rule's dark-blue-on-navy pair (1.37:1).
+    const rule = css.match(/\[data-bs-theme="dark"\]\s*\.btn-outline-primary\s*\{([^}]*)\}/)
+    expect(rule, 'thiếu quy tắc gốc [data-bs-theme="dark"] .btn-outline-primary').not.toBeNull()
+    expect(rule[1]).toMatch(/--bs-btn-hover-color:\s*var\(--ws-on-scrim\)/)
+    expect(rule[1]).toMatch(/--bs-btn-hover-bg:\s*var\(--ws-hutech\)/)
+    expect(rule[1]).toMatch(/--bs-btn-hover-border-color:\s*var\(--ws-hutech\)/)
+  })
+
   it('prefers-reduced-motion áp cho mọi phần tử, không liệt kê selector', () => {
     const css = stripComments(read('tokens/components.css'))
     const at = css.search(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{/)
