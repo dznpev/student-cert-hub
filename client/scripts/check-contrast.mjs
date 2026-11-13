@@ -102,6 +102,9 @@ const PALETTES = {
 // "name: ratio: PASS/FAIL" for every pair in the brief's table (spec §9.1).
 // Light/dark chip pairs use the -text variants on dark chips, because the base
 // success/warn/accent hues are too dark on #12301f / #2c2413 / #2e1a12.
+// Every pair is normal text and is held to 4.5:1 (AC-01, spec §9.2). A pair may
+// only use the 3:1 large-text threshold if it is explicitly marked `large: true`;
+// none of the brief's pairs qualify (all of the tokens are used at 9.5–15px).
 const PAIRS = [
   { mode: 'dark', fg: '--ws-fg-2', bg: '--ws-panel' },
   { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-panel' },
@@ -110,33 +113,33 @@ const PAIRS = [
   { mode: 'dark', fg: '--ws-warn-text', bg: '--ws-warn-l' },
   { mode: 'dark', fg: '--ws-accent-text', bg: '--ws-accent-l' },
   { mode: 'dark', fg: '--ws-muted', bg: '--ws-chip-bg' },
-  { mode: 'dark', fg: '#fff', bg: '--ws-hutech' },
+  { mode: 'dark', fg: '--ws-on-brand', bg: '--ws-hutech' },
   { mode: 'light', fg: '--ws-fg-2', bg: '--ws-panel' },
   { mode: 'light', fg: '--ws-hutech', bg: '--ws-panel' },
-  // --ws-control-idle is the faint label / table-header colour. In light mode
-  // #79879a on #fffffff5 measures ~3.65:1, so it is judged at the 3:1
-  // large-text threshold; both token values are pinned by the spec.
-  { mode: 'light', fg: '--ws-control-idle', bg: '--ws-panel', min: 3 },
+  { mode: 'light', fg: '--ws-control-idle', bg: '--ws-panel' },
   { mode: 'light', fg: '--ws-success', bg: '--ws-success-l' },
   { mode: 'light', fg: '--ws-warn', bg: '--ws-warn-l' },
   { mode: 'light', fg: '--ws-accent', bg: '--ws-accent-l' },
   { mode: 'light', fg: '--ws-muted', bg: '--ws-chip-bg' },
-  { mode: 'light', fg: '#fff', bg: '--ws-hutech' },
+  { mode: 'light', fg: '--ws-on-brand', bg: '--ws-hutech' },
 ]
 
 const ANCHOR = '--bs-body-bg'
+const NORMAL_TEXT_MIN = 4.5
+const LARGE_TEXT_MIN = 3
 let failed = false
 
 function toReference(value) {
   return value.startsWith('#') ? value : `var(${value})`
 }
 
-for (const { mode, fg, bg, min = 4.5 } of PAIRS) {
+for (const { mode, fg, bg, large = false } of PAIRS) {
   const vars = PALETTES[mode]
   const anchor = parseColor(resolveValue(`var(${ANCHOR})`, vars))
   const background = composite(parseColor(resolveValue(toReference(bg), vars)), anchor)
   const foreground = composite(parseColor(resolveValue(toReference(fg), vars)), background)
   const ratio = contrastRatio(foreground, background)
+  const min = large ? LARGE_TEXT_MIN : NORMAL_TEXT_MIN
   const pass = ratio >= min
   if (!pass) failed = true
   console.log(`${mode} ${fg} on ${bg}: ${ratio.toFixed(2)}: ${pass ? 'PASS' : 'FAIL'}`)

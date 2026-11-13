@@ -38,8 +38,14 @@
   --ws-muted: #556274;
   --ws-line: #e4eaf3;
   --ws-control: #708197;
-  --ws-control-idle: #79879a;
+  --ws-control-idle: #667080;
+  /*
+   * --ws-control-idle is intentionally not spec §5.1's #79879a: that value is
+   * 3.65:1 on --ws-panel and fails AC-01 for 9.5px labels. #667080 measures 5.00:1.
+   */
   --ws-chip-bg: #edf1f6;
+  --ws-chip-bg: #edf1f6;
+  --ws-sidebar: #fffffff5;
 
   /* Glass / scrim */
   --ws-scrim: #0c1524a8;
@@ -146,6 +152,7 @@
   --ws-chip-bg: #1c2942;
   --ws-control: #6b7d93;
   --ws-control-idle: #7b8ca2;
+  --ws-sidebar: #101d2e;
 
   /* Elevation */
   --ws-shadow-panel: 0 2px 10px #050a1247, 0 12px 34px #050a1240;
