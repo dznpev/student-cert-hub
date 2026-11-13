@@ -30,7 +30,7 @@ Thumbs.db
 !.vscode/settings.json
 .idea/
 
-# Tài liệu thiết kế nội bộ (không commit)
+# Tài liệu thiết kế
 DESIGN.md
 docs/superpowers/
 .superpowers/
