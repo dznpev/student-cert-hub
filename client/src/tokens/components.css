@@ -294,6 +294,21 @@
     border-color var(--ws-dur-fast) ease;
 }
 
+/* Compact variants keep their own scale: §5.7 fixes only the standard button at
+   32px (and the panel-header icon button at 26x26). `.btn-sm` stays near 26px
+   with the §5.4 sub-text size and Bootstrap's compact horizontal padding;
+   `.btn-link` is content-sized again, with its vertical padding restored. */
+.btn.btn-sm {
+  --bs-btn-font-size: var(--ws-t-sub);
+  --bs-btn-padding-y: var(--ws-s1);
+  min-height: 26px;
+}
+
+.btn.btn-link {
+  --bs-btn-padding-y: var(--ws-s2);
+  min-height: 0;
+}
+
 .btn:focus-visible {
   outline: 2px solid var(--ws-hutech);
   outline-offset: 2px;
