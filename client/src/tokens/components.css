@@ -135,7 +135,9 @@
   display: flex;
   flex: none;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--ws-s4);
+  margin-left: auto;
 }
 
 /* Status chip (§6.6, palette in §5.2) ------------------------------------- */
@@ -198,8 +200,11 @@
 }
 
 .admin-table-scroll:focus-visible {
+  /* Inset ring: the panel body is flush with the scroll region (§6.3 body
+     padding 0 0 4px, panel overflow hidden), so an outward ring would be
+     clipped and AC-02 forbids that. */
   outline: 2px solid var(--ws-hutech);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .portal-table {
@@ -278,6 +283,12 @@
 /* Buttons (§6.7, §7.1) ---------------------------------------------------- */
 
 .btn {
+  --bs-btn-font-size: var(--ws-t-base);
+  --bs-btn-padding-y: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
   border-radius: var(--ws-r-sm);
   transition: color var(--ws-dur-fast) ease, background-color var(--ws-dur-fast) ease,
     border-color var(--ws-dur-fast) ease;
