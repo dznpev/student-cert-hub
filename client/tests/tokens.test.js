@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest'
 
 const css = readFileSync(new URL('../src/tokens/index.css', import.meta.url), 'utf-8')
 
+// Comments are stripped so prose about a token can never be mistaken for its
+// declaration.
+const stripped = css.replace(/\/\*[\s\S]*?\*\//g, '')
+
+// Returns the full text of the block that starts at `selector {`.
+function tokenBlock(source, selector) {
+  const start = source.indexOf(`${selector} {`)
+  if (start === -1) return ''
+  return source.slice(start, source.indexOf('}', start) + 1)
+}
+
 const REQUIRED_TOKENS = [
   '--ws-hutech', '--ws-hutech-d', '--ws-hutech-l', '--ws-hutech-text', '--ws-hutech-border',
   '--ws-accent', '--ws-accent-l', '--ws-warn', '--ws-warn-l',
@@ -33,5 +44,17 @@ describe('tokens/index.css', () => {
 
   it('ánh xạ --bs-primary sang --ws-hutech', () => {
     expect(css).toMatch(/--bs-primary:\s*var\(--ws-hutech\)/)
+  })
+
+  it('khối tối khai báo --ws-hutech-text', () => {
+    const dark = tokenBlock(stripped, '[data-bs-theme="dark"]')
+    expect(dark, 'thiếu khối [data-bs-theme="dark"]').not.toBe('')
+    expect(dark).toContain('--ws-hutech-text:')
+  })
+
+  it(':root không khai báo --ws-hutech-text (chữ xanh chỉ dùng ở chế độ tối)', () => {
+    const root = tokenBlock(stripped, ':root')
+    expect(root, 'thiếu khối :root').not.toBe('')
+    expect(root).not.toContain('--ws-hutech-text')
   })
 })

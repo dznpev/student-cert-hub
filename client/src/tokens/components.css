@@ -498,13 +498,33 @@
   border-color: var(--ws-accent-text);
 }
 
-/* Motion (§5.6) ----------------------------------------------------------- */
+/* Hover state of the outline button (§7.1). Bootstrap paints :hover from the
+   --bs-btn-hover-* slots, so the brief's --bs-btn-color/--bs-btn-bg values are
+   repeated there — otherwise the rule would declare state that never renders. */
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  --bs-btn-color: var(--ws-on-scrim);
+  --bs-btn-bg: var(--ws-hutech);
+  --bs-btn-hover-color: var(--ws-on-scrim);
+  --bs-btn-hover-bg: var(--ws-hutech);
+}
+
+/* Catch-all focus ring: blue TEXT on a dark surface must be --ws-hutech-text.
+   Declared after the per-element dark rules so it also wins their equal-
+   specificity ties (AC-02, AC-10). */
+[data-bs-theme="dark"] :focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+/* Motion (§5.6, AC-06) ----------------------------------------------------
+ * No transition may run at all when the user asks for reduced motion, so the
+ * rule covers every element instead of enumerating today's animated ones.
+ */
 
 @media (prefers-reduced-motion: reduce) {
-  .btn,
-  .fld,
-  .portal-panel__actions .btn-icon,
-  .portal-table tbody tr {
-    transition: none;
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
