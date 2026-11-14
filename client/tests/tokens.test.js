@@ -60,6 +60,14 @@ describe('index.css', () => {
     expect(main).not.toContain('./tokens/index.css')
     expect(main).not.toContain('./tokens/components.css')
   })
+
+  // R149/G6: the contrast gate used to be a manual command, so nothing ran it.
+  // `pretest` makes npm run it before the suite; deleting the hook fails here.
+  it('npm test chạy cổng tương phản trước bộ test', () => {
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'))
+    expect(pkg.scripts.pretest).toBe('node scripts/check-contrast.mjs')
+    expect(pkg.scripts.test).toBe('vitest run')
+  })
 })
 
 describe('tokens/index.css', () => {
@@ -90,5 +98,24 @@ describe('tokens/index.css', () => {
     const root = tokenBlock(stripped, ':root')
     expect(root, 'thiếu khối :root').not.toBe('')
     expect(root).not.toContain('--ws-hutech-text')
+  })
+
+  // Every token the §8.0 bridge added must exist in BOTH theme blocks: a token
+  // declared in one block only silently inherits the other theme's value when
+  // `data-bs-theme` flips, which is the bug the wave exists to close.
+  it('token ngữ nghĩa mới khai báo ở cả khối sáng và khối tối', () => {
+    const root = tokenBlock(stripped, ':root')
+    const dark = tokenBlock(stripped, '[data-bs-theme="dark"]')
+    expect(root, 'thiếu khối :root').not.toBe('')
+    expect(dark, 'thiếu khối [data-bs-theme="dark"]').not.toBe('')
+    const semantic = [
+      '--ws-danger-text',
+      '--ws-alert-success-bg', '--ws-alert-warn-bg', '--ws-alert-danger-bg', '--ws-alert-info-bg',
+      '--ws-check-mark', '--ws-radio-mark',
+    ]
+    for (const token of semantic) {
+      expect(root, `${token} ở khối sáng`).toContain(`${token}:`)
+      expect(dark, `${token} ở khối tối`).toContain(`${token}:`)
+    }
   })
 })

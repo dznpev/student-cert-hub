@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "pretest": "node scripts/check-contrast.mjs",
     "test": "vitest run"
   },
   "dependencies": {

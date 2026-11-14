@@ -6,8 +6,16 @@ export default function AppSidebar({ navigationId, navigationLabel, sections, ac
 
   return (
     <aside className={'portal-sidebar' + (menuOpen ? ' portal-sidebar--open' : '')}>
-      {/* The sliding surface is this inner panel, so the fixed mobile trigger
-          below is never a descendant of the transform (R37). */}
+      {/* The trigger comes before the panel in DOM order so opening the overlay
+          keeps it inside the tab sequence (a Tab from the trigger enters the
+          nav). It is position:fixed below 992px, so it stays reachable without
+          being a descendant of the sliding surface (R37). */}
+      <button type="button" className="portal-sidebar__toggle"
+        aria-controls={navigationId} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
+        Menu
+      </button>
+
+      {/* The sliding surface is this inner panel, never the trigger. */}
       <div className="portal-sidebar__panel">
         <div className="portal-sidebar__brand">
           {onHome ? (
@@ -54,11 +62,6 @@ export default function AppSidebar({ navigationId, navigationLabel, sections, ac
           {children}
         </nav>
       </div>
-
-      <button type="button" className="portal-sidebar__toggle"
-        aria-controls={navigationId} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
-        Menu
-      </button>
     </aside>
   )
 }

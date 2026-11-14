@@ -18,11 +18,17 @@ const paths = {
   error: 'm12 3 10 18H2L12 3Z M12 9v5 M12 17h.01',
 }
 
+// `account` is the account group's own id and uses the `accounts` glyph. It is
+// registered explicitly so `PortalIcon.names` is truthful: a caller (and the
+// registered-name test) can prove the name exists instead of finding out
+// through the `paths.overview` fallback in the render below.
+paths.account = paths.accounts
+
 export default function PortalIcon({ name }) {
   return (
     <svg className="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-      <path d={paths[name === 'account' ? 'accounts' : name] ?? paths.overview} />
+      <path d={paths[name] ?? paths.overview} />
     </svg>
   )
 }

@@ -14,7 +14,7 @@ export default function AppTopbar({ title, context, search, onSearchChange, sear
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3.5-3.5" />
           </svg>
-          <input type="search" className="portal-search__input" aria-label={searchPlaceholder}
+          <input id="portal-search" type="search" className="portal-search__input" aria-label={searchPlaceholder}
             placeholder={searchPlaceholder} value={search}
             onChange={(event) => onSearchChange?.(event.target.value)} />
         </div>

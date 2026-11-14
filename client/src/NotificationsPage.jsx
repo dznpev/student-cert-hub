@@ -8,7 +8,7 @@ export default function NotificationsPage({ notifications, onReadNotification })
   const unreadCount = notifications.filter((item) => !item.isRead).length
 
   return (
-    <div className="card-body p-3">
+    <div className="p-3">
       <h2 className="h5 text-primary mb-2" id="student-notification-heading">Thông báo</h2>
       <p className="small text-body-secondary" role="status">{unreadCount} thông báo chưa đọc</p>
       {notifications.length === 0 ? (

@@ -138,9 +138,10 @@
 }
 
 /* Bootstrap surfaces that are not portal panels yet -----------------------
- * The activity form and the unreachable-section fallback in App.jsx still use
- * Bootstrap's `.card`; these rules keep their surface on tokens now that the
- * legacy admin palette is gone.
+ * Only the activity form (`ActivityForm.jsx`) and the unreachable-section
+ * fallback in `App.jsx` still render Bootstrap's `.card` / `.card-body`; these
+ * rules keep their surface on tokens now that the legacy admin palette is gone.
+ * Every other surface in the app is a `.portal-panel`.
  */
 
 .page-title {
@@ -159,6 +160,108 @@
   background-color: var(--ws-panel);
   border-color: var(--ws-line);
   border-radius: var(--ws-r);
+}
+
+/* Bootstrap semantic surfaces (§8.0 bridge) -------------------------------
+ * The app keeps Bootstrap's class names (§12.1) and the bridge recolours them.
+ * The `--bs-*` variables reach most of them; the ones below carry their own
+ * hardcoded colours or !important utilities, so they need a rule each.
+ */
+
+/* Semantic text utilities. `.text-primary` paints from --bs-primary-rgb with
+   !important, i.e. #00529c, which measures 2.12:1 on the dark panel: dark mode
+   uses the text variant of the brand exactly like links and outline buttons
+   (§5.1). `.text-danger` is what a user reads when a form rejects them, so
+   both themes read it from --ws-danger-text. */
+[data-bs-theme="dark"] .text-primary {
+  color: var(--ws-hutech-text) !important;
+}
+
+.text-danger {
+  color: var(--ws-danger-text) !important;
+}
+
+/* Feedback surfaces (§8.0 names the alert explicitly): keep the class, take
+   the subtle surface as the fill AND the border, and the status hue as the
+   text. The -text variants carry the dark theme, where the base hues are too
+   dark on the lifted surface. */
+.alert-success {
+  --bs-alert-color: var(--ws-success);
+  --bs-alert-bg: var(--ws-alert-success-bg);
+  --bs-alert-border-color: var(--ws-alert-success-bg);
+  --bs-alert-link-color: var(--ws-success);
+}
+
+.alert-warning {
+  --bs-alert-color: var(--ws-warn);
+  --bs-alert-bg: var(--ws-alert-warn-bg);
+  --bs-alert-border-color: var(--ws-alert-warn-bg);
+  --bs-alert-link-color: var(--ws-warn);
+}
+
+.alert-danger {
+  --bs-alert-color: var(--ws-accent);
+  --bs-alert-bg: var(--ws-alert-danger-bg);
+  --bs-alert-border-color: var(--ws-alert-danger-bg);
+  --bs-alert-link-color: var(--ws-accent);
+}
+
+.alert-info {
+  --bs-alert-color: var(--ws-hutech);
+  --bs-alert-bg: var(--ws-alert-info-bg);
+  --bs-alert-border-color: var(--ws-alert-info-bg);
+  --bs-alert-link-color: var(--ws-hutech);
+}
+
+[data-bs-theme="dark"] .alert-success {
+  --bs-alert-color: var(--ws-success-text);
+  --bs-alert-link-color: var(--ws-success-text);
+}
+
+[data-bs-theme="dark"] .alert-warning {
+  --bs-alert-color: var(--ws-warn-text);
+  --bs-alert-link-color: var(--ws-warn-text);
+}
+
+[data-bs-theme="dark"] .alert-danger {
+  --bs-alert-color: var(--ws-accent-text);
+  --bs-alert-link-color: var(--ws-accent-text);
+}
+
+[data-bs-theme="dark"] .alert-info {
+  --bs-alert-color: var(--ws-hutech-text);
+  --bs-alert-link-color: var(--ws-hutech-text);
+}
+
+/* A list inside a panel belongs to that panel: Bootstrap would repaint every
+   row with the page colour, so the rows inherit the panel surface and keep the
+   hairline between them (§6.3). */
+.list-group {
+  --bs-list-group-bg: transparent;
+  --bs-list-group-border-color: var(--ws-line);
+}
+
+/* A checked checkbox/radio is a filled control, and Bootstrap hardcodes
+   #0d6efd on it — a fourth blue next to the brand and the two legacy ones
+   (§11). It fills with the brand in both themes. On the dark panel #00529c is
+   only 2.12:1, so the fill switches to the light text variant and the mark
+   takes the dark ink (both tokens, in both blocks of tokens/index.css). */
+.form-check-input:checked {
+  background-color: var(--ws-hutech);
+  border-color: var(--ws-hutech);
+}
+
+.form-check-input:checked[type="checkbox"] {
+  --bs-form-check-bg-image: var(--ws-check-mark);
+}
+
+.form-check-input:checked[type="radio"] {
+  --bs-form-check-bg-image: var(--ws-radio-mark);
+}
+
+[data-bs-theme="dark"] .form-check-input:checked {
+  background-color: var(--ws-hutech-text);
+  border-color: var(--ws-hutech-text);
 }
 
 /* Page header (§6.8.1) ---------------------------------------------------- */
@@ -989,11 +1092,13 @@ select.fld {
    Selectors that declare their own transition are deliberately absent —
    `.portal-metric`, `.portal-nav__item`, `.portal-bell`, `.portal-sidebar__panel`,
    the account-menu trigger/item, `.btn`, `.fld` and table rows — because this
-   shorthand would replace theirs. Listing the sidebar here is what killed its
-   mobile slide (R150). */
+   shorthand would replace theirs. `.form-control`, `.form-select` and the table
+   row selector are absent for the same reason: Bootstrap gives them a 150 ms
+   interaction transition, and a 220 ms theme fade would override it. Listing
+   the sidebar here is what killed its mobile slide (R150). */
 @media (prefers-reduced-motion: no-preference) {
-  :is(body, .card, .form-control, .form-select, .text-body-secondary,
-    .table > :not(caption) > * > *, .portal-panel, .portal-topbar,
+  :is(body, .card, .text-body-secondary,
+    .portal-panel, .portal-topbar,
     .portal-footer, .portal-account-menu, .portal-notifications) {
     transition: background-color var(--ws-dur-slow) ease, color var(--ws-dur-slow) ease,
       border-color var(--ws-dur-slow) ease, box-shadow var(--ws-dur-slow) ease;

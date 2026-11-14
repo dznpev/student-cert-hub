@@ -13,6 +13,7 @@ import {
   searchPlaceholderFor,
 } from '../src/navigationSections.js'
 import PortalIcon from '../src/PortalIcon.jsx'
+import { studentAccountSections, studentPages } from '../src/studentNavigation.js'
 import { ThemeContext } from '../src/themeContext.js'
 
 const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf-8')
@@ -131,6 +132,13 @@ describe('navigationSections — nhóm điều hướng', () => {
         expect(PortalIcon.names, item.id).toContain(item.icon.props.name)
         expect(item.icon.props.name, item.id).toBe(item.id)
       }
+    }
+
+    // The student portal's names are data (iconName), not icon nodes, and they
+    // were unguarded: a typo there renders the overview glyph with every gate
+    // green because PortalIcon falls back to it.
+    for (const { id, iconName } of [...studentPages, ...studentAccountSections]) {
+      expect(PortalIcon.names, id).toContain(iconName)
     }
   })
 })

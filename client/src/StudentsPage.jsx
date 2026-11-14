@@ -32,7 +32,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
     setConfirmProfileStatus(false)
     setEditingProfile(false)
     requestAnimationFrame(() => {
-      const target = profileTrigger.current?.isConnected ? profileTrigger.current : document.querySelector('.portal-search__input')
+      const target = profileTrigger.current?.isConnected ? profileTrigger.current : document.getElementById('portal-search')
       target?.focus()
     })
   }

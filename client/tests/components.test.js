@@ -3,6 +3,7 @@ import * as React from 'react'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
+import ManagementAccountForm from '../src/ManagementAccountForm.jsx'
 import PortalChip from '../src/components/PortalChip.jsx'
 import PortalMetricCard from '../src/components/PortalMetricCard.jsx'
 import PortalPanel from '../src/components/PortalPanel.jsx'
@@ -574,7 +575,9 @@ describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
     const table = recentCertificatesTable(html)
     const rows = rowsOf(table)
 
-    expect(summary.scopedCertificates).toHaveLength(4)
+    // Derived from the fixture: every sample certificate is in scope, so the
+    // expectation moves with the data instead of pinning a literal 4.
+    expect(summary.scopedCertificates).toHaveLength(sampleCertificates.length)
     expect(summary.scopedCertificates.some(({ certificateId }) => certificateId === 90)).toBe(false)
     expect(table).not.toContain('CN-NGOAI-PHAM-VI')
     expect(rows).toHaveLength(summary.scopedCertificates.length)
@@ -751,6 +754,28 @@ describe('bảng tone trạng thái', () => {
   })
 })
 
+describe('form tài khoản quản trị', () => {
+  // I3: this form was the last interactive `.card` in the app. Rendering it is
+  // the only assertion that catches a revert, because the surface is a class on
+  // the root element and nothing else in the suite touches this file.
+  const renderForm = (props) => renderToStaticMarkup(
+    createElement(ManagementAccountForm, { onSave() {}, onCancel() {}, ...props }))
+
+  it('dùng PortalPanel với titleId, không còn .card / .card-body', () => {
+    const html = renderForm({})
+    expect(html).toContain('class="portal-panel portal-panel--stacked portal-panel--padded"')
+    expect(html).toContain('aria-labelledby="management-form-title"')
+    expect(html).toContain('id="management-form-title"')
+    expect(html).not.toContain('card-body')
+    expect(html).not.toContain('class="card')
+    // The behaviour the wrapper carried over: the password fields exist only
+    // when creating, and the current account cannot change its own role.
+    expect(html).toContain('id="management-password"')
+    expect(renderForm({ account: { username: 'a', fullName: 'A', role: 'admin' }, isCurrentAccount: true }))
+      .toContain('disabled=""')
+  })
+})
+
 describe('các trang quản trị còn lại', () => {
   const pages = ['StudentsPage', 'ActivitiesPage', 'ParticipationsPage', 'CohortsPage', 'ImportsPage', 'AuditLogsPage', 'CertificateTemplatesPage', 'SuperAdminAccounts']
   const pageSrc = (page) => readFileSync(new URL(`../src/${page}.jsx`, import.meta.url), 'utf-8')
@@ -825,7 +850,7 @@ describe('cổng sinh viên và màn hình độc lập', () => {
   // StudentPasswordReset is the reset *view* of the login card, so it renders
   // its toggle into that card instead of owning a surface of its own.
   const authScreens = ['StudentLogin.jsx', 'StudentAccountLink.jsx', 'CertificateVerification.jsx']
-  const studentFiles = ['StudentPortal.jsx', 'StudentOverview.jsx', 'StudentRecords.jsx', ...standalonePages]
+  const studentFiles = ['StudentPortal.jsx', 'StudentOverview.jsx', 'StudentRecords.jsx', 'NotificationsPage.jsx', ...standalonePages]
 
   it('4 màn hình độc lập có nút đổi chế độ sáng tối', () => {
     for (const page of standalonePages) {
@@ -833,8 +858,16 @@ describe('cổng sinh viên và màn hình độc lập', () => {
     }
   })
 
+  // The legacy light-blue gradient lived in src/index.css, so checking only
+  // components.css (which never held the value) could not fail. Both
+  // stylesheets are checked, and the legacy selector itself must be gone:
+  // restoring the old block fails here.
   it('màn hình độc lập không còn gradient cũ', () => {
-    expect(componentsCss()).not.toContain('#eef8ff')
+    for (const file of ['index.css', 'tokens/components.css']) {
+      const css = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+      expect(css, file).not.toContain('#eef8ff')
+      expect(css, file).not.toContain('student-login-screen')
+    }
   })
 
   // R127: the four screens share one page-token background, one token card and
@@ -996,6 +1029,11 @@ describe('cổng sinh viên và màn hình độc lập', () => {
     expect(studentAccountSections.map(({ title }) => title)).toEqual(['Tài khoản', 'Đổi mật khẩu'])
     // AppShell consumes the group builder instead of defining its own.
     expect(read('AppShell.jsx')).toContain("import { BACK_TO_SECTIONS, createAccountGroup } from '../accountNavigation.js'")
+    // R132 wiring: the portal is the side that must hand the reduced group to
+    // the shell. The group only renders after an account page opens, so no
+    // static render can reach it — a dropped prop here restores the duplicate
+    // "Hồ sơ" and every other assertion stays green.
+    expect(pageSrc('StudentPortal.jsx')).toContain('accountSections={withIcons(studentAccountSections)}')
 
     const withIconNodes = (items) => items.map(({ iconName, ...item }) => ({
       ...item, icon: createElement(PortalIcon, { name: iconName }),
@@ -1071,30 +1109,61 @@ describe('cổng sinh viên và màn hình độc lập', () => {
 
   // R137: the build tolerates a free variable and oxlint does not enable
   // no-undef, so an actual render is the only gate that catches a binding that
-  // moved out of the module (the studentPages regression).
-  it('render cổng sinh viên với bộ prop tối thiểu (smoke test)', () => {
+  // moved out of the module (the studentPages regression). All three branches
+  // are rendered: a break in the signed-in or preview render used to ship with
+  // every gate green, because only the signed-out login path was reached.
+  it('render cổng sinh viên ở cả ba nhánh: đăng nhập, đã đăng nhập, xem thử (smoke test)', () => {
     const noop = () => {}
-    const html = renderToStaticMarkup(
+    const props = {
+      students: [],
+      cohorts: [],
+      activities: [],
+      participations: [],
+      certificates: [],
+      notifications: [],
+      studentPasswords: {},
+      onChangePassword: noop,
+      onUpdateEmail: noop,
+      onReadNotification: noop,
+      onManagementSignIn: noop,
+      onActivateDemoStudent: noop,
+      onVerifyDemoActivation: noop,
+      onRequestReset: noop,
+      onResetPassword: noop,
+    }
+    const render = (overrides = {}) => renderToStaticMarkup(
       createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme() {} } },
-        createElement(StudentPortal, {
-          students: [],
-          cohorts: [],
-          activities: [],
-          participations: [],
-          certificates: [],
-          notifications: [],
-          studentPasswords: {},
-          onChangePassword: noop,
-          onUpdateEmail: noop,
-          onReadNotification: noop,
-          onManagementSignIn: noop,
-          onActivateDemoStudent: noop,
-          onVerifyDemoActivation: noop,
-          onRequestReset: noop,
-          onResetPassword: noop,
-        })))
+        createElement(StudentPortal, { ...props, ...overrides })))
 
-    expect(html).toContain('portal-auth-card')
-    expect(html).toContain('Chọn loại tài khoản để tiếp tục đăng nhập mẫu.')
+    // Signed out: the login card.
+    const signedOut = render()
+    expect(signedOut).toContain('portal-auth-card')
+    expect(signedOut).toContain('Chọn loại tài khoản để tiếp tục đăng nhập mẫu.')
+
+    // Signed in: the shell, every student section and the overview tiles —
+    // the branch the missing studentPages import used to blank.
+    const signedIn = render({
+      students: sampleStudents,
+      cohorts: sampleCohorts,
+      activities: sampleActivities,
+      participations: sampleParticipations,
+      certificates: sampleCertificates,
+      initialState: { studentId: String(sampleStudents[0].studentId), signedIn: true },
+    })
+    expect(signedIn).toContain('portal-shell')
+    expect(signedIn).toContain('portal-topbar__title">Cổng sinh viên')
+    for (const { title } of studentPages) expect(signedIn, title).toContain(title)
+    expect(signedIn).toContain('portal-metric-grid')
+    expect(signedIn).toContain('id="student-notifications"')
+
+    // Preview: the legacy picker chrome, and no sidebar.
+    const preview = render({
+      students: sampleStudents,
+      cohorts: sampleCohorts,
+      initialState: { preview: true },
+    })
+    expect(preview).toContain('portal-shell--no-sidebar')
+    expect(preview).toContain('Chọn hồ sơ xem thử')
+    expect(preview).toContain('Về đăng nhập')
   })
 })

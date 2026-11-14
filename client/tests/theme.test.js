@@ -46,8 +46,13 @@ describe('chế độ tối', () => {
   })
 
   it('focus ring ở chế độ tối dùng màu chữ xanh sáng', () => {
-    const css = read('tokens/components.css')
-    expect(css).toMatch(/focus-visible[\s\S]*--ws-hutech-text/)
+    const css = stripComments(read('tokens/components.css'))
+    // Anchored to the catch-all rule itself: `/focus-visible[\s\S]*--ws-hutech-text/`
+    // matched any later occurrence of the token anywhere in the file, so an
+    // unrelated rule could keep it green after the ring was removed.
+    expect(css).toMatch(
+      /\[data-bs-theme="dark"\]\s*:focus-visible:not\(\.template-field-overlay\)\s*\{\s*outline-color:\s*var\(--ws-hutech-text\)/,
+    )
   })
 
   it('tôn trọng prefers-reduced-motion', () => {
@@ -123,6 +128,55 @@ describe('chế độ tối — quy tắc bắt buộc', () => {
       createElement(ThemeContext.Provider, { value }, createElement(ThemeProbe)),
     )
     expect(html).toBe('<span>theme,toggleTheme|dark|function</span>')
+  })
+})
+
+// The contrast script grades the token VALUES; these assertions grade the
+// WIRING. A token can measure 8:1 and reach nothing if the rule that consumes
+// it is renamed, reordered or dropped, and no colour measurement notices.
+describe('bắc cầu Bootstrap ngữ nghĩa (§8.0)', () => {
+  const components = () => stripComments(read('tokens/components.css'))
+  const body = (css, selector) => {
+    const rule = css.match(new RegExp(`${selector}\\s*\\{([^}]*)\\}`))
+    expect(rule, `thiếu quy tắc ${selector}`).not.toBeNull()
+    return rule[1]
+  }
+
+  it('tiện ích chữ đọc từ token chữ, không từ bảng màu Bootstrap', () => {
+    const css = components()
+    expect(body(css, '\\.text-danger')).toMatch(/color:\s*var\(--ws-danger-text\)\s*!important/)
+    expect(body(css, '\\[data-bs-theme="dark"\\]\\s*\\.text-primary'))
+      .toMatch(/color:\s*var\(--ws-hutech-text\)\s*!important/)
+  })
+
+  it('bốn alert lấy nền từ token bề mặt và chữ từ token trạng thái', () => {
+    const css = components()
+    const themes = [
+      ['success', '--ws-success', '--ws-success-text', '--ws-alert-success-bg'],
+      ['warning', '--ws-warn', '--ws-warn-text', '--ws-alert-warn-bg'],
+      ['danger', '--ws-accent', '--ws-accent-text', '--ws-alert-danger-bg'],
+      ['info', '--ws-hutech', '--ws-hutech-text', '--ws-alert-info-bg'],
+    ]
+    for (const [name, lightText, darkText, surface] of themes) {
+      const light = body(css, `\\.alert-${name}`)
+      expect(light, `.alert-${name}`).toMatch(new RegExp(`--bs-alert-color:\\s*var\\(${lightText}\\)`))
+      expect(light, `.alert-${name}`).toMatch(new RegExp(`--bs-alert-bg:\\s*var\\(${surface}\\)`))
+      expect(body(css, `\\[data-bs-theme="dark"\\]\\s*\\.alert-${name}`), `alert-${name} tối`)
+        .toMatch(new RegExp(`--bs-alert-color:\\s*var\\(${darkText}\\)`))
+    }
+  })
+
+  it('ô đã chọn tô bằng thương hiệu, chế độ tối đổi sang biến thể chữ', () => {
+    const css = components()
+    expect(body(css, '\\.form-check-input:checked'))
+      .toMatch(/background-color:\s*var\(--ws-hutech\)/)
+    expect(body(css, '\\[data-bs-theme="dark"\\]\\s*\\.form-check-input:checked'))
+      .toMatch(/background-color:\s*var\(--ws-hutech-text\)/)
+    // The mark is a token so it can invert with the fill.
+    expect(body(css, '\\.form-check-input:checked\\[type="checkbox"\\]'))
+      .toMatch(/--bs-form-check-bg-image:\s*var\(--ws-check-mark\)/)
+    expect(body(css, '\\.form-check-input:checked\\[type="radio"\\]'))
+      .toMatch(/--bs-form-check-bg-image:\s*var\(--ws-radio-mark\)/)
   })
 })
 

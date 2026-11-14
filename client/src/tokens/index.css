@@ -29,6 +29,25 @@
   --ws-success-l: #ecfdf3;
   --ws-fav: #e11d48;
 
+  /* Semantic text. `.text-danger` is the error message a user has to read when
+     a form rejects them, so it gets a text token of its own: #c2410c measures
+     5.17:1 on --ws-panel and 4.94:1 on the page background. */
+  --ws-danger-text: #c2410c;
+
+  /* Alert surfaces (§8.0). Light reuses the status -l tints verbatim; the dark
+     block lifts them, because #2e1a12 differs from the #141f31 panel by
+     1.00:1 and would not read as a box at all. */
+  --ws-alert-success-bg: var(--ws-success-l);
+  --ws-alert-warn-bg: var(--ws-warn-l);
+  --ws-alert-danger-bg: var(--ws-accent-l);
+  --ws-alert-info-bg: var(--ws-hutech-l);
+
+  /* Marks painted inside a checked control. Bootstrap bakes a white stroke
+     into its data URIs; on a dark surface the checkbox fills with
+     --ws-hutech-text (a light fill), so the mark has to be a token too. */
+  --ws-check-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+  --ws-radio-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23ffffff'/%3e%3c/svg%3e");
+
   /* Surfaces and text */
   --ws-page-bg: linear-gradient(180deg, #f7fafd, #e9eef5);
   --ws-panel: #fffffff5;
@@ -101,9 +120,12 @@
 
   /* Bootstrap bridge (§8.0) — every Bootstrap class in the app follows these */
   --bs-primary: var(--ws-hutech);
-  --bs-primary-rgb: 0, 95, 156;
+  /* The brand byte-triple, not #005f9c: `.text-primary` / `.bg-primary` /
+     `.text-bg-primary` paint from this value, and a second triple would be the
+     "two coexisting blues" anti-pattern of §11. */
+  --bs-primary-rgb: 0, 82, 156;
   --bs-link-color: var(--ws-hutech);
-  --bs-link-color-rgb: 0, 95, 156;
+  --bs-link-color-rgb: 0, 82, 156;
   --bs-body-color: var(--ws-fg);
   --bs-body-bg: #f7fafd;
   --bs-emphasis-color: var(--ws-fg);
@@ -118,7 +140,7 @@
   --bs-border-radius: var(--ws-r-sm);
   --bs-border-radius-sm: var(--ws-r-tick);
   --bs-border-radius-lg: var(--ws-r-card);
-  --bs-focus-ring-color: rgba(0, 95, 156, .25);
+  --bs-focus-ring-color: rgba(0, 82, 156, .25);
   --bs-table-striped-bg: transparent;
   --bs-table-hover-bg: #f8fafc;
 }
@@ -138,6 +160,23 @@
   --ws-success-text: #6ee7a8;
   --ws-warn-text: #fbbf5c;
   --ws-accent-text: #fca58a;
+
+  /* Semantic text: the accent's light variant, so `.text-danger` stays legible
+     on the navy panel (8.57:1) and on the page background (9.48:1). */
+  --ws-danger-text: #fca58a;
+
+  /* Alert surfaces: lifted one step off the navy so the box reads as a box
+     (1.39–1.46:1 against the page background and 1.26–1.32:1 against the
+     panel, where the -l tints measure 1.11–1.28 and 1.00–1.16). */
+  --ws-alert-success-bg: #1a3a28;
+  --ws-alert-warn-bg: #3a2f1a;
+  --ws-alert-danger-bg: #452a1f;
+  --ws-alert-info-bg: #16324d;
+
+  /* The mark inside a checked control, in the dark panel ink: it sits on the
+     light --ws-hutech-text fill, where a white mark would be 2.07:1. */
+  --ws-check-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23141f31' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+  --ws-radio-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23141f31'/%3e%3c/svg%3e");
 
   /* Surfaces and text */
   --ws-page-bg:
@@ -161,8 +200,11 @@
 
   /* Bootstrap bridge — button/link text switches, backgrounds stay navy */
   --bs-primary: var(--ws-hutech);
+  --bs-primary-rgb: 0, 82, 156;
   --bs-link-color: var(--ws-hutech-text);
-  --bs-link-color-rgb: 107, 189, 237;
+  /* Byte triple of --ws-hutech-text (#6dbded), not #6bbded: the link colour and
+     the rgb triple must name the same blue (§11). */
+  --bs-link-color-rgb: 109, 189, 237;
   --bs-body-color: var(--ws-fg);
   --bs-body-bg: #0c1524;
   --bs-emphasis-color: var(--ws-fg);

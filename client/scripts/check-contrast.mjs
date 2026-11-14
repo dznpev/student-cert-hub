@@ -139,6 +139,25 @@ const PAIRS = [
   { mode: 'dark', fg: '--ws-fg', bg: '--ws-hutech-l', name: 'metric tile value (hover)' },
   { mode: 'light', fg: '--ws-hutech', bg: '--ws-hutech-l', name: 'info chip' },
   { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-hutech-l', name: 'info chip' },
+  // Semantic utilities (§8.0 bridge). `.text-primary` is the brand blue in
+  // light and its text variant in dark; `.text-danger` reads from
+  // --ws-danger-text in both themes. Each is graded on the panel and on the
+  // page background, because both carry error text.
+  { mode: 'light', fg: '--ws-hutech', bg: '--bs-body-bg', name: 'text-primary on page' },
+  { mode: 'dark', fg: '--ws-hutech-text', bg: '--bs-body-bg', name: 'text-primary on page' },
+  { mode: 'light', fg: '--ws-danger-text', bg: '--ws-panel', name: 'text-danger on panel' },
+  { mode: 'light', fg: '--ws-danger-text', bg: '--bs-body-bg', name: 'text-danger on page' },
+  { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-panel', name: 'text-danger on panel' },
+  { mode: 'dark', fg: '--ws-danger-text', bg: '--bs-body-bg', name: 'text-danger on page' },
+  // Alert surfaces (§8.0): the status hue on the alert fill, in both themes.
+  { mode: 'light', fg: '--ws-success', bg: '--ws-alert-success-bg', name: 'alert-success' },
+  { mode: 'light', fg: '--ws-warn', bg: '--ws-alert-warn-bg', name: 'alert-warning' },
+  { mode: 'light', fg: '--ws-accent', bg: '--ws-alert-danger-bg', name: 'alert-danger' },
+  { mode: 'light', fg: '--ws-hutech', bg: '--ws-alert-info-bg', name: 'alert-info' },
+  { mode: 'dark', fg: '--ws-success-text', bg: '--ws-alert-success-bg', name: 'alert-success' },
+  { mode: 'dark', fg: '--ws-warn-text', bg: '--ws-alert-warn-bg', name: 'alert-warning' },
+  { mode: 'dark', fg: '--ws-accent-text', bg: '--ws-alert-danger-bg', name: 'alert-danger' },
+  { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-alert-info-bg', name: 'alert-info' },
 ]
 
 const ANCHOR = '--bs-body-bg'

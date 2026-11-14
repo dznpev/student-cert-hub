@@ -13,14 +13,17 @@ import { studentAccountSections, studentPages, studentSections } from './student
 const withIcons = (items) => items.map(({ iconName, ...item }) => ({ ...item, icon: <PortalIcon name={iconName} /> }))
 
 export default function StudentPortal({ students, cohorts, activities, participations, certificates, notifications,
-  studentPasswords, onChangePassword, onUpdateEmail, onReadNotification, onManagementSignIn, onActivateDemoStudent, onVerifyDemoActivation, onRequestReset, onResetPassword, adminPreviewAvailable }) {
+  studentPasswords, onChangePassword, onUpdateEmail, onReadNotification, onManagementSignIn, onActivateDemoStudent, onVerifyDemoActivation, onRequestReset, onResetPassword, adminPreviewAvailable, initialState }) {
+  // The signed-in and preview branches are only reachable through state, so a
+  // static render (R137's smoke test) can only exercise them when their initial
+  // value is supplied. Production call sites pass no `initialState`.
   const [editingProfile, setEditingProfile] = useState(false)
   const [notice, setNotice] = useState('')
-  const [studentId, setStudentId] = useState('')
-  const [showPreviewPicker, setShowPreviewPicker] = useState(false)
+  const [studentId, setStudentId] = useState(initialState?.studentId ?? '')
+  const [showPreviewPicker, setShowPreviewPicker] = useState(initialState?.preview ?? false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [page, setPage] = useState('overview')
-  const [signedIn, setSignedIn] = useState(false)
+  const [page, setPage] = useState(initialState?.page ?? 'overview')
+  const [signedIn, setSignedIn] = useState(initialState?.signedIn ?? false)
   const bellRef = useRef(null)
   const student = students.find((item) => String(item.studentId) === studentId && !item.accountDisabled)
   const cohort = cohorts.find((item) => item.cohortId === student?.cohortId)
