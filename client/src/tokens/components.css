@@ -261,6 +261,13 @@
   line-height: 1.4;
 }
 
+/* The hover surface is --ws-hutech-l, where --ws-control-idle measures 4.34:1
+   (light) / 4.36:1 (dark) — below AC-01 for 10.5px text. --ws-muted measures
+   5.37:1 / 5.61:1 on that surface and flips with the theme. */
+.portal-metric:hover .portal-metric__note {
+  color: var(--ws-muted);
+}
+
 /* Business tone applied to icon + number (§6.4). */
 .portal-metric--success :is(.portal-metric__icon, .portal-metric__value) {
   color: var(--ws-success);

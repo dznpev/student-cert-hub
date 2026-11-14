@@ -23,9 +23,9 @@ const metricAppearance = [
 
 const numberFormat = new Intl.NumberFormat('vi-VN')
 const percentFormat = new Intl.NumberFormat('vi-VN', { style: 'percent', maximumFractionDigits: 1 })
-const todayLabel = new Intl.DateTimeFormat('vi-VN', {
+const todayFormat = new Intl.DateTimeFormat('vi-VN', {
   weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh',
-}).format(new Date())
+})
 const emptyFilters = { selectedCohort: '', selectedActivity: '', fromDate: '', toDate: '', selectedCertificateStatus: '' }
 const formatDate = (value) => value.split('-').reverse().join('/')
 
@@ -134,6 +134,10 @@ export default function DashboardPage({ cohorts, students, activities, participa
   const statusLabel = certificateStatuses.find(({ status }) => status === selectedCertificateStatus)?.label ?? 'Tất cả trạng thái chứng nhận'
   const dateSummary = fromDate && toDate ? `${formatDate(fromDate)} – ${formatDate(toDate)}`
     : fromDate ? `Từ ${formatDate(fromDate)}` : toDate ? `Đến ${formatDate(toDate)}` : 'Toàn bộ thời gian'
+  // Rendered, not captured at module load: a dashboard left open across
+  // midnight must show the current day when the component mounts again.
+  // The lazy state initialiser keeps the impure Date() call out of render.
+  const [todayLabel] = useState(() => todayFormat.format(new Date()))
   const { studentCount, activityCount, participationCount, uniqueStudents, certificateCounts, cohortParticipation } = summarizeDashboard({
     cohorts, students, activities, participations, certificates, ...filters,
   })
@@ -262,8 +266,8 @@ export default function DashboardPage({ cohorts, students, activities, participa
             <div className={'portal-metric' + (tone ? ' portal-metric--' + tone : '')} key={label}>
               <span className="portal-metric__icon" aria-hidden="true"><PortalIcon name={icon} /></span>
               <div className="portal-metric__text">
-                <span className="portal-metric__label">{label}</span>
                 <span className="portal-metric__value">{numberFormat.format(value)}</span>
+                <span className="portal-metric__label">{label}</span>
                 {note && <span className="portal-metric__note">{note}</span>}
               </div>
             </div>
