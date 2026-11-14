@@ -61,7 +61,7 @@ export default function CertificateTemplatePdf({ url, fileName, fieldPositions, 
     <>
       {pdfDocument && <div className="mb-3">
         <label className="form-label" htmlFor="template-pdf-page">Trang PDF</label>
-        <select id="template-pdf-page" className="form-select w-auto" value={pdfPageNumber} onChange={(event) => {
+        <select id="template-pdf-page" className="fld w-auto" value={pdfPageNumber} onChange={(event) => {
           setPdfPagePreview(null)
           setPdfError('')
           setPdfPageNumber(Number(event.target.value))

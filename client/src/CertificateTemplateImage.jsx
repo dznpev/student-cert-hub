@@ -148,7 +148,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
           <div className="d-flex flex-wrap align-items-end gap-2 mb-2">
             <div>
               <label className="form-label" htmlFor="template-field">Trường dữ liệu</label>
-              <select id="template-field" className="form-select" value={selectedField} onChange={(event) => setSelectedField(event.target.value)}>
+              <select id="template-field" className="fld w-100" value={selectedField} onChange={(event) => setSelectedField(event.target.value)}>
                 {Object.entries(fields).map(([key, label]) => (
                   <option key={key} value={key}>{label}{fieldPositions[key] ? ' · Đã đặt' : ''}</option>
                 ))}
@@ -180,7 +180,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
                   <div className="d-flex flex-wrap align-items-end gap-2">
                     <div>
                       <label className="form-label" htmlFor="template-field-font">Phông chữ</label>
-                      <select id="template-field-font" className="form-select" value={position.fontFamily ?? 'Arial'}
+                      <select id="template-field-font" className="fld w-100" value={position.fontFamily ?? 'Arial'}
                         onChange={(event) => setPosition({ ...position, fontFamily: event.target.value })}>
                         {fontFamilies.map((font) => <option key={font} style={{ fontFamily: font }}>{font}</option>)}
                       </select>
@@ -188,7 +188,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
                     <div>
                       <label className="form-label" htmlFor="template-field-font-size">Cỡ chữ (pt)</label>
                       <input id="template-field-font-size" type="number" min="1" max="200" step="0.5"
-                        className="form-control" style={{ width: '7rem' }} value={fontSizePt}
+                        className="fld" style={{ width: '7rem' }} value={fontSizePt}
                         onChange={(event) => {
                           const value = event.target.valueAsNumber
                           if (Number.isFinite(value) && value >= 1 && value <= 200) setPosition({ ...position, fontSizePt: value })
@@ -256,7 +256,7 @@ export default function CertificateTemplateImage({ src, fileName, fieldPositions
         </p>
       )}
       <div className="bg-body-tertiary border rounded p-2 text-center">
-        <div className="position-relative d-inline-block mw-100 overflow-hidden align-middle">
+        <div className="template-editor-scope position-relative d-inline-block mw-100 overflow-hidden align-middle">
           <img ref={imageRef} src={src} alt={`Xem trước mẫu ${fileName}`} className="d-block img-fluid"
             draggable={false} style={{ maxHeight: '65vh' }} onLoad={(event) => { setNaturalWidth(event.currentTarget.naturalWidth); onLoad?.(event) }} onError={onError} />
           {Object.entries(fieldPositions).map(([key, { x, y, fontSize = 2, fontSizePt: savedFontSizePt, fontFamily = 'Arial', bold, italic, underline, color = '#172235', textAlign = 'center', verticalAlign = 'middle', qrSize = 18 }]) => (

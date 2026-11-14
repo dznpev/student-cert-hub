@@ -82,9 +82,19 @@ describe('component dùng chung', () => {
     expect(src).toContain('portal-table--sticky-actions')
   })
 
-  it('components.css không chứa hex thô', () => {
+  // R141: the certificate-template editor is the one sanctioned raw-colour
+  // exception (spec §6.11), so the guard runs with every
+  // `.template-editor-scope` rule removed and then proves the sanctioned values
+  // live inside that scope and nowhere else in the file.
+  it('components.css không chứa hex thô ngoài khối ngoại lệ editor', () => {
     const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
-    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
+    const scoped = (css.match(/\.template-editor-scope[^{]*\{[^}]*\}/g) ?? []).join('\n')
+    const outside = css.replace(/\.template-editor-scope[^{]*\{[^}]*\}/g, '')
+    expect(outside).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
+    expect(scoped).toContain('#2f5fc4')
+    expect(scoped).toContain('#fff')
+    expect(outside).not.toContain('#2f5fc4')
+    expect(outside).not.toContain('#fff')
   })
 
   it('components.css không dùng rounded-4', () => {
@@ -235,6 +245,81 @@ describe('component dùng chung', () => {
     expect(plain).toContain('class="portal-metric portal-metric--default"')
     expect(plain).not.toContain('portal-metric__note')
     expect(plain).not.toContain('portal-metric__icon')
+  })
+})
+
+describe('trình chỉnh sửa mẫu chứng nhận', () => {
+  const componentsCss = () => readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+  const pageSrc = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+
+  it('editor mẫu chứng nhận giữ ngoại lệ đọc được trên ảnh nền', () => {
+    const css = componentsCss()
+    expect(css).toContain('--template-outline')
+    expect(css).toContain('--template-glow')
+    expect(css).toMatch(/template-editor-scope[\s\S]*text-shadow/)
+  })
+
+  it('ngoại lệ chỉ nằm trong .template-editor-scope', () => {
+    const css = componentsCss()
+    const outside = css.replace(/\.template-editor-scope\s*\{[^}]*\}/g, '')
+    expect(outside).not.toContain('#2f5fc4')
+  })
+
+  // R141: the scope block must declare both sanctioned values verbatim and the
+  // selected field's ring must stay the spec's dashed 2px outline.
+  it('khối ngoại lệ khai báo hai biến và vẽ viền 2px dashed cho trường được chọn', () => {
+    const css = componentsCss()
+    const scope = /\.template-editor-scope\s*\{([^}]*)\}/.exec(css)
+    expect(scope, 'thiếu khối .template-editor-scope').not.toBeNull()
+    expect(scope[1]).toMatch(/--template-outline:\s*#2f5fc4\b/)
+    expect(scope[1]).toMatch(/--template-glow:\s*#fff\b/)
+    expect(css).toMatch(
+      /\.template-editor-scope \.template-field-overlay\[data-selected="true"\][\s\S]*?outline:\s*2px dashed var\(--template-outline\)/,
+    )
+  })
+
+  it('editor bọc overlay trong .template-editor-scope', () => {
+    const wrapper = /<div className="([^"]*)"\s*>\s*<img/.exec(pageSrc('CertificateTemplateImage.jsx'))
+    expect(wrapper, 'không tìm thấy phần tử gốc chứa <img> và overlay').not.toBeNull()
+    expect(wrapper[1]).toContain('template-editor-scope')
+  })
+
+  // R140: the four rules moved into the scoped block, so the unscoped legacy
+  // copies leave index.css and can no longer paint outside the editor.
+  it('bốn quy tắc editor cũ đã rời index.css', () => {
+    const css = pageSrc('index.css')
+    expect(css).not.toMatch(/^\.template-sample-value\s*\{/m)
+    expect(css).not.toMatch(/^\.template-field-overlay\s*\{/m)
+    expect(css).not.toMatch(/^\.template-field-overlay\[data-editable="true"\]\s*\{/m)
+    expect(css).not.toMatch(/^\.template-field-overlay\[data-selected="true"\]/m)
+  })
+
+  // R143: the editor's fields take the .fld look; only the native colour
+  // picker keeps its control (spec §6.11) because .fld's 32px height would
+  // squeeze the swatch.
+  it('ô chọn và ô cỡ chữ của editor dùng .fld, ô màu giữ nguyên', () => {
+    const image = pageSrc('CertificateTemplateImage.jsx')
+    const fieldSelect = /<select[^>]*id="template-field"[^>]*>/.exec(image)?.[0]
+    const fontSelect = /<select[^>]*id="template-field-font"[^>]*>/.exec(image)?.[0]
+    const fontSize = /<input[^>]*id="template-field-font-size"[\s\S]*?\/>/.exec(image)?.[0]
+    const color = /<input[^>]*id="template-field-color"[\s\S]*?\/>/.exec(image)?.[0]
+    for (const [name, tag] of [['template-field', fieldSelect], ['template-field-font', fontSelect]]) {
+      expect(tag, name).toBeTruthy()
+      expect(tag, name).toContain('fld')
+      expect(tag, name).not.toContain('form-select')
+    }
+    expect(fontSize, 'template-field-font-size').toBeTruthy()
+    expect(fontSize).toContain('fld')
+    expect(fontSize).not.toContain('form-control')
+
+    expect(color, 'template-field-color').toBeTruthy()
+    expect(color).toContain('form-control-color')
+    expect(color).not.toContain('fld')
+
+    const pageSelect = /<select[^>]*id="template-pdf-page"[^>]*>/.exec(pageSrc('CertificateTemplatePdf.jsx'))?.[0]
+    expect(pageSelect, 'template-pdf-page').toBeTruthy()
+    expect(pageSelect).toContain('fld')
+    expect(pageSelect).not.toContain('form-select')
   })
 })
 

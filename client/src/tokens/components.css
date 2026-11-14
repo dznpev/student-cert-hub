@@ -1,8 +1,10 @@
 /*
  * HUTECH shared component styles.
  *
- * Every colour here is a var(--ws-*) token: this file must never hold a raw
- * colour literal (tokens/index.css is the only place allowed to do that).
+ * Every colour here is a var(--ws-*) token, with one sanctioned exception: the
+ * certificate-template editor's `.template-editor-scope` block (§6.11), whose
+ * overlays sit on an image the user uploads. That block is the only raw colour
+ * in the project besides tokens/index.css.
  * Geometry uses the radius and spacing scales from §5.3 / §5.5, with the fixed
  * component sizes of §5.7 where the scale has no matching step.
  *
@@ -612,6 +614,48 @@
    `appearance` is deliberately untouched — that is what keeps the arrow. */
 select.fld {
   padding-right: var(--ws-s9);
+}
+
+/* Certificate template editor (§6.11) -------------------------------------
+ * The field overlays sit on an image/PDF the user uploads, so their backdrop
+ * is unknown and no token can guarantee legibility. This block is the
+ * project's one sanctioned raw-colour exception: the dashed outline and the
+ * white glow are declared as custom properties here and used only by the
+ * scoped rules below. The overlay never follows the theme — it always works
+ * on the user's own image. The geometry also lives here now (R140); the
+ * unscoped copies were removed from index.css.
+ */
+
+.template-editor-scope {
+  --template-outline: #2f5fc4;
+  --template-glow: #fff;
+}
+
+.template-editor-scope .template-field-overlay {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.template-editor-scope .template-field-overlay[data-editable="true"] {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.template-editor-scope .template-field-overlay[data-selected="true"],
+.template-editor-scope .template-field-overlay:focus-visible {
+  outline: 2px dashed var(--template-outline);
+  outline-offset: 3px;
+  z-index: 1;
+}
+
+/* The label's ink is the field's own configured colour, set inline on the
+   overlay, so no third raw colour is needed here. */
+.template-editor-scope .template-sample-value {
+  font-size: clamp(0.65rem, 1.2vw, 1rem);
+  font-weight: 500;
+  white-space: nowrap;
+  text-shadow: 0 0 3px var(--template-glow), 0 0 6px var(--template-glow);
 }
 
 /* Empty state (§12.2) ----------------------------------------------------- */

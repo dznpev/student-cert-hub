@@ -27,34 +27,8 @@ body {
   font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
 }
 
-.template-sample-value {
-  color: #172235;
-  font-size: clamp(0.65rem, 1.2vw, 1rem);
-  font-weight: 500;
-  white-space: nowrap;
-  text-shadow: 0 0 3px #fff, 0 0 6px #fff;
-}
-
-.template-field-overlay {
-  position: absolute;
-  transform: translate(-50%, -50%);
-}
-
-.template-field-overlay[data-editable="true"] {
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-}
-
 .template-field-overlay[data-editable="true"]:active {
   cursor: grabbing;
-}
-
-.template-field-overlay[data-selected="true"],
-.template-field-overlay:focus-visible {
-  outline: 2px dashed #2f5fc4;
-  outline-offset: 3px;
-  z-index: 1;
 }
 
 .template-version-button {
