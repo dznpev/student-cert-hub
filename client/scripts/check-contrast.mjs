@@ -50,6 +50,19 @@ function resolveValue(value, vars, seen = new Set()) {
 }
 
 function parseColor(value) {
+  // Control marks and switch knobs are SVG data URIs (they must travel as an
+  // image), so the fill's hex is the colour the control actually paints. The
+  // first `%23xxxxxx` in the URI is read as the token's colour, which lets the
+  // knob/track pair be measured instead of asserted.
+  const svg = /^url\("data:image\/svg\+xml,[^"]*?%23([0-9a-f]{6})/i.exec(value.trim())
+  if (svg) {
+    return {
+      r: Number.parseInt(svg[1].slice(0, 2), 16),
+      g: Number.parseInt(svg[1].slice(2, 4), 16),
+      b: Number.parseInt(svg[1].slice(4, 6), 16),
+      a: 1,
+    }
+  }
   const hex = /^#([0-9a-f]{3,8})$/i.exec(value.trim())
   if (!hex) throw new Error(`Không đọc được màu "${value}"`)
   const digits = hex[1]
@@ -103,9 +116,12 @@ const PALETTES = {
 // surfaces the components build on top of it (R149).
 // Light/dark chip pairs use the -text variants on dark chips, because the base
 // success/warn/accent hues are too dark on #12301f / #2c2413 / #2e1a12.
-// Every pair is normal text and is held to 4.5:1 (AC-01, spec §9.2). A pair may
-// only use the 3:1 large-text threshold if it is explicitly marked `large: true`;
-// none of the brief's pairs qualify (all of the tokens are used at 9.5–15px).
+// Text pairs are held to 4.5:1 (AC-01, spec §9.2). A pair may use the 3:1
+// large-text threshold only when marked `large: true`, and the 3:1 non-text
+// threshold (WCAG 1.4.11) only when marked `nonText: true` — used by the switch
+// knob. A pair may set an explicit `min` (the alert borders, which are neither
+// text nor a control state). None of the brief's text pairs qualify for either
+// exception: all of those tokens are used at 9.5–15px.
 const PAIRS = [
   { mode: 'dark', fg: '--ws-fg-2', bg: '--ws-panel' },
   { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-panel' },
@@ -142,13 +158,25 @@ const PAIRS = [
   // Semantic utilities (§8.0 bridge). `.text-primary` is the brand blue in
   // light and its text variant in dark; `.text-danger` reads from
   // --ws-danger-text in both themes. Each is graded on the panel and on the
-  // page background, because both carry error text.
+  // page, because both carry error text. The page pairs use the gradient's
+  // worst stop, not the --bs-body-bg proxy: the shell paints --ws-page-bg, and
+  // the light gradient's dark stop (#e9eef5) is the tightest surface it draws.
   { mode: 'light', fg: '--ws-hutech', bg: '--bs-body-bg', name: 'text-primary on page' },
   { mode: 'dark', fg: '--ws-hutech-text', bg: '--bs-body-bg', name: 'text-primary on page' },
   { mode: 'light', fg: '--ws-danger-text', bg: '--ws-panel', name: 'text-danger on panel' },
-  { mode: 'light', fg: '--ws-danger-text', bg: '--bs-body-bg', name: 'text-danger on page' },
+  { mode: 'light', fg: '--ws-danger-text', bg: '--ws-page-bg-worst', name: 'text-danger on page (gradient worst stop)' },
   { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-panel', name: 'text-danger on panel' },
-  { mode: 'dark', fg: '--ws-danger-text', bg: '--bs-body-bg', name: 'text-danger on page' },
+  { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-page-bg-worst', name: 'text-danger on page (gradient worst stop)' },
+  // `.invalid-feedback` paints from --bs-form-invalid-color (W2), and it sits
+  // beside a field on a panel and directly on the page.
+  { mode: 'light', fg: '--bs-form-invalid-color', bg: '--ws-panel', name: 'invalid-feedback on panel' },
+  { mode: 'light', fg: '--bs-form-invalid-color', bg: '--ws-page-bg-worst', name: 'invalid-feedback on page (gradient worst stop)' },
+  { mode: 'dark', fg: '--bs-form-invalid-color', bg: '--ws-panel', name: 'invalid-feedback on panel' },
+  { mode: 'dark', fg: '--bs-form-invalid-color', bg: '--ws-page-bg-worst', name: 'invalid-feedback on page (gradient worst stop)' },
+  // Error text also lands inside a warning alert (a rejected batch), so the
+  // same token is graded on that surface (W5).
+  { mode: 'light', fg: '--ws-danger-text', bg: '--ws-alert-warn-bg', name: 'text-danger on warning alert' },
+  { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-alert-warn-bg', name: 'text-danger on warning alert' },
   // Alert surfaces (§8.0): the status hue on the alert fill, in both themes.
   { mode: 'light', fg: '--ws-success', bg: '--ws-alert-success-bg', name: 'alert-success' },
   { mode: 'light', fg: '--ws-warn', bg: '--ws-alert-warn-bg', name: 'alert-warning' },
@@ -158,24 +186,47 @@ const PAIRS = [
   { mode: 'dark', fg: '--ws-warn-text', bg: '--ws-alert-warn-bg', name: 'alert-warning' },
   { mode: 'dark', fg: '--ws-accent-text', bg: '--ws-alert-danger-bg', name: 'alert-danger' },
   { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-alert-info-bg', name: 'alert-info' },
+  // Alert borders (W6). A border is not text and WCAG sets no ratio for a
+  // decorative edge; 1.5:1 against the fill is the smallest step that still
+  // reads in 8-bit sRGB and is above the 1.39–1.46:1 the surface lift already
+  // settled for "visible box".
+  { mode: 'light', fg: '--ws-alert-success-border', bg: '--ws-alert-success-bg', min: 1.5, name: 'alert-success border on fill' },
+  { mode: 'light', fg: '--ws-alert-warn-border', bg: '--ws-alert-warn-bg', min: 1.5, name: 'alert-warning border on fill' },
+  { mode: 'light', fg: '--ws-alert-danger-border', bg: '--ws-alert-danger-bg', min: 1.5, name: 'alert-danger border on fill' },
+  { mode: 'light', fg: '--ws-alert-info-border', bg: '--ws-alert-info-bg', min: 1.5, name: 'alert-info border on fill' },
+  { mode: 'dark', fg: '--ws-alert-success-border', bg: '--ws-alert-success-bg', min: 1.5, name: 'alert-success border on fill' },
+  { mode: 'dark', fg: '--ws-alert-warn-border', bg: '--ws-alert-warn-bg', min: 1.5, name: 'alert-warning border on fill' },
+  { mode: 'dark', fg: '--ws-alert-danger-border', bg: '--ws-alert-danger-bg', min: 1.5, name: 'alert-danger border on fill' },
+  { mode: 'dark', fg: '--ws-alert-info-border', bg: '--ws-alert-info-bg', min: 1.5, name: 'alert-info border on fill' },
+  // The switch knob (W1) is a non-text control, so it is held to 3:1 against
+  // the track it sits on. The checked track is --ws-hutech in light and
+  // --ws-hutech-text in dark; the focus knob only shows while the switch is
+  // off, where the track is the unchecked field surface (--bs-body-bg).
+  { mode: 'light', fg: '--ws-switch-knob', bg: '--ws-hutech', nonText: true, name: 'switch knob on checked track' },
+  { mode: 'dark', fg: '--ws-switch-knob', bg: '--ws-hutech-text', nonText: true, name: 'switch knob on checked track' },
+  { mode: 'light', fg: '--ws-switch-knob-focus', bg: '--bs-body-bg', nonText: true, name: 'switch focus knob on unchecked track' },
+  { mode: 'dark', fg: '--ws-switch-knob-focus', bg: '--bs-body-bg', nonText: true, name: 'switch focus knob on unchecked track' },
 ]
 
 const ANCHOR = '--bs-body-bg'
 const NORMAL_TEXT_MIN = 4.5
 const LARGE_TEXT_MIN = 3
+// WCAG 1.4.11's non-text minimum, used by control pairs (a knob against its
+// track); a pair may also set an explicit `min` (the alert borders do).
+const NON_TEXT_MIN = 3
 let failed = false
 
 function toReference(value) {
   return value.startsWith('#') ? value : `var(${value})`
 }
 
-for (const { mode, fg, bg, large = false, name } of PAIRS) {
+for (const { mode, fg, bg, large = false, nonText = false, min: explicitMin, name } of PAIRS) {
   const vars = PALETTES[mode]
   const anchor = parseColor(resolveValue(`var(${ANCHOR})`, vars))
   const background = composite(parseColor(resolveValue(toReference(bg), vars)), anchor)
   const foreground = composite(parseColor(resolveValue(toReference(fg), vars)), background)
   const ratio = contrastRatio(foreground, background)
-  const min = large ? LARGE_TEXT_MIN : NORMAL_TEXT_MIN
+  const min = explicitMin ?? (large || nonText ? LARGE_TEXT_MIN : NORMAL_TEXT_MIN)
   const pass = ratio >= min
   if (!pass) failed = true
   const label = name ? `${name}: ${fg} on ${bg}` : `${fg} on ${bg}`

@@ -178,6 +178,41 @@ describe('bắc cầu Bootstrap ngữ nghĩa (§8.0)', () => {
     expect(body(css, '\\.form-check-input:checked\\[type="radio"\\]'))
       .toMatch(/--bs-form-check-bg-image:\s*var\(--ws-radio-mark\)/)
   })
+
+  // W6: a border painted with the alert's own fill leaves no edge, so the box
+  // stops reading as a box. Each alert names its border token.
+  it('viền alert đọc từ token riêng, không đồng nhất với nền', () => {
+    const css = components()
+    const borders = {
+      success: '--ws-alert-success-border',
+      warning: '--ws-alert-warn-border',
+      danger: '--ws-alert-danger-border',
+      info: '--ws-alert-info-border',
+    }
+    for (const [name, token] of Object.entries(borders)) {
+      expect(body(css, `\\.alert-${name}`), `.alert-${name}`)
+        .toMatch(new RegExp(`--bs-alert-border-color:\\s*var\\(${token}\\)`))
+    }
+  })
+
+  // W1/W3: the checked switch knob, the focus knob and the focused field are
+  // the last controls Bootstrap paints from hardcoded colours.
+  it('công tắc và ô nhập đang focus đọc từ token, không từ màu Bootstrap', () => {
+    const css = components()
+    expect(body(css, '\\.form-switch \\.form-check-input:checked'))
+      .toMatch(/--bs-form-switch-bg:\s*var\(--ws-switch-knob\)/)
+    expect(body(css, '\\.form-switch \\.form-check-input:focus:not\\(:checked\\),?'))
+      .toMatch(/--bs-form-switch-bg:\s*var\(--ws-switch-knob-focus\)/)
+
+    const focus = css.match(/\.form-control:focus,[\s\S]*?\.form-check-input:focus\s*\{([^}]*)\}/)
+    expect(focus?.[1], '.form-control:focus').toBeDefined()
+    expect(focus[1]).toMatch(/border-color:\s*var\(--ws-hutech\)/)
+    expect(focus[1]).toMatch(/box-shadow:\s*0 0 0 \.25rem var\(--bs-focus-ring-color\)/)
+
+    const darkFocus = css.match(/\[data-bs-theme="dark"\] \.form-control:focus,[\s\S]*?\.form-check-input:focus\s*\{([^}]*)\}/)
+    expect(darkFocus?.[1], 'focus tối').toBeDefined()
+    expect(darkFocus[1]).toMatch(/border-color:\s*var\(--ws-hutech-text\)/)
+  })
 })
 
 // Renders the hook's return value as `keys|theme|typeof toggleTheme` so a hook

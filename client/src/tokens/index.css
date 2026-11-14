@@ -30,9 +30,11 @@
   --ws-fav: #e11d48;
 
   /* Semantic text. `.text-danger` is the error message a user has to read when
-     a form rejects them, so it gets a text token of its own: #c2410c measures
-     5.17:1 on --ws-panel and 4.94:1 on the page background. */
-  --ws-danger-text: #c2410c;
+     a form rejects them, so it gets a text token of its own: #b53c0b measures
+     5.80:1 on --ws-panel, 5.54:1 on --bs-body-bg and 4.98:1 on the darkest
+     stop of the page gradient (#e9eef5), which is the tightest surface the
+     shell actually paints. */
+  --ws-danger-text: #b53c0b;
 
   /* Alert surfaces (§8.0). Light reuses the status -l tints verbatim; the dark
      block lifts them, because #2e1a12 differs from the #141f31 panel by
@@ -42,14 +44,37 @@
   --ws-alert-danger-bg: var(--ws-accent-l);
   --ws-alert-info-bg: var(--ws-hutech-l);
 
+  /* Alert borders — a declared deviation from §8.0's "border = --ws-*-l": a
+     border equal to the fill leaves the box with no edge at all (1.01–1.10:1
+     against the page in light, 1.26:1 against the panel in dark). Each border
+     is a mid-tint of its status that reads against its own fill (1.77–2.02:1)
+     and against the page, so the alert reads as a box. */
+  --ws-alert-success-border: #8cc7a8;
+  --ws-alert-warn-border: #e6b95c;
+  --ws-alert-danger-border: #e79c87;
+  --ws-alert-info-border: #86b0d7;
+
   /* Marks painted inside a checked control. Bootstrap bakes a white stroke
      into its data URIs; on a dark surface the checkbox fills with
      --ws-hutech-text (a light fill), so the mark has to be a token too. */
   --ws-check-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
   --ws-radio-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23ffffff'/%3e%3c/svg%3e");
+  /* The switch knob. Bootstrap bakes a white circle into the checked switch, so
+     the knob stays #ffffff on the #00529c track here (7.82:1); the dark block
+     flips it to the panel ink, because the track turns into the light
+     --ws-hutech-text and white would be 2.07:1 there. */
+  --ws-switch-knob: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23ffffff'/%3e%3c/svg%3e");
+  /* The same knob in its focus state, where Bootstrap paints #86b7fe — another
+     blue from outside the token set. Drawn in the brand on the unchecked
+     (page-coloured) track. */
+  --ws-switch-knob-focus: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%2300529c'/%3e%3c/svg%3e");
 
   /* Surfaces and text */
   --ws-page-bg: linear-gradient(180deg, #f7fafd, #e9eef5);
+  /* The worst (lowest-contrast) stop of --ws-page-bg, for text the shell paints
+     directly on the gradient. The gate grades page pairs against this, not
+     against the convenient --bs-body-bg proxy. */
+  --ws-page-bg-worst: #e9eef5;
   --ws-panel: #fffffff5;
   --ws-panel-solid: #ffffff;
   --ws-tile: #ffffff;
@@ -140,7 +165,15 @@
   --bs-border-radius: var(--ws-r-sm);
   --bs-border-radius-sm: var(--ws-r-tick);
   --bs-border-radius-lg: var(--ws-r-card);
-  --bs-focus-ring-color: rgba(0, 82, 156, .25);
+  /* The focus ring is a token pair: light uses the brand blue at 25% alpha, the
+     dark block the byte triple of --ws-hutech-text. */
+  --ws-focus-ring: rgba(0, 82, 156, .25);
+  --bs-focus-ring-color: var(--ws-focus-ring);
+  /* The text `.invalid-feedback` paints with: the same error colour as
+     `.text-danger`, so a validation message is legible on the panel and on the
+     page. Bootstrap's own #dc3545 measures 4.49:1 on the panel and 4.32:1 on
+     the page in light — below AA. */
+  --bs-form-invalid-color: var(--ws-danger-text);
   --bs-table-striped-bg: transparent;
   --bs-table-hover-bg: #f8fafc;
 }
@@ -173,16 +206,30 @@
   --ws-alert-danger-bg: #452a1f;
   --ws-alert-info-bg: #16324d;
 
+  /* Alert borders: the same deviation as the light block, lifted so each border
+     reads against its own (lifted) fill — 1.98–2.26:1 here. */
+  --ws-alert-success-border: #2f6b49;
+  --ws-alert-warn-border: #7a6233;
+  --ws-alert-danger-border: #8a5340;
+  --ws-alert-info-border: #33638f;
+
   /* The mark inside a checked control, in the dark panel ink: it sits on the
      light --ws-hutech-text fill, where a white mark would be 2.07:1. */
   --ws-check-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23141f31' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
   --ws-radio-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23141f31'/%3e%3c/svg%3e");
+  /* The switch knob inverts with the track: the checked track is the light
+     --ws-hutech-text, so the knob is the panel ink (7.99:1). The focus knob is
+     the light brand itself on the navy unchecked track (8.84:1). */
+  --ws-switch-knob: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23141f31'/%3e%3c/svg%3e");
+  --ws-switch-knob-focus: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%236dbded'/%3e%3c/svg%3e");
 
   /* Surfaces and text */
   --ws-page-bg:
     radial-gradient(1200px 640px at 10% -10%, #16406b 0%, transparent 60%),
     radial-gradient(900px 520px at 90% -6%, #123a5e 0%, transparent 55%),
     linear-gradient(180deg, #0f1c2e, #0a121d);
+  /* The lightest stop of the dark gradient — the worst surface for light text. */
+  --ws-page-bg-worst: #16406b;
   --ws-panel: #141f31;
   --ws-panel-solid: #141f31;
   --ws-tile: #18242f;
@@ -213,6 +260,11 @@
   --bs-tertiary-color: var(--ws-muted);
   --bs-tertiary-bg: #1c2942;
   --bs-border-color: var(--ws-line);
+  /* Both bridge variables are declared in the dark block too: a value that
+     lives only in :root silently keeps the light colour when the theme flips. */
+  --ws-focus-ring: rgba(109, 189, 237, .25);
+  --bs-focus-ring-color: var(--ws-focus-ring);
+  --bs-form-invalid-color: var(--ws-danger-text);
   --bs-table-striped-bg: transparent;
   --bs-table-hover-bg: #18242f;
 }

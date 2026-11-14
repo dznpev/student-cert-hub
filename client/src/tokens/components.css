@@ -182,34 +182,36 @@
 }
 
 /* Feedback surfaces (§8.0 names the alert explicitly): keep the class, take
-   the subtle surface as the fill AND the border, and the status hue as the
-   text. The -text variants carry the dark theme, where the base hues are too
-   dark on the lifted surface. */
+   the subtle surface as the fill, the status hue as the text, and a mid-tint as
+   the border. A border equal to the fill leaves the box with no edge (it is the
+   one deliberate departure from §8.0's "border = --ws-*-l"; the tokens and the
+   reason are in tokens/index.css). The -text variants carry the dark theme,
+   where the base hues are too dark on the lifted surface. */
 .alert-success {
   --bs-alert-color: var(--ws-success);
   --bs-alert-bg: var(--ws-alert-success-bg);
-  --bs-alert-border-color: var(--ws-alert-success-bg);
+  --bs-alert-border-color: var(--ws-alert-success-border);
   --bs-alert-link-color: var(--ws-success);
 }
 
 .alert-warning {
   --bs-alert-color: var(--ws-warn);
   --bs-alert-bg: var(--ws-alert-warn-bg);
-  --bs-alert-border-color: var(--ws-alert-warn-bg);
+  --bs-alert-border-color: var(--ws-alert-warn-border);
   --bs-alert-link-color: var(--ws-warn);
 }
 
 .alert-danger {
   --bs-alert-color: var(--ws-accent);
   --bs-alert-bg: var(--ws-alert-danger-bg);
-  --bs-alert-border-color: var(--ws-alert-danger-bg);
+  --bs-alert-border-color: var(--ws-alert-danger-border);
   --bs-alert-link-color: var(--ws-accent);
 }
 
 .alert-info {
   --bs-alert-color: var(--ws-hutech);
   --bs-alert-bg: var(--ws-alert-info-bg);
-  --bs-alert-border-color: var(--ws-alert-info-bg);
+  --bs-alert-border-color: var(--ws-alert-info-border);
   --bs-alert-link-color: var(--ws-hutech);
 }
 
@@ -261,6 +263,39 @@
 
 [data-bs-theme="dark"] .form-check-input:checked {
   background-color: var(--ws-hutech-text);
+  border-color: var(--ws-hutech-text);
+}
+
+/* A checked switch paints its knob from --bs-form-switch-bg, which Bootstrap
+   bakes as a white circle: on the light --ws-hutech-text track of the dark
+   theme that knob is 2.07:1, under the 3:1 non-text convention. The knob is a
+   token pair (white on the brand, panel ink on the light track), so it follows
+   the fill in both themes. The focus knob is the same circle — Bootstrap paints
+   it #86b7fe, a blue from outside the token set — and only paints while the
+   switch is unchecked: a checked switch keeps the checked knob. */
+.form-switch .form-check-input:checked {
+  --bs-form-switch-bg: var(--ws-switch-knob);
+}
+
+.form-switch .form-check-input:focus:not(:checked) {
+  --bs-form-switch-bg: var(--ws-switch-knob-focus);
+}
+
+/* Bootstrap hardcodes #86b7fe and rgba(13, 110, 253, .25) on the focused
+   field — a fifth blue on a real focus state, in both themes. Both move to the
+   brand tokens, and --bs-focus-ring-color is declared in the dark block too, so
+   the ring follows the theme. The checkbox/radio/switch shares the same
+   hardcoded pair on `:focus`, so it takes the same bridge. */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: var(--ws-hutech);
+  box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color);
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus,
+[data-bs-theme="dark"] .form-check-input:focus {
   border-color: var(--ws-hutech-text);
 }
 
@@ -1092,10 +1127,12 @@ select.fld {
    Selectors that declare their own transition are deliberately absent —
    `.portal-metric`, `.portal-nav__item`, `.portal-bell`, `.portal-sidebar__panel`,
    the account-menu trigger/item, `.btn`, `.fld` and table rows — because this
-   shorthand would replace theirs. `.form-control`, `.form-select` and the table
-   row selector are absent for the same reason: Bootstrap gives them a 150 ms
-   interaction transition, and a 220 ms theme fade would override it. Listing
-   the sidebar here is what killed its mobile slide (R150). */
+   shorthand would replace theirs. `.form-control` and `.form-select` are absent
+   for the same reason: Bootstrap gives them a 150 ms interaction transition.
+   The table row/cell selector is absent for the opposite reason: Bootstrap
+   gives table cells NO transition at all, so there is none to protect and none
+   to restore — their background simply follows the token change. Listing the
+   sidebar here is what killed its mobile slide (R150). */
 @media (prefers-reduced-motion: no-preference) {
   :is(body, .card, .text-body-secondary,
     .portal-panel, .portal-topbar,

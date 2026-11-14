@@ -26,6 +26,10 @@ const REQUIRED_TOKENS = [
   '--ws-t-badge', '--ws-t-rail', '--ws-t-chip', '--ws-t-sub', '--ws-t-card', '--ws-t-base', '--ws-t-lead',
   '--ws-font-head', '--ws-font-body',
   '--ws-dur-instant', '--ws-dur-fast', '--ws-dur-normal', '--ws-dur-slow',
+  // W4: the brand byte triple. A wrong RGB triple silently repaints
+  // `.text-primary` / `.bg-primary` / `.text-bg-primary` with a second blue
+  // (the original G1 defect), so the triple is a required token.
+  '--bs-primary-rgb',
 ]
 
 describe('index.css', () => {
@@ -111,11 +115,30 @@ describe('tokens/index.css', () => {
     const semantic = [
       '--ws-danger-text',
       '--ws-alert-success-bg', '--ws-alert-warn-bg', '--ws-alert-danger-bg', '--ws-alert-info-bg',
+      '--ws-alert-success-border', '--ws-alert-warn-border', '--ws-alert-danger-border', '--ws-alert-info-border',
       '--ws-check-mark', '--ws-radio-mark',
+      '--ws-switch-knob', '--ws-switch-knob-focus',
+      '--ws-page-bg-worst', '--ws-focus-ring',
     ]
     for (const token of semantic) {
       expect(root, `${token} ở khối sáng`).toContain(`${token}:`)
       expect(dark, `${token} ở khối tối`).toContain(`${token}:`)
     }
+  })
+
+  // W2/W3: the two Bootstrap variables the wave newly bridges must be declared
+  // in the dark block too. `--bs-focus-ring-color` used to live in `:root` only,
+  // so the dark theme kept the light ring; `--bs-form-invalid-color` was still
+  // Bootstrap's #dc3545 in both blocks.
+  it('--bs-form-invalid-color và --bs-focus-ring-color khai báo ở cả hai khối', () => {
+    const root = tokenBlock(stripped, ':root')
+    const dark = tokenBlock(stripped, '[data-bs-theme="dark"]')
+    for (const token of ['--bs-form-invalid-color', '--bs-focus-ring-color']) {
+      expect(root, `${token} ở khối sáng`).toContain(`${token}:`)
+      expect(dark, `${token} ở khối tối`).toContain(`${token}:`)
+    }
+    expect(root).toMatch(/--bs-form-invalid-color:\s*var\(--ws-danger-text\)/)
+    expect(dark).toMatch(/--bs-form-invalid-color:\s*var\(--ws-danger-text\)/)
+    expect(dark).toMatch(/--bs-focus-ring-color:\s*var\(--ws-focus-ring\)/)
   })
 })
