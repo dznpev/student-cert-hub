@@ -104,7 +104,8 @@ describe('shell mới — hành vi render', () => {
   it('footer chỉ hiện copyright và version, không còn link tra cứu chứng nhận', () => {
     const html = renderToStaticMarkup(createElement(PortalFooter))
     expect(html).toContain('© 2012–2026 HUTECH University. All rights reserved')
-    expect(html).toContain('| Version 1.1.0')
+    // Anchored to the span so a future "1.0.1" cannot satisfy a "1.0" check.
+    expect(html).toContain('portal-footer__muted">| Version 1.0</span>')
     // The public lookup link belongs to the signed-out student screens, not to
     // the shell footer.
     expect(html).not.toContain('Tra cứu chứng nhận')

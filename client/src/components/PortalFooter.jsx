@@ -3,7 +3,7 @@
 // navigation link into the public lookup, which does not belong on the admin
 // or student shells. The lookup stays reachable where it is useful - the
 // signed-out student screens (StudentLogin) and the template preview QR code.
-const FOOTER_VERSION = '1.1.0'
+const FOOTER_VERSION = '1.0'
 
 export default function PortalFooter() {
   return (
