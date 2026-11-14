@@ -164,6 +164,12 @@ describe('App — tìm kiếm dùng chung ở topbar', () => {
       expect(read(file), file).not.toContain('onSearchChange')
     }
   })
+
+  it('startManagementPreview xóa tìm kiếm vô điều kiện trước khi vào shell', () => {
+    expect(read('App.jsx')).toMatch(
+      /function startManagementPreview[\s\S]*?setPageSearch\(''\)[\s\S]*?window\.location\.hash = 'quan-tri-mau'/,
+    )
+  })
 })
 
 describe('navigationSections — placeholder tìm kiếm (R57)', () => {

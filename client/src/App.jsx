@@ -277,6 +277,7 @@ export default function App() {
     if (!account || password !== (managementPasswords[account.accountId] ?? demoPassword)) return 'Tên đăng nhập hoặc mật khẩu mẫu không đúng.'
     if (account.disabled) return 'Tài khoản quản trị mẫu đang bị khóa.'
     setManagementAccountId(account.accountId)
+    setPageSearch('')
     goHome()
     setSuperAdminSection('accounts')
     window.location.hash = 'quan-tri-mau'
