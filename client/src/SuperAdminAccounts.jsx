@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import ManagementAccountForm from './ManagementAccountForm.jsx'
 import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
@@ -56,12 +58,11 @@ export default function SuperAdminAccounts({ students, managementAccounts, curre
 
   return (
     <>
-      <h1 className="page-title mb-2">Quản lý tài khoản</h1>
-      <p className="text-body-secondary mb-4">Danh sách tài khoản và hồ sơ sinh viên dùng thử. Trạng thái khóa được lưu trong phiên hiện tại.</p>
-      <div className="d-flex justify-content-end mb-3">
-        <button type="button" className="btn btn-primary" disabled={editingAccount !== null || confirmLock !== null || activationTarget !== null}
-          onClick={() => { setEditingAccount({}); setNotice('') }}>Thêm tài khoản quản trị</button>
-      </div>
+      <PortalPageHeader title="Quản lý tài khoản" description="Danh sách tài khoản và hồ sơ sinh viên dùng thử. Trạng thái khóa được lưu trong phiên hiện tại."
+        actions={(
+          <button type="button" className="btn btn-primary" disabled={editingAccount !== null || confirmLock !== null || activationTarget !== null}
+            onClick={() => { setEditingAccount({}); setNotice('') }}>Thêm tài khoản quản trị</button>
+        )} />
       {editingAccount !== null && <ManagementAccountForm key={editingAccount.accountId ?? 'new'} account={editingAccount.accountId ? editingAccount : null}
         isCurrentAccount={editingAccount.accountId === currentAccountId} onCancel={() => setEditingAccount(null)}
         onSave={(id, values) => {
@@ -109,24 +110,25 @@ export default function SuperAdminAccounts({ students, managementAccounts, curre
           <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setIssuedActivation(null)}>Ẩn mã</button>
         </section>
       )}
-      <section className="card rounded-4" aria-label="Danh sách tài khoản và hồ sơ">
-        <div className="card-body p-3 p-md-4">
+      <PortalPanel className="portal-panel--stacked portal-panel--padded">
           <div className="row g-3 mb-3">
             <div className="col-12 col-sm-6 col-md-3">
               <label htmlFor="account-role" className="form-label">Vai trò</label>
-              <select id="account-role" className="form-select" value={role} onChange={(event) => setRole(event.target.value)}>
+              <select id="account-role" className="fld w-100" value={role} onChange={(event) => setRole(event.target.value)}>
                 <option value="">Tất cả vai trò</option>
                 {Object.entries(roles).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </select>
             </div>
             <div className="col-12 col-sm-6 col-md-3">
               <label htmlFor="account-status" className="form-label">Trạng thái</label>
-              <select id="account-status" className="form-select" value={status} onChange={(event) => setStatus(event.target.value)}>
+              <select id="account-status" className="fld w-100" value={status} onChange={(event) => setStatus(event.target.value)}>
                 <option value="">Tất cả trạng thái</option>
                 {Object.entries(statuses).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
               </select>
             </div>
           </div>
+      </PortalPanel>
+      <PortalPanel title="Danh sách tài khoản và hồ sơ">
           <PortalTable label="Bảng tài khoản và hồ sơ">
               <thead><tr>
                 <th scope="col">Tên đăng nhập / MSSV</th>
@@ -168,8 +170,7 @@ export default function SuperAdminAccounts({ students, managementAccounts, curre
                 {visibleRows.length === 0 && <tr><td colSpan={5} className="text-center text-body-secondary">Không tìm thấy mục phù hợp.</td></tr>}
               </tbody>
           </PortalTable>
-        </div>
-      </section>
+      </PortalPanel>
     </>
   )
 }

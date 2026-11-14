@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import PortalChip from '../src/components/PortalChip.jsx'
 import PortalMetricCard from '../src/components/PortalMetricCard.jsx'
+import PortalPanel from '../src/components/PortalPanel.jsx'
 import PortalTable from '../src/components/PortalTable.jsx'
 import DashboardPage from '../src/DashboardPage.jsx'
 import { auditOutcomes } from '../src/auditOutcomes.js'
@@ -381,6 +382,9 @@ describe('trang Chứng nhận', () => {
     const shared = /(?:^|\n)\.fld,\s*\.fld-multiline\s*\{([^}]*)\}/.exec(css)
     expect(shared, 'thiếu quy tắc nhóm .fld, .fld-multiline').not.toBeNull()
     expect(shared[1]).toMatch(/border-radius:\s*var\(--ws-r-sm\)/)
+    // R106: a height on the shared body would collapse the textarea just as a
+    // height on the standalone rule would, so the grouped body is guarded too.
+    expect(shared[1]).not.toMatch(/(?:^|;)\s*height:/)
 
     // …and only the single-line shape keeps the fixed height.
     const single = /(?:^|\n)\.fld\s*\{([^}]*)\}/.exec(css)
@@ -431,6 +435,40 @@ describe('bảng tone trạng thái', () => {
 
     for (const [name, entries, expected] of vocabularies) {
       expect(tones(entries), name).toEqual(expected)
+    }
+  })
+})
+
+describe('các trang quản trị còn lại', () => {
+  const pages = ['StudentsPage', 'ActivitiesPage', 'ParticipationsPage', 'CohortsPage', 'ImportsPage', 'AuditLogsPage', 'CertificateTemplatesPage', 'SuperAdminAccounts']
+  const pageSrc = (page) => readFileSync(new URL(`../src/${page}.jsx`, import.meta.url), 'utf-8')
+
+  it('mọi trang quản trị dùng PortalPageHeader và không còn rounded-4', () => {
+    for (const page of pages) {
+      const src = readFileSync(new URL(`../src/${page}.jsx`, import.meta.url), 'utf-8')
+      expect(src, page).not.toContain('rounded-4')
+      expect(src, page).toContain('PortalPageHeader')
+    }
+  })
+
+  // R109: converting a region must not lose its name. PortalPanel renders the id
+  // on its title element, so the id an `aria-labelledby` used to point at still
+  // exists — and every id these pages still reference resolves in the same file.
+  // `titleId` is collected alongside literal `id` because the render check above
+  // proves it lands on the <h2> as a real id.
+  it('vùng được đặt tên vẫn trỏ tới một phần tử có thật', () => {
+    const html = renderToStaticMarkup(createElement(PortalPanel, { title: 'Vùng có tên', titleId: 'vung-co-ten' }))
+    expect(html).toMatch(/<h2[^>]*id="vung-co-ten"[^>]*>/)
+    expect(html).toContain('portal-panel__title">Vùng có tên</h2>')
+
+    for (const page of pages) {
+      const src = pageSrc(page)
+      const ids = new Set([...src.matchAll(/\b(?:titleId|id)="([^"]+)"/g)].map((match) => match[1]))
+      for (const [, refs] of src.matchAll(/\baria-(?:labelledby|describedby)="([^"]+)"/g)) {
+        for (const id of refs.split(/\s+/)) {
+          expect(ids.has(id), `${page} → ${id}`).toBe(true)
+        }
+      }
     }
   })
 })

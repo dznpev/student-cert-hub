@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 import { importRowStatuses } from './importRowStatuses.js'
 import { previewStudentFile } from './previewStudentFile.js'
@@ -137,16 +139,14 @@ export default function ImportsPage({ activities, cohorts, students, participati
 
   return (
     <>
-      <h1 className="page-title mb-4">Nhập dữ liệu Excel</h1>
+      <PortalPageHeader title="Nhập dữ liệu Excel" />
       {errorReportError && <p className="alert alert-danger" role="alert">{errorReportError}</p>}
 
-      <section className="card rounded-4 mb-4" aria-labelledby="import-settings">
-        <div className="card-body p-3 p-md-4">
-          <h2 id="import-settings" className="h5 mb-3">Thông tin tệp nhập</h2>
+      <PortalPanel className="portal-panel--stacked portal-panel--padded" title="Thông tin tệp nhập" titleId="import-settings">
           <div className="row g-3 mb-3">
             <div className="col-12 col-md-6 col-xl-4">
               <label className="form-label" htmlFor="import-type">Loại dữ liệu</label>
-              <select id="import-type" className="form-select" value={importType} disabled={busy} onChange={(event) => { setImportType(event.target.value); resetPreview() }}>
+              <select id="import-type" className="fld w-100" value={importType} disabled={busy} onChange={(event) => { setImportType(event.target.value); resetPreview() }}>
                 {Object.entries(importTypes).map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
@@ -155,7 +155,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
             {importType === 'Participations' && (
               <div className="col-12 col-md-6 col-xl-4">
                 <label className="form-label" htmlFor="import-activity">Hoạt động</label>
-                <select id="import-activity" className="form-select" value={selectedActivity} disabled={busy} onChange={(event) => { setSelectedActivity(event.target.value); resetPreview() }}>
+                <select id="import-activity" className="fld w-100" value={selectedActivity} disabled={busy} onChange={(event) => { setSelectedActivity(event.target.value); resetPreview() }}>
                   <option value="" disabled>Chọn hoạt động</option>
                   {activities.map(({ activityId, code, name }) => (
                     <option key={activityId} value={activityId}>{code} · {name}</option>
@@ -179,13 +179,10 @@ export default function ImportsPage({ activities, cohorts, students, participati
           <button type="button" className="btn btn-primary admin-primary-button" disabled={busy} onClick={readFile}>
             {reading ? 'Đang đọc tệp…' : 'Xem trước tệp'}
           </button>
-        </div>
-      </section>
+      </PortalPanel>
 
       {importType === 'Students' && (
-        <section className="card rounded-4 mb-4" aria-labelledby="student-import-preview">
-          <div className="card-body p-3 p-md-4">
-            <h2 id="student-import-preview" className="h5 mb-3">Xem trước hồ sơ sinh viên</h2>
+        <PortalPanel className="portal-panel--stacked portal-panel--padded" title="Xem trước hồ sơ sinh viên" titleId="student-import-preview">
             {preview ? (
               <>
                 {preview.confirmed && (
@@ -237,14 +234,11 @@ export default function ImportsPage({ activities, cohorts, students, participati
                 </p>
               </>
             ) : <p className="text-body-secondary mb-0">Chọn tệp hồ sơ sinh viên rồi bấm Xem trước tệp.</p>}
-          </div>
-        </section>
+        </PortalPanel>
       )}
 
       {importType === 'Participations' && (
-        <section className="card rounded-4 mb-4" aria-labelledby="participation-import-preview">
-          <div className="card-body p-3 p-md-4">
-            <h2 id="participation-import-preview" className="h5 mb-3">Xem trước lượt tham gia</h2>
+        <PortalPanel className="portal-panel--stacked portal-panel--padded" title="Xem trước lượt tham gia" titleId="participation-import-preview">
             {preview ? (
               <>
                 {preview.confirmed && (
@@ -293,19 +287,16 @@ export default function ImportsPage({ activities, cohorts, students, participati
                 </p>
               </>
             ) : <p className="text-body-secondary mb-0">Chọn hoạt động và tệp danh sách MSSV rồi bấm Xem trước tệp.</p>}
-          </div>
-        </section>
+        </PortalPanel>
       )}
 
-      <section className="card rounded-4" aria-labelledby="import-history">
-        <div className="card-body p-3 p-md-4">
-          <h2 id="import-history" className="h5 mb-3">Lịch sử nhập</h2>
+      <PortalPanel className="portal-panel--padded" title="Lịch sử nhập" titleId="import-history">
           <div className="row g-3 mb-3">
             <div className="col-12 col-sm-5 col-xl-3">
               <label className="form-label" htmlFor="import-history-type">Loại dữ liệu</label>
               <select
                 id="import-history-type"
-                className="form-select"
+                className="fld w-100"
                 value={historyType}
                 onChange={(event) => setHistoryType(event.target.value)}
               >
@@ -324,7 +315,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
               <p className="small text-body-secondary">Kết quả tại thời điểm xác nhận nhập, chỉ giữ trong phiên này. Đổi thông tin sinh viên hoặc đọc lại tệp không thay đổi đợt đã lưu.</p>
               {selectedBatch.rows ? <>
                 <label htmlFor="import-detail-status" className="form-label">Lọc kết quả dòng</label>
-                <select id="import-detail-status" className="form-select mb-3" disabled={busy} value={selectedRowStatus} onChange={(event) => setSelectedRowStatus(event.target.value)}>
+                <select id="import-detail-status" className="fld w-100 mb-3" disabled={busy} value={selectedRowStatus} onChange={(event) => setSelectedRowStatus(event.target.value)}>
                   <option value="">Tất cả kết quả</option>
                   {['Imported', 'Duplicate', 'Skipped', 'Error'].map((status) => <option value={status} key={status}>{importRowStatuses[status].label}</option>)}
                 </select>
@@ -388,8 +379,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                 )}
               </tbody>
           </PortalTable>
-        </div>
-      </section>
+      </PortalPanel>
     </>
   )
 }

@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import CertificateTemplateImage from './CertificateTemplateImage.jsx'
 import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 
@@ -115,8 +117,7 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
 
   return (
     <>
-      <h1 className="page-title mb-2">Mẫu chứng nhận</h1>
-      <p className="text-body-secondary mb-4">Danh mục mẫu dùng thử. Mẫu mặc định áp dụng cho yêu cầu chứng nhận mới của hoạt động dùng mẫu mặc định. Thay đổi lưu trong phiên hiện tại.</p>
+      <PortalPageHeader title="Mẫu chứng nhận" description="Danh mục mẫu dùng thử. Mẫu mặc định áp dụng cho yêu cầu chứng nhận mới của hoạt động dùng mẫu mặc định. Thay đổi lưu trong phiên hiện tại." />
       {notice && <p className="alert alert-success" role="status">{notice}</p>}
       {statusTemplate && (
         <section className="alert alert-warning" aria-labelledby="template-status-title">
@@ -134,12 +135,11 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
         </section>
       )}
 
-      <div className="card rounded-4 mb-4">
-        <div className="card-body p-3 p-md-4">
+      <PortalPanel className="portal-panel--stacked portal-panel--padded">
           <div className="row g-3 mb-3">
             <div className="col-12 col-md-5">
               <label className="form-label" htmlFor="template-status-filter">Trạng thái</label>
-              <select id="template-status-filter" className="form-select" value={templateStatusFilter}
+              <select id="template-status-filter" className="fld w-100" value={templateStatusFilter}
                 onChange={(event) => setTemplateStatusFilter(event.target.value)}>
                 <option value="">Tất cả mẫu</option>
                 <option value="active">Đang sử dụng</option>
@@ -155,6 +155,8 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
                 onClick={() => { onSearchChange(''); setTemplateStatusFilter('') }}>Xóa bộ lọc</button>
             )}
           </div>
+      </PortalPanel>
+      <PortalPanel className="portal-panel--stacked">
           <PortalTable label="Danh sách mẫu chứng nhận">
               <thead>
                 <tr>
@@ -224,14 +226,15 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
                 )}
               </tbody>
           </PortalTable>
-        </div>
-      </div>
+      </PortalPanel>
 
-      <section className="card rounded-4" aria-labelledby="template-preview-title">
-        <div className="card-body p-3 p-md-4">
-          <h2 id="template-preview-title" className="h5 mb-3" ref={previewHeading} tabIndex={-1}>
+      <section className="portal-panel portal-panel--padded" aria-labelledby="template-preview-title">
+        <header className="portal-panel__header">
+          <h2 id="template-preview-title" className="portal-panel__title" ref={previewHeading} tabIndex={-1}>
             {versionTemplate ? `Thêm phiên bản v${versionTemplate.version + 1} · ${versionTemplate.templateName}` : 'Xem trước tệp mẫu'}
           </h2>
+        </header>
+        <div className="portal-panel__body">
           {versionTemplate && (
             <button type="button" className="btn btn-sm btn-outline-secondary mb-3" onClick={() => startVersion(null)}>
               Hủy thêm phiên bản
@@ -272,7 +275,7 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
                   {!versionTemplate && (
                     <>
                       <label className="form-label" htmlFor="new-template-name">Tên mẫu mới</label>
-                      <input id="new-template-name" className="form-control mb-2" value={templateNameDraft} required
+                      <input id="new-template-name" className="fld w-100 mb-2" value={templateNameDraft} required
                         onChange={(event) => { setTemplateNameDraft(event.target.value); setSaveError('') }} />
                     </>
                   )}

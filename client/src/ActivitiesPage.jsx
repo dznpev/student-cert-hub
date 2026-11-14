@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import ActivityForm from './ActivityForm.jsx'
 import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 import { activityStatuses } from './activityStatuses.js'
 
@@ -25,12 +27,11 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
 
   return (
     <>
-      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-        <h1 className="page-title mb-0">Hoạt động</h1>
+      <PortalPageHeader title="Hoạt động" actions={
         <button type="button" className="btn btn-primary admin-primary-button" disabled={showForm} onClick={() => { setEditingActivity(null); setShowForm(true); setNotice('') }}>
           Thêm hoạt động
         </button>
-      </div>
+      } />
 
       {showForm && (
         <ActivityForm
@@ -53,14 +54,13 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
       )}
       {notice && <p className="alert alert-success" role="status">{notice}</p>}
 
-      <div className="card activities-card">
-        <div className="card-body p-3 p-md-4">
+      <PortalPanel className="portal-panel--stacked portal-panel--padded">
           <div className="row g-3 mb-3">
             <div className="col-12 col-sm-5 col-xl-3">
               <label className="form-label" htmlFor="activity-status">Trạng thái</label>
               <select
                 id="activity-status"
-                className="form-select"
+                className="fld w-100"
                 value={status}
                 onChange={(event) => setStatus(event.target.value)}
               >
@@ -71,7 +71,8 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
               </select>
             </div>
           </div>
-
+      </PortalPanel>
+      <PortalPanel>
           <PortalTable label="Danh sách hoạt động" minWidth="38rem">
               <caption className="visually-hidden">Danh sách hoạt động mẫu</caption>
               <thead>
@@ -127,8 +128,7 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
                 )}
               </tbody>
           </PortalTable>
-        </div>
-      </div>
+      </PortalPanel>
     </>
   )
 }

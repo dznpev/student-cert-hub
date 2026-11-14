@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 
 export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
@@ -75,25 +78,22 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
 
   return (
     <>
-      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-        <h1 className="page-title mb-0">Khóa tuyển sinh</h1>
-        {!isBusy && (
-          <button type="button" className="btn btn-primary admin-primary-button ms-auto" onClick={() => openForm()}>
-            Thêm khóa tuyển sinh
-          </button>
-        )}
-      </div>
+      <PortalPageHeader title="Khóa tuyển sinh" actions={!isBusy && (
+        <button type="button" className="btn btn-primary admin-primary-button ms-auto" onClick={() => openForm()}>
+          Thêm khóa tuyển sinh
+        </button>
+      )} />
 
       {draft && (
-        <form className="card cohorts-card mb-4" aria-labelledby="cohort-form-title" onSubmit={submitCohort} noValidate>
-          <div className="card-body p-3 p-md-4">
-            <h2 id="cohort-form-title" className="h5 mb-3">{isEditing ? 'Sửa khóa tuyển sinh' : 'Thêm khóa tuyển sinh'}</h2>
+        <PortalPanel className="portal-panel--stacked portal-panel--padded"
+          title={isEditing ? 'Sửa khóa tuyển sinh' : 'Thêm khóa tuyển sinh'} titleId="cohort-form-title">
+          <form aria-labelledby="cohort-form-title" onSubmit={submitCohort} noValidate>
             <div className="row g-3 mb-3">
               <div className="col-12 col-sm-4 col-xl-3">
                 <label className="form-label" htmlFor="cohort-code">Mã khóa</label>
                 <input
                   id="cohort-code"
-                  className={errors.cohortCode ? 'form-control is-invalid' : 'form-control'}
+                  className={errors.cohortCode ? 'fld w-100 is-invalid' : 'fld w-100'}
                   value={draft.cohortCode}
                   onChange={(event) => updateDraft('cohortCode', event.target.value)}
                   maxLength={10}
@@ -109,7 +109,7 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
                 <label className="form-label" htmlFor="cohort-name">Tên khóa</label>
                 <input
                   id="cohort-name"
-                  className={errors.cohortName ? 'form-control is-invalid' : 'form-control'}
+                  className={errors.cohortName ? 'fld w-100 is-invalid' : 'fld w-100'}
                   value={draft.cohortName}
                   onChange={(event) => updateDraft('cohortName', event.target.value)}
                   maxLength={100}
@@ -125,8 +125,8 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
               <button type="submit" className="btn btn-primary admin-primary-button">Lưu khóa</button>
               <button type="button" className="btn btn-outline-secondary" onClick={() => setDraft(null)}>Hủy</button>
             </div>
-          </div>
-        </form>
+          </form>
+        </PortalPanel>
       )}
 
       {pendingCohort && (
@@ -141,13 +141,12 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
       )}
 
       {notice && <p className="alert alert-success" role="status">{notice}</p>}
-      <div className="card cohorts-card">
-        <div className="card-body p-3 p-md-4">
+      <PortalPanel className="portal-panel--stacked portal-panel--padded">
           <div className="cohort-status-filter mb-3">
             <label className="form-label" htmlFor="cohort-status">Trạng thái</label>
             <select
               id="cohort-status"
-              className="form-select"
+              className="fld w-100"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >
@@ -156,6 +155,8 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
               <option value="inactive">Ngừng sử dụng</option>
             </select>
           </div>
+      </PortalPanel>
+      <PortalPanel>
           <PortalTable label="Danh sách khóa tuyển sinh">
             <caption className="visually-hidden">Danh sách khóa tuyển sinh mẫu</caption>
             <thead>
@@ -172,9 +173,7 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
                   <th scope="row" className="text-start">{cohortCode}</th>
                   <td>{cohortName}</td>
                   <td>
-                    <span className={isActive ? 'badge text-wrap text-bg-success' : 'badge text-wrap text-bg-secondary'}>
-                      {isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'}
-                    </span>
+                    <PortalChip tone={isActive ? 'success' : 'mute'} label={isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'} />
                   </td>
                   <td>
                     <div className="d-flex flex-wrap justify-content-center gap-1">
@@ -210,8 +209,7 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
               )}
             </tbody>
           </PortalTable>
-        </div>
-      </div>
+      </PortalPanel>
     </>
   )
 }

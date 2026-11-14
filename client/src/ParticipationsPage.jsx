@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { createParticipationComparator } from './sortRecords.js'
 
 import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 import { approvalStatuses } from './approvalStatuses.js'
 
@@ -72,13 +74,13 @@ export default function ParticipationsPage({ cohorts, activities, students, part
 
   return (
     <>
-      <h1 className="page-title mb-2">Lượt tham gia</h1>
-      <p className="text-body-secondary mb-4">Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
+      <PortalPageHeader title="Lượt tham gia" description="Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu." />
 
       {review && (
-        <form className="card rounded-4 mb-4" aria-labelledby="participation-review-title" onSubmit={submitReview} noValidate>
-          <div className="card-body p-3 p-md-4">
-            <h2 id="participation-review-title" className="h5">{review.approvalStatus === 'Approved' ? 'Duyệt lượt tham gia' : 'Từ chối lượt tham gia'}</h2>
+        <PortalPanel className="portal-panel--stacked portal-panel--padded"
+          title={review.approvalStatus === 'Approved' ? 'Duyệt lượt tham gia' : 'Từ chối lượt tham gia'}
+          titleId="participation-review-title">
+          <form aria-labelledby="participation-review-title" onSubmit={submitReview} noValidate>
             {review.participationIds ? (
               <>
                 <p><strong>Đã chọn {review.participationIds.length} lượt tham gia.</strong></p>
@@ -103,7 +105,7 @@ export default function ParticipationsPage({ cohorts, activities, students, part
                 <label className="form-label" htmlFor="participation-reason">Lý do từ chối (bắt buộc)</label>
                 <textarea
                   id="participation-reason"
-                  className={'form-control' + (error ? ' is-invalid' : '')}
+                  className={'fld-multiline' + (error ? ' is-invalid' : '')}
                   rows={3}
                   maxLength={500}
                   required
@@ -127,14 +129,12 @@ export default function ParticipationsPage({ cohorts, activities, students, part
               </button>
               <button type="button" className="btn btn-outline-secondary" onClick={() => setReview(null)} autoFocus={review.approvalStatus === 'Approved'}>Hủy</button>
             </div>
-          </div>
-        </form>
+          </form>
+        </PortalPanel>
       )}
       {notice && <p className="alert alert-success" role="status">{notice}</p>}
       {batchResults.length > 0 && (
-        <section className="card rounded-4 mb-4" aria-labelledby="participation-results-title">
-          <div className="card-body p-3 p-md-4">
-            <h2 id="participation-results-title" className="h5">Kết quả xử lý từng lượt</h2>
+        <PortalPanel className="portal-panel--stacked portal-panel--padded" title="Kết quả xử lý từng lượt" titleId="participation-results-title">
             <p className={'alert ' + (successCount === batchResults.length ? 'alert-success' : 'alert-warning')} role="status">
               Thành công: {successCount}/{batchResults.length} lượt. Không thành công: {batchResults.length - successCount} lượt.
             </p>
@@ -146,18 +146,16 @@ export default function ParticipationsPage({ cohorts, activities, students, part
                 </li>
               ))}
             </ul>
-          </div>
-        </section>
+        </PortalPanel>
       )}
 
-      <div className="card rounded-4">
-        <div className="card-body p-3 p-md-4">
+      <PortalPanel className="portal-panel--stacked portal-panel--padded">
           <div className="row g-3 mb-3">
             <div className="col-12 col-sm-7 col-xl-5">
               <label className="form-label" htmlFor="participation-activity">Hoạt động</label>
               <select
                 id="participation-activity"
-                className="form-select"
+                className="fld w-100"
                 value={selectedActivity}
                 disabled={Boolean(review)}
                 onChange={(event) => { setSelectedActivity(event.target.value); setSelectedIds([]) }}
@@ -172,7 +170,7 @@ export default function ParticipationsPage({ cohorts, activities, students, part
               <label className="form-label" htmlFor="participation-status">Trạng thái duyệt</label>
               <select
                 id="participation-status"
-                className="form-select"
+                className="fld w-100"
                 value={selectedStatus}
                 disabled={Boolean(review)}
                 onChange={(event) => { setSelectedStatus(event.target.value); setSelectedIds([]) }}
@@ -191,6 +189,8 @@ export default function ParticipationsPage({ cohorts, activities, students, part
             <button type="button" className="btn btn-outline-secondary btn-sm" disabled={Boolean(review) || selectedIds.length === 0} onClick={() => setSelectedIds([])}>Bỏ chọn</button>
           </div>
           <p className="small text-body-secondary">Chỉ chọn các lượt Chờ duyệt trong kết quả đang hiển thị. Đổi bộ lọc sẽ bỏ lựa chọn hiện tại.</p>
+      </PortalPanel>
+      <PortalPanel>
           <PortalTable label="Danh sách lượt tham gia" minWidth="65rem" stickyActions>
               <caption className="visually-hidden">Danh sách lượt tham gia mẫu</caption>
               <thead>
@@ -252,8 +252,7 @@ export default function ParticipationsPage({ cohorts, activities, students, part
                 )}
               </tbody>
           </PortalTable>
-        </div>
-      </div>
+      </PortalPanel>
     </>
   )
 }

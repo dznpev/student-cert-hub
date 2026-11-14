@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { auditOutcomes } from './auditOutcomes.js'
 import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 
@@ -39,17 +41,15 @@ export default function AuditLogsPage({ auditLogs, search = '', onSearchChange =
 
   return (
     <>
-      <h1 className="page-title mb-2">Nhật ký hệ thống</h1>
-      <p className="text-body-secondary mb-4">Nhật ký mô phỏng trong phiên hiện tại. Giữ khi đổi menu, tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
+      <PortalPageHeader title="Nhật ký hệ thống" description="Nhật ký mô phỏng trong phiên hiện tại. Giữ khi đổi menu, tải lại trang sẽ khôi phục dữ liệu mẫu." />
 
-      <div className="card rounded-4">
-        <div className="card-body p-3 p-md-4">
+      <PortalPanel className="portal-panel--stacked portal-panel--padded">
           <div className="row g-3 mb-3">
             <div className="col-12 col-sm-5 col-xl-3">
               <label className="form-label" htmlFor="audit-outcome">Kết quả</label>
               <select
                 id="audit-outcome"
-                className="form-select"
+                className="fld w-100"
                 value={selectedOutcome}
                 onChange={(event) => setSelectedOutcome(event.target.value)}
               >
@@ -66,6 +66,8 @@ export default function AuditLogsPage({ auditLogs, search = '', onSearchChange =
               <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => { onSearchChange(''); setSelectedOutcome('') }}>Xóa bộ lọc</button>
             )}
           </div>
+      </PortalPanel>
+      <PortalPanel>
           <PortalTable label="Danh sách nhật ký hệ thống" minWidth="56rem">
               <caption className="visually-hidden">Danh sách nhật ký hệ thống mẫu</caption>
               <thead>
@@ -101,8 +103,7 @@ export default function AuditLogsPage({ auditLogs, search = '', onSearchChange =
                 )}
               </tbody>
           </PortalTable>
-        </div>
-      </div>
+      </PortalPanel>
     </>
   )
 }

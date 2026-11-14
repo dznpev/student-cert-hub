@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import { normalizeSearch } from './normalizeSearch.js'
 import { createStudentComparator } from './sortRecords.js'
 import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 import StudentProfileForm from './StudentProfileForm.jsx'
@@ -53,10 +55,8 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
         <button type="button" className="btn btn-outline-primary mb-3" onClick={closeProfile} autoFocus>
           Quay lại danh sách
         </button>
-        <h1 className="page-title mb-2">Hồ sơ sinh viên</h1>
-        <p className="text-body-secondary mb-4">Dữ liệu mẫu</p>
-        <section className="card rounded-4" aria-label={'Hồ sơ ' + selectedStudent.fullName}>
-          <div className="card-body p-3 p-md-4">
+        <PortalPageHeader title="Hồ sơ sinh viên" description="Dữ liệu mẫu" />
+        <PortalPanel className="portal-panel--padded" title={'Hồ sơ ' + selectedStudent.fullName}>
             {editingProfile ? (
               <StudentProfileForm student={selectedStudent} cohorts={cohorts} onCancel={() => setEditingProfile(false)}
                 onSave={(values) => {
@@ -98,25 +98,22 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
             )}
               </>
             )}
-          </div>
-        </section>
+        </PortalPanel>
       </>
     )
   }
 
   return (
     <>
-      <h1 className="page-title mb-2">Sinh viên</h1>
-      <p className="text-body-secondary mb-4">Dữ liệu mẫu</p>
+      <PortalPageHeader title="Sinh viên" description="Dữ liệu mẫu" />
 
-      <div className="card rounded-4">
-        <div className="card-body p-3 p-md-4">
+      <PortalPanel className="portal-panel--stacked portal-panel--padded">
           <div className="row g-3 mb-3">
             <div className="col-12 col-sm-6 col-xl-2">
               <label className="form-label" htmlFor="student-cohort">Khóa tuyển sinh</label>
               <select
                 id="student-cohort"
-                className="form-select"
+                className="fld w-100"
                 value={selectedCohort}
                 onChange={(event) => setSelectedCohort(event.target.value)}
               >
@@ -128,7 +125,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
             </div>
             <div className="col-12 col-sm-6 col-xl-3">
               <label className="form-label" htmlFor="student-account-status">Tình trạng tài khoản</label>
-              <select id="student-account-status" className="form-select" value={selectedAccountStatus}
+              <select id="student-account-status" className="fld w-100" value={selectedAccountStatus}
                 onChange={(event) => setSelectedAccountStatus(event.target.value)}>
                 <option value="">Tất cả tình trạng</option>
                 {Object.entries(studentAccountStatuses).map(([value, { label }]) => (
@@ -138,7 +135,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
             </div>
             <div className="col-12 col-sm-6 col-xl-3">
               <label className="form-label" htmlFor="student-profile-status">Tình trạng hồ sơ</label>
-              <select id="student-profile-status" className="form-select" value={selectedProfileStatus}
+              <select id="student-profile-status" className="fld w-100" value={selectedProfileStatus}
                 onChange={(event) => setSelectedProfileStatus(event.target.value)}>
                 <option value="">Tất cả hồ sơ</option>
                 <option value="active">Đang sử dụng</option>
@@ -146,6 +143,8 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
               </select>
             </div>
           </div>
+      </PortalPanel>
+      <PortalPanel>
           <PortalTable label="Danh sách sinh viên" minWidth="60rem" stickyActions>
               <caption className="visually-hidden">Danh sách sinh viên mẫu</caption>
               <colgroup>
@@ -211,8 +210,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
                 )}
               </tbody>
           </PortalTable>
-        </div>
-      </div>
+      </PortalPanel>
     </>
   )
 }
