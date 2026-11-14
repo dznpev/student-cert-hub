@@ -41,7 +41,9 @@ export default function AppShell({
   onSearchChange,
   searchPlaceholder,
   onChangePassword,
+  changePasswordNote = 'Đăng nhập bằng tài khoản quản trị mẫu để đổi mật khẩu.',
   context,
+  topbarActions,
   children,
 }) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
@@ -92,6 +94,7 @@ export default function AppShell({
         searchPlaceholder={accountPage ? null : searchPlaceholder}
       >
         <span className="portal-topbar__role">{roleLabel}</span>
+        {topbarActions}
         <AccountMenu
           identifier={accountIdentifier}
           open={accountMenuOpen}
@@ -110,7 +113,7 @@ export default function AppShell({
               {accountPage === 'password' ? (
                 onChangePassword
                   ? <PasswordChangeForm onChangePassword={onChangePassword} />
-                  : <p className="portal-account-page__note">Đăng nhập bằng tài khoản quản trị mẫu để đổi mật khẩu.</p>
+                  : <p className="portal-account-page__note">{changePasswordNote}</p>
               ) : (
                 <>
                   <dl className="portal-account-page__list">

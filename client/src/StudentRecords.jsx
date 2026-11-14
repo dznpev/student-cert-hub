@@ -3,6 +3,9 @@ import CertificateDownloadPanel from './CertificateDownloadPanel.jsx'
 import { certificateStatuses } from './certificateStatuses.js'
 import CertificateVerificationLink from './CertificateVerificationLink.jsx'
 import { approvalStatuses } from './approvalStatuses.js'
+import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import { compareCodesDescending } from './sortRecords.js'
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
@@ -26,10 +29,10 @@ export default function StudentRecords({ page, activities, participations, certi
       || right.participation.participationId - left.participation.participationId)
 
   return (
-    <section className="card rounded-4" aria-labelledby="student-records-title">
-      <div className="card-body p-3 p-md-4">
-        <h1 id="student-records-title" className="page-title mb-3">{title}</h1>
-        {showCertificates && <p className="text-body-secondary">Chứng nhận trong bản xem thử. Tệp PDF chưa được cung cấp.</p>}
+    <>
+      <PortalPageHeader title={title}
+        description={showCertificates ? 'Chứng nhận trong bản xem thử. Tệp PDF chưa được cung cấp.' : undefined} />
+      <PortalPanel className="portal-panel--padded">
         {showCertificates && downloadRequest && <CertificateDownloadPanel key={downloadRequest.certificateIds.join(',')}
           request={downloadRequest} certificates={certificates} onClose={() => setDownloadRequest(null)} />}
         {records.length === 0 ? (
@@ -47,7 +50,7 @@ export default function StudentRecords({ page, activities, participations, certi
                 <li className="list-group-item px-0 py-3" key={participation.participationId}>
                   <div className="d-flex flex-wrap justify-content-between align-items-start gap-2">
                     <h2 className="h6 mb-0 text-break">{activity?.name ?? 'Hoạt động chưa xác định'}</h2>
-                    <span className={'badge text-wrap ' + (status?.badge ?? 'text-bg-secondary')}>{status?.label ?? 'Chưa xác định'}</span>
+                    <PortalChip tone={status?.tone} label={status?.label ?? 'Chưa xác định'} />
                   </div>
                   {activity?.code && <p className="small text-body-secondary mb-0 mt-1">{activity.code}</p>}
                   {showCertificates && (
@@ -68,7 +71,7 @@ export default function StudentRecords({ page, activities, participations, certi
             })}
           </ul>
         )}
-      </div>
-    </section>
+      </PortalPanel>
+    </>
   )
 }

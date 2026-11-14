@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import ThemeToggleButton from './components/ThemeToggleButton.jsx'
 
 export default function StudentPasswordReset({ onRequestReset, onResetPassword, onBack }) {
   const [studentCode, setStudentCode] = useState('')
@@ -39,6 +40,7 @@ export default function StudentPasswordReset({ onRequestReset, onResetPassword, 
   if (completed) {
     return (
       <>
+        <ThemeToggleButton />
         <p className="alert alert-success" role="status">Đã đặt lại mật khẩu mẫu. Bạn có thể đăng nhập bằng mật khẩu mới trong phiên này.</p>
         <button type="button" className="btn btn-primary w-100" onClick={onBack}>Về đăng nhập</button>
       </>
@@ -47,6 +49,9 @@ export default function StudentPasswordReset({ onRequestReset, onResetPassword, 
 
   return (
     <>
+      {/* §6.10: this view owns the screen's toggle; StudentLogin hides its own
+          while the reset form is open. */}
+      <ThemeToggleButton />
       <p className="small text-body-secondary">Luồng thử trên trình duyệt. Mã xác nhận hiển thị bên dưới để kiểm tra, email cần kết nối API.</p>
       {!resetRequest ? (
         <form onSubmit={requestReset}>

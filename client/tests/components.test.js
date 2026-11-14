@@ -7,6 +7,7 @@ import PortalChip from '../src/components/PortalChip.jsx'
 import PortalMetricCard from '../src/components/PortalMetricCard.jsx'
 import PortalPanel from '../src/components/PortalPanel.jsx'
 import PortalTable from '../src/components/PortalTable.jsx'
+import ThemeToggleButton from '../src/components/ThemeToggleButton.jsx'
 import DashboardPage from '../src/DashboardPage.jsx'
 import { auditOutcomes } from '../src/auditOutcomes.js'
 import { importRowStatuses } from '../src/importRowStatuses.js'
@@ -501,5 +502,137 @@ describe('các trang quản trị còn lại', () => {
         }
       }
     }
+  })
+})
+
+describe('cổng sinh viên và màn hình độc lập', () => {
+  const pageSrc = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+  const componentsCss = () => readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+  const standalonePages = [
+    'StudentLogin.jsx', 'StudentAccountLink.jsx', 'StudentPasswordReset.jsx', 'CertificateVerification.jsx',
+  ]
+  // StudentPasswordReset is the reset *view* of the login card, so it renders
+  // its toggle into that card instead of owning a surface of its own.
+  const authScreens = ['StudentLogin.jsx', 'StudentAccountLink.jsx', 'CertificateVerification.jsx']
+  const studentFiles = ['StudentPortal.jsx', 'StudentOverview.jsx', 'StudentRecords.jsx', ...standalonePages]
+
+  it('4 màn hình độc lập có nút đổi chế độ sáng tối', () => {
+    for (const page of standalonePages) {
+      expect(pageSrc(page), page).toContain('ThemeToggleButton')
+    }
+  })
+
+  it('màn hình độc lập không còn gradient cũ', () => {
+    expect(componentsCss()).not.toContain('#eef8ff')
+  })
+
+  // R127: the four screens share one page-token background, one token card and
+  // the white logo chip the brand blue needs (§8.3).
+  it('màn hình độc lập dùng nền trang, card token và hộp logo trắng', () => {
+    for (const page of authScreens) {
+      const src = pageSrc(page)
+      expect(src, page).toContain('portal-auth-screen')
+      expect(src, page).toContain('portal-auth-card')
+      expect(src, page).toContain('portal-logo-chip')
+      // The legacy surface classes are gone; element ids such as
+      // `student-login-code` are field wiring and stay.
+      for (const legacy of ['student-login-screen', 'student-login-card', 'student-login-logo']) {
+        expect(src, page).not.toContain(legacy)
+      }
+      expect(src, page).not.toContain('rounded-4')
+    }
+
+    const css = componentsCss()
+    expect(css).toMatch(/\.portal-auth-screen\s*\{[^}]*background:\s*var\(--ws-page-bg\)/)
+    const card = /\.portal-auth-card\s*\{([^}]*)\}/.exec(css)
+    expect(card, 'thiếu .portal-auth-card').not.toBeNull()
+    expect(card[1]).toMatch(/max-width:\s*27rem/)
+    expect(card[1]).toMatch(/background-color:\s*var\(--ws-panel\)/)
+    expect(card[1]).toMatch(/border-radius:\s*var\(--ws-r\)/)
+    expect(card[1]).toMatch(/box-shadow:\s*var\(--ws-shadow-panel\)/)
+  })
+
+  // R128: one toggle component, driven by Task 3's useTheme() hook.
+  it('ThemeToggleButton lấy theme từ useTheme và đổi nhãn theo chế độ', () => {
+    const src = read('ThemeToggleButton.jsx')
+    expect(src).toContain('useTheme')
+    expect(src).not.toContain('ThemeContext')
+
+    const render = (theme) => renderToStaticMarkup(createElement(ThemeContext.Provider,
+      { value: { theme, toggleTheme() {} } }, createElement(ThemeToggleButton)))
+    const light = render('light')
+    expect(light).toContain('class="portal-theme-toggle')
+    expect(light).toContain('aria-label="Chuyển sang chế độ tối"')
+    expect(light).toContain('🌙')
+    const dark = render('dark')
+    expect(dark).toContain('aria-label="Chuyển sang chế độ sáng"')
+    expect(dark).toContain('☀️')
+  })
+
+  // R124: the student portal is the last consumer of the legacy shell.
+  it('cổng sinh viên dùng AppShell và bốn tệp shell cũ đã bị xoá', () => {
+    const portal = pageSrc('StudentPortal.jsx')
+    expect(portal).toContain("from './components/AppShell.jsx'")
+    for (const file of ['PortalSidebar.jsx', 'PortalTopbar.jsx', 'AccountMenu.jsx', 'PortalFooter.jsx']) {
+      expect(() => pageSrc(file), file).toThrow()
+    }
+  })
+
+  // R129: the preview-only password page used to tell the visitor to sign in
+  // with their MSSV; AppShell's shared note says "quản trị", so the student
+  // portal supplies its own wording.
+  it('lời nhắc đổi mật khẩu của sinh viên xem thử giữ nguyên câu cũ', () => {
+    expect(pageSrc('StudentPortal.jsx')).toContain('changePasswordNote="Đăng nhập bằng MSSV để đổi mật khẩu mẫu."')
+    expect(read('AppShell.jsx')).toContain('{changePasswordNote}')
+  })
+
+  // R125: a nav id that reuses an account id would open the account panel
+  // instead of the section and mark two items aria-current="page".
+  it('mục điều hướng của sinh viên không trùng id nhóm tài khoản', () => {
+    const ids = [...pageSrc('StudentPortal.jsx').matchAll(/\{\s*id:\s*'([^']+)',\s*title:/g)].map(([, id]) => id)
+    expect(ids).toEqual(['overview', 'student-profile', 'participations', 'certificates'])
+    for (const accountId of ['profile', 'account', 'password']) expect(ids).not.toContain(accountId)
+    // The account group keeps its own ids (AppShell, R34).
+    expect(read('AppShell.jsx')).toContain("const ACCOUNT_PAGE_IDS = ['profile', 'account', 'password']")
+  })
+
+  // R126: the bell keeps its unread count on a HUTECH token, not text-bg-danger.
+  it('chuông thông báo giữ số chưa đọc với badge token', () => {
+    const portal = pageSrc('StudentPortal.jsx')
+    expect(portal).toContain('topbarActions')
+    expect(portal).toContain('portal-bell')
+    expect(portal).toContain("aria-label={unread ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}")
+
+    const badge = /\.portal-bell__badge\s*\{([^}]*)\}/.exec(componentsCss())
+    expect(badge, 'thiếu .portal-bell__badge').not.toBeNull()
+    expect(badge[1]).toMatch(/background-color:\s*var\(--ws-accent\)/)
+    expect(badge[1]).toMatch(/color:\s*var\(--ws-on-brand\)/)
+  })
+
+  // R130: no Bootstrap card / rounded-4 / status badge surface survives.
+  it('tệp của cổng sinh viên không còn card, rounded-4, text-bg-* hay page-title', () => {
+    for (const file of studentFiles) {
+      const src = pageSrc(file)
+      expect(src, file).not.toContain('rounded-4')
+      expect(src, file).not.toContain('text-bg-')
+      expect(src, file).not.toMatch(/\bcard-body\b/)
+      expect(src, file).not.toMatch(/(?:^|[\s"'])card(?:[\s"']|$)/)
+      expect(src, file).not.toMatch(/\bpage-title\b/)
+    }
+  })
+
+  it('tổng quan và hồ sơ sinh viên dùng PageHeader, Panel và thẻ chỉ số chung', () => {
+    const overview = pageSrc('StudentOverview.jsx')
+    expect(overview).toContain('PortalPageHeader')
+    expect(overview).toContain('PortalMetricCard')
+    // The shared component lives in components/ — the legacy local one is gone.
+    expect(overview).not.toContain("from './PortalMetricCard.jsx'")
+
+    const records = pageSrc('StudentRecords.jsx')
+    expect(records).toContain('PortalPageHeader')
+    expect(records).toContain('PortalPanel')
+    expect(records).toContain('PortalChip')
+
+    expect(pageSrc('StudentPortal.jsx')).toContain('PortalPanel')
   })
 })

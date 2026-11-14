@@ -231,6 +231,13 @@
   margin-bottom: var(--ws-s7);
 }
 
+/* The personal overview has three tiles, so it fills its row instead of leaving
+   a fourth column empty. The narrower rules below still collapse it to two and
+   then one column, because they come later in the cascade. */
+.portal-metric-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .portal-metric {
   display: flex;
   align-items: flex-start;
@@ -1451,4 +1458,187 @@ select.fld {
   .portal-footer {
     padding: var(--ws-s6) var(--ws-s5);
   }
+}
+
+/* Student portal (§6.9.2 notification bell) --------------------------------
+ * The bell is the student shell's only topbar control that the admin shell does
+ * not have; its popover hangs under it, next to the account menu.
+ */
+
+.portal-bell__wrap {
+  position: relative;
+  display: flex;
+}
+
+.portal-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--ws-hutech);
+  background-color: transparent;
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) ease, border-color var(--ws-dur-fast) ease;
+}
+
+.portal-bell:hover {
+  background-color: var(--ws-hutech-l);
+  border-color: var(--ws-hutech-border);
+}
+
+.portal-bell:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+/* R126: the unread count keeps a filled pill, painted with the accent surface
+   instead of Bootstrap's un-bridged danger red. */
+.portal-bell__badge {
+  position: absolute;
+  top: calc(-1 * var(--ws-s3));
+  right: calc(-1 * var(--ws-s3));
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--ws-s2);
+  color: var(--ws-on-brand);
+  background-color: var(--ws-accent);
+  border-radius: var(--ws-r-pill);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.portal-notifications {
+  position: absolute;
+  top: calc(100% + var(--ws-s4));
+  right: 0;
+  z-index: 30;
+  width: min(28rem, calc(100vw - var(--ws-s8) * 2));
+  max-height: 70vh;
+  overflow-y: auto;
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-notifications[aria-hidden="true"] {
+  display: none;
+}
+
+[data-bs-theme="dark"] .portal-bell {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-bell:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+/* Standalone screens (§6.10) ----------------------------------------------
+ * Sign-in, activation link, password reset and the public verification lookup
+ * have no shell: one centred card on the page gradient, the logo in its white
+ * chip (§8.3) and their own theme toggle.
+ */
+
+.portal-auth-screen {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--ws-s8);
+  /* The token already carries both the light and the dark page gradient. */
+  background: var(--ws-page-bg);
+}
+
+.portal-auth-card {
+  width: 100%;
+  /* 27rem and the 24px/32px inset are fixed by §6.10, not scale steps. */
+  max-width: 27rem;
+  padding: 24px 32px;
+  background-color: var(--ws-panel);
+  border-radius: var(--ws-r);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-auth-header {
+  margin-bottom: var(--ws-s8);
+  text-align: center;
+}
+
+.portal-auth-logo {
+  margin-bottom: var(--ws-s5);
+}
+
+.portal-auth-logo__img {
+  display: block;
+  width: min(10rem, 100%);
+  height: auto;
+}
+
+.portal-auth-eyebrow {
+  margin: 0 0 var(--ws-s2);
+  color: var(--ws-hutech);
+  font-size: var(--ws-t-chip);
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+/* 25px / 800 is the standalone title size fixed by §6.10 (not a scale step). */
+.portal-auth-title {
+  margin: 0 0 var(--ws-s3);
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.25px;
+}
+
+.portal-auth-description {
+  margin: 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-card);
+  line-height: 1.5;
+}
+
+.portal-theme-toggle {
+  position: fixed;
+  top: var(--ws-s7);
+  right: var(--ws-s7);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  box-shadow: var(--ws-shadow-panel);
+  font-size: var(--ws-t-lead);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.portal-theme-toggle:hover {
+  background-color: var(--ws-chip-bg);
+}
+
+.portal-theme-toggle:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+[data-bs-theme="dark"] .portal-auth-eyebrow {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-theme-toggle:focus-visible {
+  outline-color: var(--ws-hutech-text);
 }

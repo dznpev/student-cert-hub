@@ -1,5 +1,6 @@
 import PortalIcon from './PortalIcon.jsx'
 import PortalMetricCard from './components/PortalMetricCard.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
 
 export default function StudentOverview({ student, participations, certificates }) {
   const metrics = [
@@ -9,16 +10,14 @@ export default function StudentOverview({ student, participations, certificates 
   ]
 
   return (
-    <section aria-labelledby="student-overview-title">
-      <h1 id="student-overview-title" className="page-title mb-2">Tổng quan cá nhân</h1>
-      <p className="text-body-secondary mb-3">{student.fullName} · {student.studentCode} · Dữ liệu xem thử</p>
-      <div className="row g-3">
+    <>
+      <PortalPageHeader title="Tổng quan cá nhân"
+        description={`${student.fullName} · ${student.studentCode} · Dữ liệu xem thử`} />
+      <div className="portal-metric-grid portal-metric-grid--three">
         {metrics.map(([label, value, icon, tone]) => (
-          <div className="col-12 col-md-4" key={label}>
-            <PortalMetricCard label={label} value={value} icon={<PortalIcon name={icon} />} tone={tone} />
-          </div>
+          <PortalMetricCard key={label} label={label} value={value} icon={<PortalIcon name={icon} />} tone={tone} />
         ))}
       </div>
-    </section>
+    </>
   )
 }
