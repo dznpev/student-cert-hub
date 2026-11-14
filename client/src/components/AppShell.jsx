@@ -41,6 +41,7 @@ export default function AppShell({
   onSearchChange,
   searchPlaceholder,
   onChangePassword,
+  context,
   children,
 }) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
@@ -85,11 +86,12 @@ export default function AppShell({
 
       <AppTopbar
         title="Quản lý chứng nhận sinh viên"
-        context={roleLabel}
+        context={accountPage ? ACCOUNT_TITLES[accountPage] : (context || roleLabel)}
         search={search}
         onSearchChange={onSearchChange}
         searchPlaceholder={searchPlaceholder}
       >
+        <span className="portal-topbar__role">{roleLabel}</span>
         <AccountMenu
           identifier={accountIdentifier}
           open={accountMenuOpen}

@@ -5,6 +5,11 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import AccountMenu from '../src/components/AccountMenu.jsx'
 import AppSidebar from '../src/components/AppSidebar.jsx'
+import {
+  createAdminSections,
+  createSuperAdminSections,
+  createSuperAdminWorkspaceSections,
+} from '../src/navigationSections.js'
 import { ThemeContext } from '../src/themeContext.js'
 
 const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf-8')
@@ -92,17 +97,33 @@ describe('shell mới — hành vi render', () => {
   })
 })
 
-describe('App.jsx — nhóm điều hướng', () => {
-  it('App.jsx định nghĩa section theo nhóm', () => {
-    const src = read('App.jsx')
-    expect(src).toMatch(/group:\s*'Nghiệp vụ'/)
-    expect(src).toMatch(/group:\s*'Hệ thống'/)
-    expect(src).toMatch(/group:\s*'Quản trị'/)
+describe('navigationSections — nhóm điều hướng', () => {
+  const itemsOf = (sections) => sections.flatMap(({ items }) => items)
+
+  it('mỗi shell có đúng một mục Nhật ký hệ thống và đúng bộ nhóm', () => {
+    const shells = [
+      ['admin', createAdminSections(0), ['Nghiệp vụ', 'Hệ thống']],
+      ['super admin', createSuperAdminSections(0), ['Quản trị', 'Nghiệp vụ', 'Hệ thống']],
+      ['super admin workspace', createSuperAdminWorkspaceSections(0), [null, 'Nghiệp vụ', 'Hệ thống']],
+    ]
+
+    for (const [label, sections, expectedGroups] of shells) {
+      expect(sections.map(({ group }) => group), label).toEqual(expectedGroups)
+      expect(itemsOf(sections).filter(({ id }) => id === 'audit'), label).toHaveLength(1)
+    }
   })
 
-  it('mục Nhật ký hệ thống chỉ xuất hiện một lần mỗi shell', () => {
-    const src = read('App.jsx')
-    const occurrences = (src.match(/id:\s*'audit'/g) || []).length
-    expect(occurrences).toBeLessThanOrEqual(3)
+  it('mọi mục điều hướng đều có icon đã đăng ký', () => {
+    const shells = [
+      createAdminSections(0),
+      createSuperAdminSections(0),
+      createSuperAdminWorkspaceSections(0),
+    ]
+
+    for (const sections of shells) {
+      const items = itemsOf(sections)
+      expect(items.length).toBeGreaterThan(0)
+      for (const item of items) expect(item.icon?.props?.name).toBe(item.id)
+    }
   })
 })

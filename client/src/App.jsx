@@ -1,6 +1,6 @@
 import StudentAccountLink from './StudentAccountLink.jsx'
 import { getStudentAccountStatus } from './studentAccountStatuses.js'
-import { useState, useSyncExternalStore } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import ActivitiesPage from './ActivitiesPage.jsx'
 import AuditLogsPage from './AuditLogsPage.jsx'
 import CertificateTemplatesPage from './CertificateTemplatesPage.jsx'
@@ -11,6 +11,7 @@ import DashboardPage from './DashboardPage.jsx'
 import ImportsPage from './ImportsPage.jsx'
 import StudentPortal from './StudentPortal.jsx'
 import AppShell from './components/AppShell.jsx'
+import { createAdminSections, createSuperAdminSections, createSuperAdminWorkspaceSections } from './navigationSections.js'
 import { demoManagementAccounts } from './demoManagementAccounts.js'
 import { demoPassword } from './demoPassword.js'
 import { demoStudentActivation } from './demoStudentActivation.js'
@@ -30,6 +31,9 @@ import { queueCertificates, processCertificate } from './queueCertificates.js'
 import { compareCodesDescending } from './sortRecords.js'
 import { sampleAuditLogs } from './sampleAuditLogs.js'
 
+// The brief's Interfaces line: App.jsx exports the grouped section builders for each shell.
+export { createAdminSections, createSuperAdminSections, createSuperAdminWorkspaceSections }
+
 // Nav items carry no page component, so the render logic resolves it by id.
 const pageComponents = {
   overview: DashboardPage,
@@ -40,6 +44,12 @@ const pageComponents = {
   certificates: CertificatesPage,
   imports: ImportsPage,
   audit: AuditLogsPage,
+}
+
+// The grouped navigation holds the items in several shells, so the topbar looks
+// the active item up by id instead of relying on a second flat metadata list.
+function findNavItem(sections, sectionId) {
+  return sections.flatMap(({ items }) => items).find((item) => item.id === sectionId)
 }
 
 function isDemoCodeExpired(request) {
@@ -95,32 +105,11 @@ export default function App() {
   const [auditLogs, setAuditLogs] = useState(sampleAuditLogs)
   const [notifications, setNotifications] = useState([])
   const pendingCount = participations.filter(({ approvalStatus }) => approvalStatus === 'Pending').length
-  const businessItems = [
-    { id: 'overview', title: 'Tổng quan' },
-    { id: 'cohorts', title: 'Khóa tuyển sinh' },
-    { id: 'students', title: 'Sinh viên' },
-    { id: 'activities', title: 'Hoạt động' },
-    { id: 'participations', title: 'Lượt tham gia', badge: pendingCount },
-    { id: 'certificates', title: 'Chứng nhận' },
-    { id: 'imports', title: 'Nhập dữ liệu Excel' },
-  ]
-  const adminSections = [
-    { group: 'Nghiệp vụ', items: businessItems },
-    { group: 'Hệ thống', items: [{ id: 'audit', title: 'Nhật ký hệ thống' }] },
-  ]
-  const superAdminSections = [
-    { group: 'Quản trị', items: [
-      { id: 'accounts', title: 'Quản lý tài khoản' },
-      { id: 'templates', title: 'Mẫu chứng nhận' },
-    ] },
-    { group: 'Nghiệp vụ', items: businessItems },
-    { group: 'Hệ thống', items: [{ id: 'audit', title: 'Nhật ký hệ thống' }] },
-  ]
-  const superAdminWorkspaceSections = [
-    { group: 'Quản trị', items: [{ id: 'back-to-super-admin', title: 'Về Super Admin' }] },
-    ...adminSections,
-  ]
-  const activeSection = businessItems.find((section) => section.id === activeSectionId)
+  const adminSections = useMemo(() => createAdminSections(pendingCount), [pendingCount])
+  const superAdminSections = useMemo(() => createSuperAdminSections(pendingCount), [pendingCount])
+  const superAdminWorkspaceSections = useMemo(() => createSuperAdminWorkspaceSections(pendingCount), [pendingCount])
+  const activeSection = findNavItem(adminSections, activeSectionId)
+  const superAdminActiveSection = findNavItem(superAdminSections, superAdminSection)
   const ActivePage = pageComponents[activeSectionId]
 
   function requestStudentPasswordReset(studentCode) {
@@ -731,7 +720,7 @@ export default function App() {
           }
           setActiveSectionId(sectionId)
           setSuperAdminSection('workspace')
-        }} roleLabel="Super Admin · Bản xem thử"
+        }} roleLabel="Super Admin · Bản xem thử" context={superAdminActiveSection?.title}
         accountIdentifier={managementAccount.username} onSignOut={endManagementPreview}
         onHome={() => setSuperAdminSection('accounts')} onChangePassword={changeManagementPassword}
         search={null} onSearchChange={null} searchPlaceholder={null}>
@@ -760,6 +749,7 @@ export default function App() {
         else setActiveSectionId(sectionId)
       }}
       roleLabel={inSuperAdmin ? 'Super Admin · Khu quản trị' : 'Admin cấp chứng nhận'}
+      context={activeSection?.title}
       accountIdentifier={managementAccount?.username ?? 'admin'}
       onSignOut={endManagementPreview}
       onHome={() => { if (inSuperAdmin) setSuperAdminSection('accounts'); else setActiveSectionId('overview') }}
@@ -790,11 +780,11 @@ export default function App() {
         />
       ) : (
         <>
-          <h1 className="page-title mb-4">{activeSection.title}</h1>
+          <h1 className="page-title mb-4">{activeSection?.title}</h1>
           <div className="card content-card">
             <div className="card-body p-4">
               <p className="text-body-secondary mb-0">
-                {activeSection.description ?? 'Mục này đang được xây dựng.'}
+                {activeSection?.description ?? 'Mục này đang được xây dựng.'}
               </p>
             </div>
           </div>
