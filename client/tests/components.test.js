@@ -135,6 +135,17 @@ describe('component dùng chung', () => {
     }
   })
 
+  it('PortalTable dùng cho mọi bảng và bảng rộng có cột thao tác dính', () => {
+    const src = readFileSync(new URL('../src/CertificatesPage.jsx', import.meta.url), 'utf-8')
+    expect(src).toContain('PortalTable')
+    expect(src).toContain('stickyActions')
+  })
+
+  it('style cột thao tác dính có position sticky', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    expect(css).toMatch(/portal-table--sticky-actions[\s\S]*position:\s*sticky/)
+  })
+
   it('PortalMetricCard giữ cấu trúc <dl> và áp tone lên phần tử gốc', () => {
     const html = renderToStaticMarkup(createElement(PortalMetricCard, {
       label: 'Chờ duyệt', value: '3', note: 'Ghi chú', icon: createElement('span', null, 'i'), tone: 'warn',

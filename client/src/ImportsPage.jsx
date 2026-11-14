@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PortalChip from './components/PortalChip.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { importRowStatuses } from './importRowStatuses.js'
 import { previewStudentFile } from './previewStudentFile.js'
 import { previewParticipationFile } from './previewParticipationFile.js'
@@ -195,8 +196,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                 <p className="text-body-secondary">
                   {preview.fileName} · {counts.totalRows} dòng{!preview.confirmed && ` · ${counts.validRows} hợp lệ · ${countDetails}`}
                 </p>
-                <div className="admin-table-scroll" role="region" aria-label="Xem trước hồ sơ sinh viên" tabIndex={0}>
-                  <table className="table align-middle mb-0 admin-data-table import-history-table">
+                <PortalTable label="Xem trước hồ sơ sinh viên" minWidth="56rem">
                     <thead>
                       <tr>
                         {['STT', 'MSSV', 'Họ và tên', 'Khóa', 'Email', 'Lớp', 'Kết quả', 'Chi tiết'].map((label) => <th scope="col" key={label}>{label}</th>)}
@@ -216,8 +216,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                         </tr>
                       ))}
                     </tbody>
-                  </table>
-                </div>
+                </PortalTable>
                 <div className="d-flex flex-wrap gap-2 mt-3">
                   {!preview.confirmed && (
                     <button
@@ -256,8 +255,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                 <p className="text-body-secondary">
                   {preview.fileName} · {previewActivity?.name} · {counts.totalRows} dòng{!preview.confirmed && ` · ${counts.validRows} hợp lệ · ${countDetails}`}
                 </p>
-                <div className="admin-table-scroll" role="region" aria-label="Xem trước lượt tham gia" tabIndex={0}>
-                  <table className="table align-middle mb-0 admin-data-table import-preview-table">
+                <PortalTable label="Xem trước lượt tham gia" minWidth="34rem">
                     <thead>
                       <tr>
                         {['STT', 'MSSV', 'Họ và tên', 'Kết quả', 'Chi tiết'].map((label) => <th scope="col" key={label}>{label}</th>)}
@@ -274,8 +272,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                         </tr>
                       ))}
                     </tbody>
-                  </table>
-                </div>
+                </PortalTable>
                 <div className="d-flex flex-wrap gap-2 mt-3">
                   {!preview.confirmed && (
                     <button
@@ -332,8 +329,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                   {['Imported', 'Duplicate', 'Skipped', 'Error'].map((status) => <option value={status} key={status}>{importRowStatuses[status].label}</option>)}
                 </select>
                 <p className="small" role="status">Hiển thị {detailRows.length}/{selectedBatch.rows.length} dòng.</p>
-                <div className="admin-table-scroll" role="region" aria-label="Kết quả từng dòng của đợt nhập" tabIndex={0}>
-                  <table className="table align-middle mb-0 admin-data-table import-history-table">
+                <PortalTable label="Kết quả từng dòng của đợt nhập" minWidth="56rem">
                     <thead><tr>{['STT', 'Dòng gốc', 'MSSV', 'Họ và tên', ...(selectedBatch.importType === 'Students' ? ['Khóa', 'Email', 'Lớp'] : []), 'Kết quả', 'Chi tiết'].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
                     <tbody>{detailRows.map((row, index) => <tr key={row.rowNumber}>
                       <th scope="row">{index + 1}</th><td>{row.rowNumber}</td><td>{row.studentCode || '—'}</td><td>{row.fullName || '—'}</td>
@@ -342,8 +338,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                     </tr>)}
                     {detailRows.length === 0 && <tr><td colSpan={selectedBatch.importType === 'Students' ? 9 : 6} className="text-center text-body-secondary">Không có dòng phù hợp.</td></tr>}
                     </tbody>
-                  </table>
-                </div>
+                </PortalTable>
                 {selectedBatch.rows.some((row) => row.processingStatus === 'Error') && <div className="mt-3">
                   <button type="button" className="btn btn-outline-secondary" disabled={busy} onClick={() => exportErrorReport(selectedBatch)}>
                     {exportingErrorReport ? 'Đang tạo báo cáo lỗi…' : 'Tải báo cáo lỗi của đợt (.xlsx)'}
@@ -354,8 +349,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
               <button type="button" className="btn btn-outline-secondary mt-3" disabled={busy} onClick={() => { setSelectedBatchId(null); setSelectedRowStatus(''); setErrorReportError('') }}>Đóng chi tiết đợt</button>
             </section>
           )}
-          <div className="admin-table-scroll" role="region" aria-label="Lịch sử các đợt nhập" tabIndex={0}>
-            <table className="table align-middle mb-0 admin-data-table import-history-table">
+          <PortalTable label="Lịch sử các đợt nhập" minWidth="56rem" stickyActions>
               <thead>
                 <tr>
                   <th scope="col">Tên tệp</th>
@@ -393,8 +387,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+          </PortalTable>
         </div>
       </section>
     </>

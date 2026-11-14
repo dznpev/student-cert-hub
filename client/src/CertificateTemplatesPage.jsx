@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import CertificateTemplateImage from './CertificateTemplateImage.jsx'
 import PortalChip from './components/PortalChip.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 
 const CertificateTemplatePdf = lazy(() => import('./CertificateTemplatePdf.jsx'))
@@ -154,8 +155,7 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
                 onClick={() => { onSearchChange(''); setTemplateStatusFilter('') }}>Xóa bộ lọc</button>
             )}
           </div>
-          <div className="admin-table-scroll" role="region" aria-label="Danh sách mẫu chứng nhận" tabIndex={0}>
-            <table className="table align-middle mb-0 admin-data-table">
+          <PortalTable label="Danh sách mẫu chứng nhận">
               <thead>
                 <tr>
                   <th scope="col">Tên mẫu</th>
@@ -223,8 +223,7 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
                   </td></tr>
                 )}
               </tbody>
-            </table>
-          </div>
+          </PortalTable>
         </div>
       </div>
 

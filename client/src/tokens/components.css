@@ -430,12 +430,12 @@
   right: 0;
   z-index: 1;
   white-space: nowrap;
-  background-color: var(--ws-panel);
+  background-color: var(--ws-panel-solid);
   border-left: 1px solid var(--ws-line);
   box-shadow: -6px 0 12px -10px var(--ws-control);
 }
 
-.portal-table--sticky-actions tbody tr:hover td:last-child {
+.portal-table--sticky-actions tbody tr:hover :is(th, td):last-child {
   background-color: var(--ws-chip-bg);
 }
 

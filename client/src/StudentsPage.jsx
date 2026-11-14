@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { normalizeSearch } from './normalizeSearch.js'
 import { createStudentComparator } from './sortRecords.js'
 import PortalChip from './components/PortalChip.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 import StudentProfileForm from './StudentProfileForm.jsx'
 
@@ -145,8 +146,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
               </select>
             </div>
           </div>
-          <div className="admin-table-scroll" role="region" aria-label="Danh sách sinh viên" tabIndex={0}>
-            <table className="table align-middle mb-0 admin-data-table students-table">
+          <PortalTable label="Danh sách sinh viên" minWidth="60rem" stickyActions>
               <caption className="visually-hidden">Danh sách sinh viên mẫu</caption>
               <colgroup>
                 <col className="students-col-code" />
@@ -210,8 +210,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+          </PortalTable>
         </div>
       </div>
     </>

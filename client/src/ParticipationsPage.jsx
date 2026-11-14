@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createParticipationComparator } from './sortRecords.js'
 
 import PortalChip from './components/PortalChip.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { approvalStatuses } from './approvalStatuses.js'
 
 export default function ParticipationsPage({ cohorts, activities, students, participations, onReviewParticipation, onReviewParticipations }) {
@@ -190,8 +191,7 @@ export default function ParticipationsPage({ cohorts, activities, students, part
             <button type="button" className="btn btn-outline-secondary btn-sm" disabled={Boolean(review) || selectedIds.length === 0} onClick={() => setSelectedIds([])}>Bỏ chọn</button>
           </div>
           <p className="small text-body-secondary">Chỉ chọn các lượt Chờ duyệt trong kết quả đang hiển thị. Đổi bộ lọc sẽ bỏ lựa chọn hiện tại.</p>
-          <div className="admin-table-scroll" role="region" aria-label="Danh sách lượt tham gia" tabIndex={0}>
-            <table className="table align-middle mb-0 admin-data-table participations-table">
+          <PortalTable label="Danh sách lượt tham gia" minWidth="65rem" stickyActions>
               <caption className="visually-hidden">Danh sách lượt tham gia mẫu</caption>
               <thead>
                 <tr>
@@ -251,8 +251,7 @@ export default function ParticipationsPage({ cohorts, activities, students, part
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+          </PortalTable>
         </div>
       </div>
     </>

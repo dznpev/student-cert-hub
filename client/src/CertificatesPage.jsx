@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import CertificateDownloadPanel from './CertificateDownloadPanel.jsx'
 import CertificateSnapshotPreview from './CertificateSnapshotPreview.jsx'
 import PortalChip from './components/PortalChip.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { certificateStatuses } from './certificateStatuses.js'
 import { createParticipationComparator } from './sortRecords.js'
 import { normalizeSearch } from './normalizeSearch.js'
@@ -214,8 +215,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
           <p className="small text-body-secondary">Chỉ chọn chứng nhận đang hiệu lực. Đổi bộ lọc sẽ bỏ chọn. Tải PDF/ZIP hiện là giao diện thử, chưa có tệp và quyền tải từ API.</p>
           {downloadRequest && <CertificateDownloadPanel key={downloadRequest.format + ':' + downloadRequest.certificateIds.join(',')}
             request={downloadRequest} certificates={certificates} onClose={() => setDownloadRequest(null)} />}
-          <div className="admin-table-scroll" role="region" aria-label="Danh sách chứng nhận" tabIndex={0}>
-            <table className="table align-middle mb-0 admin-data-table certificates-table">
+          <PortalTable label="Danh sách chứng nhận" minWidth="85rem" stickyActions>
               <caption className="visually-hidden">Danh sách chứng nhận mẫu</caption>
               <thead>
                 <tr>
@@ -307,8 +307,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+          </PortalTable>
         </div>
       </div>
     </>

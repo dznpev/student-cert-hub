@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PortalTable from './components/PortalTable.jsx'
 
 export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
   const [status, setStatus] = useState('all')
@@ -155,7 +156,7 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
               <option value="inactive">Ngừng sử dụng</option>
             </select>
           </div>
-          <table className="table align-middle mb-0 admin-data-table cohorts-table text-center">
+          <PortalTable label="Danh sách khóa tuyển sinh">
             <caption className="visually-hidden">Danh sách khóa tuyển sinh mẫu</caption>
             <thead>
               <tr>
@@ -208,7 +209,7 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
                 </tr>
               )}
             </tbody>
-          </table>
+          </PortalTable>
         </div>
       </div>
     </>

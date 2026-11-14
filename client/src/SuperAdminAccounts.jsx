@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import ManagementAccountForm from './ManagementAccountForm.jsx'
 import PortalChip from './components/PortalChip.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 
@@ -126,8 +127,7 @@ export default function SuperAdminAccounts({ students, managementAccounts, curre
               </select>
             </div>
           </div>
-          <div className="admin-table-scroll" role="region" aria-label="Bảng tài khoản và hồ sơ" tabIndex={0}>
-            <table className="table align-middle mb-0">
+          <PortalTable label="Bảng tài khoản và hồ sơ">
               <thead><tr>
                 <th scope="col">Tên đăng nhập / MSSV</th>
                 <th scope="col">Tên hiển thị</th>
@@ -167,8 +167,7 @@ export default function SuperAdminAccounts({ students, managementAccounts, curre
                 ))}
                 {visibleRows.length === 0 && <tr><td colSpan={5} className="text-center text-body-secondary">Không tìm thấy mục phù hợp.</td></tr>}
               </tbody>
-            </table>
-          </div>
+          </PortalTable>
         </div>
       </section>
     </>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { auditOutcomes } from './auditOutcomes.js'
 import PortalChip from './components/PortalChip.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 
 const entityLabels = {
@@ -65,8 +66,7 @@ export default function AuditLogsPage({ auditLogs, search = '', onSearchChange =
               <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => { onSearchChange(''); setSelectedOutcome('') }}>Xóa bộ lọc</button>
             )}
           </div>
-          <div className="admin-table-scroll" role="region" aria-label="Danh sách nhật ký hệ thống" tabIndex={0}>
-            <table className="table align-middle mb-0 admin-data-table audit-logs-table">
+          <PortalTable label="Danh sách nhật ký hệ thống" minWidth="56rem">
               <caption className="visually-hidden">Danh sách nhật ký hệ thống mẫu</caption>
               <thead>
                 <tr>
@@ -100,8 +100,7 @@ export default function AuditLogsPage({ auditLogs, search = '', onSearchChange =
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+          </PortalTable>
         </div>
       </div>
     </>

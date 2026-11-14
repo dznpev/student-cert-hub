@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import ActivityForm from './ActivityForm.jsx'
 import PortalChip from './components/PortalChip.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { activityStatuses } from './activityStatuses.js'
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
@@ -71,8 +72,7 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
             </div>
           </div>
 
-          <div className="admin-table-scroll" role="region" aria-label="Danh sách hoạt động" tabIndex={0}>
-            <table className="table align-middle mb-0 admin-data-table activities-table">
+          <PortalTable label="Danh sách hoạt động" minWidth="38rem">
               <caption className="visually-hidden">Danh sách hoạt động mẫu</caption>
               <thead>
                 <tr>
@@ -126,8 +126,7 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+          </PortalTable>
         </div>
       </div>
     </>
