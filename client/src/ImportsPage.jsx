@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PortalChip from './components/PortalChip.jsx'
+import { importRowStatuses } from './importRowStatuses.js'
 import { previewStudentFile } from './previewStudentFile.js'
 import { previewParticipationFile } from './previewParticipationFile.js'
 import { summarizeImportRows } from './summarizeImportRows.js'
@@ -9,20 +10,12 @@ const importTypes = {
   Participations: 'Danh sách lượt tham gia',
 }
 
-const rowStatuses = {
-  Valid: { label: 'Hợp lệ', tone: 'info' },
-  Imported: { label: 'Đã nhập', tone: 'success' },
-  Skipped: { label: 'Bỏ qua', tone: 'mute' },
-  Duplicate: { label: 'Trùng', tone: 'warn' },
-  Error: { label: 'Lỗi', tone: 'danger' },
-}
-
 const batchStatuses = {
   Completed: 'Hoàn tất',
 }
 
 function ImportRowStatus({ row }) {
-  const status = rowStatuses[row.isDuplicate && row.processingStatus === 'Skipped' ? 'Duplicate' : row.processingStatus]
+  const status = importRowStatuses[row.isDuplicate && row.processingStatus === 'Skipped' ? 'Duplicate' : row.processingStatus]
   return <PortalChip tone={status.tone} label={status.label} />
 }
 
@@ -336,7 +329,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                 <label htmlFor="import-detail-status" className="form-label">Lọc kết quả dòng</label>
                 <select id="import-detail-status" className="form-select mb-3" disabled={busy} value={selectedRowStatus} onChange={(event) => setSelectedRowStatus(event.target.value)}>
                   <option value="">Tất cả kết quả</option>
-                  {['Imported', 'Duplicate', 'Skipped', 'Error'].map((status) => <option value={status} key={status}>{rowStatuses[status].label}</option>)}
+                  {['Imported', 'Duplicate', 'Skipped', 'Error'].map((status) => <option value={status} key={status}>{importRowStatuses[status].label}</option>)}
                 </select>
                 <p className="small" role="status">Hiển thị {detailRows.length}/{selectedBatch.rows.length} dòng.</p>
                 <div className="admin-table-scroll" role="region" aria-label="Kết quả từng dòng của đợt nhập" tabIndex={0}>

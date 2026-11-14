@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { auditOutcomes } from './auditOutcomes.js'
 import PortalChip from './components/PortalChip.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 
@@ -9,12 +10,6 @@ const entityLabels = {
   Certificates: 'Chứng nhận',
   CertificateTemplates: 'Mẫu chứng nhận',
   ActivityParticipations: 'Lượt tham gia',
-}
-
-const outcomes = {
-  Success: { label: 'Thành công', tone: 'success' },
-  Failure: { label: 'Thất bại', tone: 'danger' },
-  Partial: { label: 'Một phần', tone: 'warn' },
 }
 
 const timestampFormatter = new Intl.DateTimeFormat('vi-VN', {
@@ -58,7 +53,7 @@ export default function AuditLogsPage({ auditLogs, search = '', onSearchChange =
                 onChange={(event) => setSelectedOutcome(event.target.value)}
               >
                 <option value="">Tất cả kết quả</option>
-                {Object.entries(outcomes).map(([value, { label }]) => (
+                {Object.entries(auditOutcomes).map(([value, { label }]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
@@ -85,7 +80,7 @@ export default function AuditLogsPage({ auditLogs, search = '', onSearchChange =
               </thead>
               <tbody>
                 {visibleAuditRows.map((entry) => {
-                  const outcome = outcomes[entry.outcome]
+                  const outcome = auditOutcomes[entry.outcome]
                   return (
                     <tr key={entry.auditLogId}>
                       <td className="text-nowrap">

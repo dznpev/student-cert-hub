@@ -7,6 +7,12 @@ import PortalChip from '../src/components/PortalChip.jsx'
 import PortalMetricCard from '../src/components/PortalMetricCard.jsx'
 import PortalTable from '../src/components/PortalTable.jsx'
 import DashboardPage from '../src/DashboardPage.jsx'
+import { auditOutcomes } from '../src/auditOutcomes.js'
+import { importRowStatuses } from '../src/importRowStatuses.js'
+import { activityStatuses } from '../src/activityStatuses.js'
+import { approvalStatuses } from '../src/approvalStatuses.js'
+import { certificateStatuses } from '../src/certificateStatuses.js'
+import { studentAccountStatuses } from '../src/studentAccountStatuses.js'
 import { ThemeContext } from '../src/themeContext.js'
 import { sampleActivities } from '../src/sampleActivities.js'
 import { sampleCertificates } from '../src/sampleCertificates.js'
@@ -27,6 +33,9 @@ function cssOrder(css, name) {
   const withOrder = new RegExp(`(?:^|\\n)[^{}]*\\.${name}[^{]*\\{[^}]*order:\\s*(-?\\d+)`).exec(css)
   return withOrder ? Number(withOrder[1]) : 0
 }
+
+// The tone each entry of a status map carries, keyed like the map itself.
+const tones = (entries) => Object.fromEntries(entries.map(([key, entry]) => [key, entry.tone]))
 
 function renderDashboard() {
   return renderToStaticMarkup(createElement(
@@ -73,6 +82,15 @@ describe('component dùng chung', () => {
   it('components.css không dùng rounded-4', () => {
     const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
     expect(css).not.toContain('rounded-4')
+  })
+
+  it('ô chỉ số tự reset margin của <dl> và hai <dd> do Bootstrap reboot đặt vào', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    // Bootstrap's reboot gives dl a 1rem bottom margin and dd .5rem; the rules
+    // are scoped to the tile's own classes so other pages' <dl>s keep theirs.
+    for (const name of ['portal-metric', 'portal-metric__value', 'portal-metric__note']) {
+      expect(css, name).toMatch(new RegExp(`(?:^|\\n)\\s*\\.${name}\\s*\\{[^}]*margin:\\s*0`))
+    }
   })
 
   it('PortalChip rơi về tone mute khi tone không hợp lệ hoặc thiếu', () => {
@@ -223,5 +241,36 @@ describe('trang Tổng quan', () => {
 
     // The legacy metric card is no longer part of the dashboard.
     expect(html).not.toContain('portal-metric-card')
+  })
+})
+
+describe('bảng tone trạng thái', () => {
+  // R81: §6.6.1 fixes every status → tone pair, so the mapping is pinned here
+  // instead of resting on a careful reading of six maps.
+  it('mỗi trạng thái mang đúng tone của spec §6.6.1', () => {
+    const vocabularies = [
+      ['chứng nhận', certificateStatuses.map(({ status, tone }) => [status, { tone }]), {
+        Issued: 'success', Generating: 'info', Failed: 'danger', Revoked: 'mute',
+      }],
+      ['duyệt tham gia', Object.entries(approvalStatuses), {
+        Pending: 'warn', Approved: 'success', Rejected: 'danger',
+      }],
+      ['hoạt động', Object.entries(activityStatuses), {
+        Draft: 'mute', Open: 'success', Closed: 'mute', Archived: 'mute',
+      }],
+      ['tài khoản sinh viên', Object.entries(studentAccountStatuses), {
+        active: 'success', pending: 'warn', disabled: 'danger', unlinked: 'mute',
+      }],
+      ['dòng nhập', Object.entries(importRowStatuses), {
+        Valid: 'info', Imported: 'success', Skipped: 'mute', Duplicate: 'warn', Error: 'danger',
+      }],
+      ['kết quả kiểm toán', Object.entries(auditOutcomes), {
+        Success: 'success', Failure: 'danger', Partial: 'warn',
+      }],
+    ]
+
+    for (const [name, entries, expected] of vocabularies) {
+      expect(tones(entries), name).toEqual(expected)
+    }
   })
 })

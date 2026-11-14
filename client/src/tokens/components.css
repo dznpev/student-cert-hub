@@ -208,6 +208,9 @@
   gap: var(--ws-s3);
   min-width: 0;
   padding: var(--ws-s6) var(--ws-s7);
+  /* Bootstrap's reboot gives <dl> a 1rem bottom margin and <dd> .5rem. Reset
+     them per class, not globally: other pages' <dl>s keep their spacing. */
+  margin: 0;
   background-color: var(--ws-tile);
   border: 1px solid var(--ws-line);
   border-radius: var(--ws-r-card);
@@ -246,6 +249,7 @@
 
 /* 21px / 800 is the large-metric size fixed by §5.4 (not a scale step). */
 .portal-metric__value {
+  margin: 0;
   color: var(--ws-fg);
   font-family: var(--ws-font-head);
   font-size: 21px;
@@ -256,6 +260,7 @@
 }
 
 .portal-metric__note {
+  margin: 0;
   color: var(--ws-control-idle);
   font-size: var(--ws-t-rail);
   line-height: 1.4;
