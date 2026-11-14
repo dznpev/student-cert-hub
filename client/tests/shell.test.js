@@ -4,12 +4,14 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import AccountMenu from '../src/components/AccountMenu.jsx'
+import AppShell from '../src/components/AppShell.jsx'
 import AppSidebar from '../src/components/AppSidebar.jsx'
 import {
   createAdminSections,
   createSuperAdminSections,
   createSuperAdminWorkspaceSections,
 } from '../src/navigationSections.js'
+import PortalIcon from '../src/PortalIcon.jsx'
 import { ThemeContext } from '../src/themeContext.js'
 
 const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf-8')
@@ -113,7 +115,7 @@ describe('navigationSections — nhóm điều hướng', () => {
     }
   })
 
-  it('mọi mục điều hướng đều có icon đã đăng ký', () => {
+  it('mọi mục điều hướng đều có icon đã đăng ký trong PortalIcon', () => {
     const shells = [
       createAdminSections(0),
       createSuperAdminSections(0),
@@ -123,7 +125,38 @@ describe('navigationSections — nhóm điều hướng', () => {
     for (const sections of shells) {
       const items = itemsOf(sections)
       expect(items.length).toBeGreaterThan(0)
-      for (const item of items) expect(item.icon?.props?.name).toBe(item.id)
+      for (const item of items) {
+        expect(item.icon, item.id).toBeTruthy()
+        expect(PortalIcon.names, item.id).toContain(item.icon.props.name)
+        expect(item.icon.props.name, item.id).toBe(item.id)
+      }
     }
+  })
+})
+
+describe('AppShell — topbar context', () => {
+  const renderShell = () => renderToStaticMarkup(
+    createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme: () => {} } },
+      createElement(AppShell, {
+        sections: [
+          { group: 'Nghiệp vụ', items: [{ id: 'overview', title: 'Tổng quan' }] },
+          { group: 'Hệ thống', items: [{ id: 'audit', title: 'Nhật ký hệ thống' }] },
+        ],
+        activeSectionId: 'overview',
+        onSelectSection: () => {},
+        roleLabel: 'Admin cấp chứng nhận',
+        accountIdentifier: 'admin',
+        onSignOut: () => {},
+        onHome: () => {},
+        context: 'Tổng quan',
+      })),
+  )
+
+  it('hiển thị tiêu đề mục hiện tại và nhãn vai trò ở topbar', () => {
+    const html = renderShell()
+    expect(html).toContain('portal-topbar__context">Tổng quan')
+    expect(html).toContain('portal-topbar__actions"><span class="portal-topbar__role">Admin cấp chứng nhận</span>')
+    // The role label is not used as the context when a section title is supplied.
+    expect(html).not.toContain('portal-topbar__context">Admin cấp chứng nhận')
   })
 })

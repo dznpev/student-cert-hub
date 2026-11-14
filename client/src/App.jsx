@@ -31,9 +31,6 @@ import { queueCertificates, processCertificate } from './queueCertificates.js'
 import { compareCodesDescending } from './sortRecords.js'
 import { sampleAuditLogs } from './sampleAuditLogs.js'
 
-// The brief's Interfaces line: App.jsx exports the grouped section builders for each shell.
-export { createAdminSections, createSuperAdminSections, createSuperAdminWorkspaceSections }
-
 // Nav items carry no page component, so the render logic resolves it by id.
 const pageComponents = {
   overview: DashboardPage,

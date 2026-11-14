@@ -26,3 +26,8 @@ export default function PortalIcon({ name }) {
     </svg>
   )
 }
+
+// Registered names, exposed on the component so callers and tests can verify a
+// name exists instead of relying on the `paths.overview` fallback in the render
+// above. A static property keeps this module exporting only the component.
+PortalIcon.names = Object.keys(paths)
