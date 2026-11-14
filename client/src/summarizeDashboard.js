@@ -1,6 +1,14 @@
 import { certificateStatuses } from './certificateStatuses.js'
 import { compareCodesDescending } from './sortRecords.js'
 
+// The recent-certificates row's student cell: a certificate whose participation
+// or student cannot be resolved shows an em dash, and a student record with a
+// null code or name shows one in its place instead of the literal "null".
+export function formatStudentLabel(student) {
+  if (!student) return '—'
+  return (student.studentCode ?? '—') + ' · ' + (student.fullName ?? '—')
+}
+
 export function summarizeDashboard({ cohorts, students, activities, participations, certificates, selectedCohort = '', selectedActivity = '', fromDate = '', toDate = '', selectedCertificateStatus = '' }) {
   const scopedStudents = students.filter((item) => selectedCohort === '' || String(item.cohortId) === selectedCohort)
   const activeStudents = scopedStudents.filter(({ isActive }) => isActive !== false)

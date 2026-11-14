@@ -15,7 +15,7 @@ import StudentPortal from '../src/StudentPortal.jsx'
 import { createAccountGroup } from '../src/accountNavigation.js'
 import { studentAccountSections, studentPages, studentSections } from '../src/studentNavigation.js'
 import DashboardPage from '../src/DashboardPage.jsx'
-import { summarizeDashboard } from '../src/summarizeDashboard.js'
+import { summarizeDashboard, formatStudentLabel } from '../src/summarizeDashboard.js'
 import { auditOutcomes } from '../src/auditOutcomes.js'
 import { importRowStatuses } from '../src/importRowStatuses.js'
 import { activityStatuses } from '../src/activityStatuses.js'
@@ -46,7 +46,7 @@ function cssOrder(css, name) {
 // The tone each entry of a status map carries, keyed like the map itself.
 const tones = (entries) => Object.fromEntries(entries.map(([key, entry]) => [key, entry.tone]))
 
-function renderDashboard() {
+function renderDashboard(overrides = {}) {
   return renderToStaticMarkup(createElement(
     ThemeContext.Provider,
     { value: { theme: 'light', toggleTheme() {} } },
@@ -56,6 +56,7 @@ function renderDashboard() {
       activities: sampleActivities,
       participations: sampleParticipations,
       certificates: sampleCertificates,
+      ...overrides,
     }),
   ))
 }
@@ -470,23 +471,16 @@ describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
   // [prefix, header row, ...body rows]: the table renders plain <tr> tags.
   const rowsOf = (table) => table.split('<tr>').slice(2)
 
-  function render(overrides = {}) {
-    return renderToStaticMarkup(createElement(
-      ThemeContext.Provider,
-      { value: { theme: 'light', toggleTheme() {} } },
-      createElement(DashboardPage, {
-        cohorts: sampleCohorts,
-        students: sampleStudents,
-        activities: sampleActivities,
-        participations: sampleParticipations,
-        certificates: sampleCertificates,
-        ...overrides,
-      }),
-    ))
+  // The value the KPI tile renders, read from the DOM rather than recomputed.
+  function tileValue(html, label) {
+    const match = new RegExp('<dt class="portal-metric__label">' + label + '</dt>'
+      + '<dd class="portal-metric__value">([^<]+)</dd>').exec(html)
+    expect(match, 'thiếu ô chỉ số ' + label).toBeTruthy()
+    return Number(match[1].replace(/\./g, ''))
   }
 
   it('liệt kê chứng nhận mới nhất trước, chưa có ngày cấp xếp cuối', () => {
-    const rows = rowsOf(recentCertificatesTable(render()))
+    const rows = rowsOf(recentCertificatesTable(renderDashboard()))
     const codes = rows.map((row) => /CN-MAU-\d{3}/.exec(row)?.[0])
     expect(codes).toEqual(['CN-MAU-002', 'CN-MAU-001', 'CN-MAU-004', 'CN-MAU-003'])
 
@@ -497,8 +491,24 @@ describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
     expect(rows[3]).toContain('>—<')
   })
 
+  // Ruling F12: a date-only value and an ISO datetime for the SAME day must tie
+  // break on certificateId. The higher id owns the date-only value, so a raw
+  // string comparison would put it after the datetime string instead.
+  it('cùng một ngày, khác định dạng, vẫn phân định bằng mã chứng nhận', () => {
+    const certificates = [
+      ...sampleCertificates,
+      { certificateId: 21, certificateCode: 'CN-GIO-021', participationId: 2, issuedAt: '2026-10-26T17:00:00.000Z', status: 'Issued' },
+      { certificateId: 22, certificateCode: 'CN-GIO-022', participationId: 3, issuedAt: '2026-10-26', status: 'Issued' },
+    ]
+    const rows = rowsOf(recentCertificatesTable(renderDashboard({ certificates })))
+    const codes = rows.map((row) => /CN-[A-Z]+-\d{3}/.exec(row)?.[0])
+    expect(codes.slice(0, 4)).toEqual(['CN-GIO-022', 'CN-GIO-021', 'CN-MAU-002', 'CN-MAU-001'])
+    expect(rows[0]).toContain('26/10/2026')
+    expect(rows[1]).toContain('26/10/2026')
+  })
+
   it('hiển thị mã, sinh viên, ngày cấp và chip trạng thái theo bảng trạng thái', () => {
-    const table = recentCertificatesTable(render())
+    const table = recentCertificatesTable(renderDashboard())
     expect(table).toContain('>Mã chứng nhận<')
     expect(table).toContain('>Sinh viên<')
     expect(table).toContain('>Ngày cấp<')
@@ -517,28 +527,61 @@ describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
     expect(generating).toContain('portal-chip--info')
   })
 
-  // Ruling F1: the table renders the certificates `summarizeDashboard` counted,
-  // so the Issued rows can never disagree with the Issued KPI.
-  it('số dòng Đang hiệu lực trong bảng khớp chỉ số chứng nhận hiệu lực', () => {
+  // Ruling F13: a certificate whose participation or student cannot be resolved
+  // shows an em dash. In a scoped render such a certificate is out of scope by
+  // definition (see the F1 guard), so the fallback is asserted directly.
+  it('cột Sinh viên hiển thị — khi không xác định được sinh viên', () => {
+    expect(formatStudentLabel(undefined)).toBe('—')
+    expect(formatStudentLabel(null)).toBe('—')
+    expect(formatStudentLabel({ studentCode: '02400001', fullName: 'Nguyễn Minh Anh' })).toBe('02400001 · Nguyễn Minh Anh')
+  })
+
+  // Ruling F14: the student schema allows nulls; they must not leak "null".
+  it('sinh viên có trường null hiển thị — thay vì chữ null', () => {
+    const students = [...sampleStudents, {
+      studentId: 9, studentCode: null, fullName: null, email: null,
+      className: null, cohortId: 24, userId: null, isActive: true,
+    }]
+    const participations = [...sampleParticipations, {
+      participationId: 9, activityId: 1, studentId: 9, approvalStatus: 'Approved',
+    }]
+    const certificates = [...sampleCertificates, {
+      certificateId: 9, certificateCode: 'CN-THIEU-009', participationId: 9, issuedAt: '2026-09-01', status: 'Issued',
+    }]
+    const table = recentCertificatesTable(renderDashboard({ students, participations, certificates }))
+    const row = rowsOf(table).find((item) => item.includes('CN-THIEU-009'))
+    expect(row).toContain('>— · —<')
+    expect(row).not.toContain('null')
+  })
+
+  // Rulings F1/F11: the table renders the certificates `summarizeDashboard`
+  // counted. The extra certificate has no participation, so it is outside the
+  // tiles' scope: a raw or re-derived render adds a fifth row and fails here.
+  it('bỏ chứng nhận ngoài phạm vi và số dòng Đang hiệu lực khớp ô chỉ số', () => {
+    const certificates = [
+      ...sampleCertificates,
+      { certificateId: 90, certificateCode: 'CN-NGOAI-PHAM-VI', participationId: 999, issuedAt: '2026-11-02', status: 'Issued' },
+    ]
     const summary = summarizeDashboard({
       cohorts: sampleCohorts,
       students: sampleStudents,
       activities: sampleActivities,
       participations: sampleParticipations,
-      certificates: sampleCertificates,
+      certificates,
     })
     const issuedLabel = certificateStatuses.find(({ status }) => status === 'Issued').label
-    const rows = rowsOf(recentCertificatesTable(render()))
-    expect(rows).toHaveLength(summary.scopedCertificates.length)
-    expect(rows.filter((row) => row.includes(issuedLabel))).toHaveLength(summary.certificateCounts.Issued)
-  })
+    const html = renderDashboard({ certificates })
+    const table = recentCertificatesTable(html)
+    const rows = rowsOf(table)
 
-  // Ruling F9: the rows come from the memoised summary's `scopedCertificates`,
-  // never from a fresh filter built in the render body.
-  it('bảng đọc danh sách từ summary đã memo thay vì tự lọc lại', () => {
-    const src = readFileSync(new URL('../src/DashboardPage.jsx', import.meta.url), 'utf-8')
-    expect(src).not.toContain('certificates.filter')
-    expect(src).toMatch(/const \{[^}]*scopedCertificates[^}]*\} = useMemo\(/)
+    expect(summary.scopedCertificates).toHaveLength(4)
+    expect(summary.scopedCertificates.some(({ certificateId }) => certificateId === 90)).toBe(false)
+    expect(table).not.toContain('CN-NGOAI-PHAM-VI')
+    expect(rows).toHaveLength(summary.scopedCertificates.length)
+    // The table's Issued rows and the rendered Issued KPI tile are one number.
+    const issuedRows = rows.filter((row) => row.includes(issuedLabel))
+    expect(issuedRows).toHaveLength(summary.certificateCounts.Issued)
+    expect(issuedRows).toHaveLength(tileValue(html, 'Chứng nhận hiệu lực'))
   })
 
   it('giới hạn 10 dòng dù phạm vi có nhiều chứng nhận hơn', () => {
@@ -562,7 +605,7 @@ describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
       status: 'Issued',
     }))
 
-    const rows = rowsOf(recentCertificatesTable(render({ cohorts, students, activities, participations, certificates })))
+    const rows = rowsOf(recentCertificatesTable(renderDashboard({ cohorts, students, activities, participations, certificates })))
     expect(rows).toHaveLength(10)
     expect(rows[0]).toContain('CN-012')
     expect(rows.at(-1)).toContain('CN-003')
@@ -570,7 +613,7 @@ describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
   })
 
   it('hiển thị dòng trống colSpan khi không có chứng nhận', () => {
-    const table = recentCertificatesTable(render({ certificates: [] }))
+    const table = recentCertificatesTable(renderDashboard({ certificates: [] }))
     const rows = rowsOf(table)
     expect(rows).toHaveLength(1)
     expect(rows[0]).toContain('colSpan="4"')
@@ -579,7 +622,7 @@ describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
   })
 
   it('nằm cuối trang, trong panel thân tràn và không có cột thao tác', () => {
-    const html = render()
+    const html = renderDashboard()
     expect(html.indexOf('Chứng nhận theo trạng thái')).toBeLessThan(html.indexOf(tableLabel))
     expect(html).toContain('min-width:56rem')
     const table = recentCertificatesTable(html)

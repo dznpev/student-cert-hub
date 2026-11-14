@@ -9,7 +9,7 @@ import {
   DoughnutController, LinearScale, Tooltip,
 } from 'chart.js'
 import { certificateStatuses } from './certificateStatuses.js'
-import { summarizeDashboard } from './summarizeDashboard.js'
+import { summarizeDashboard, formatStudentLabel } from './summarizeDashboard.js'
 import { createDashboardReport } from './exportDashboardReport.js'
 
 Chart.register(
@@ -67,17 +67,19 @@ const todayFormat = new Intl.DateTimeFormat('vi-VN', {
 })
 const emptyFilters = { selectedCohort: '', selectedActivity: '', fromDate: '', toDate: '', selectedCertificateStatus: '' }
 const formatDate = (value) => value.split('-').reverse().join('/')
-// issuedAt is a plain yyyy-mm-dd day; a certificate still generating or failed
-// has no issue date, and "recent" does not apply to it (ruling F2).
-const formatIssuedDate = (value) => value ? formatDate(String(value).slice(0, 10)) : '—'
+// issuedAt may be a plain yyyy-mm-dd day or an ISO datetime. The day part is
+// normalised once so display and the "most recent" comparison agree (F12), and
+// a certificate still generating or failed has no issue date at all (F2).
+const issuedDay = (value) => value ? String(value).slice(0, 10) : ''
+const formatIssuedDate = (value) => issuedDay(value) ? formatDate(issuedDay(value)) : '—'
 
 function compareRecentCertificates(left, right) {
-  const leftDate = left.issuedAt ?? ''
-  const rightDate = right.issuedAt ?? ''
-  if (leftDate !== rightDate) {
-    if (leftDate === '') return 1
-    if (rightDate === '') return -1
-    return leftDate < rightDate ? 1 : -1
+  const leftDay = issuedDay(left.issuedAt)
+  const rightDay = issuedDay(right.issuedAt)
+  if (leftDay !== rightDay) {
+    if (leftDay === '') return 1
+    if (rightDay === '') return -1
+    return leftDay < rightDay ? 1 : -1
   }
   return Number(right.certificateId ?? 0) - Number(left.certificateId ?? 0)
 }
@@ -410,7 +412,7 @@ export default function DashboardPage({ cohorts, students, activities, participa
         </div>
       )}
 
-      <PortalPanel className="portal-panel--stacked dashboard-recent-certificates">
+      <PortalPanel className="dashboard-recent-certificates">
         <PortalTable label="Danh sách chứng nhận gần đây" minWidth="56rem">
           <caption className="visually-hidden">Danh sách chứng nhận gần đây</caption>
           <thead>
@@ -425,9 +427,9 @@ export default function DashboardPage({ cohorts, students, activities, participa
             {recentCertificates.map(({ certificate, student, statusInfo }) => (
               <tr key={certificate.certificateId}>
                 <th scope="row" className="portal-table__cell-strong">{certificate.certificateCode}</th>
-                <td>{student ? student.studentCode + ' · ' + student.fullName : '—'}</td>
+                <td>{formatStudentLabel(student)}</td>
                 <td>{formatIssuedDate(certificate.issuedAt)}</td>
-                <td><PortalChip tone={statusInfo.tone} label={statusInfo.label} /></td>
+                <td><PortalChip tone={statusInfo?.tone} label={statusInfo?.label ?? certificate.status} /></td>
               </tr>
             ))}
             {recentCertificates.length === 0 && (
