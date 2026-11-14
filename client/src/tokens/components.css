@@ -425,7 +425,7 @@
 }
 
 /* Sticky action column, driven by a wide min-width table (§6.5) */
-.portal-table--sticky-actions :is(th, td):last-child {
+.portal-table--sticky-actions :is(th, td):last-child:not([colspan]) {
   position: sticky;
   right: 0;
   z-index: 1;

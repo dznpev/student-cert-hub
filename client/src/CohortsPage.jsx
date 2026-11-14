@@ -205,7 +205,7 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
               ))}
               {visibleCohorts.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="text-body-secondary">Không có khóa tuyển sinh phù hợp.</td>
+                  <td colSpan={4} className="text-center text-body-secondary">Không có khóa tuyển sinh phù hợp.</td>
                 </tr>
               )}
             </tbody>

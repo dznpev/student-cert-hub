@@ -146,6 +146,64 @@ describe('component dùng chung', () => {
     expect(css).toMatch(/portal-table--sticky-actions[\s\S]*position:\s*sticky/)
   })
 
+  // R86: the brief's single-page assertion above cannot notice a page that
+  // reverts to the raw wrapper or a wide table that loses (or gains) the pin.
+  it('cả tám trang còn lại dùng PortalTable và chỉ bảng có cột thao tác mới dính', () => {
+    const pageSrc = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+    for (const file of [
+      'ParticipationsPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx', 'AuditLogsPage.jsx',
+      'ActivitiesPage.jsx', 'CertificateTemplatesPage.jsx', 'CohortsPage.jsx', 'SuperAdminAccounts.jsx',
+    ]) {
+      expect(pageSrc(file), file).toContain('PortalTable')
+    }
+
+    for (const file of ['CertificatesPage.jsx', 'ParticipationsPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx']) {
+      expect(pageSrc(file), file).toContain('stickyActions')
+    }
+    // Nhật ký hệ thống is 56rem but has no action column, so it must stay unpinned.
+    expect(pageSrc('AuditLogsPage.jsx')).not.toContain('stickyActions')
+  })
+
+  // R86/R87: assert the rules themselves instead of one regex spanning the file.
+  it('cột dính dùng nền đục, bỏ ô colSpan và hover phủ cả th lẫn td', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    const sticky = /(\.portal-table--sticky-actions[^{]*:is\(th, td\):last-child[^{]*)\{([^}]*)\}/.exec(css)
+    expect(sticky, 'thiếu quy tắc cột thao tác dính').not.toBeNull()
+    expect(sticky[1]).toContain(':not([colspan])')
+    expect(sticky[2]).toMatch(/position:\s*sticky/)
+    expect(sticky[2]).toMatch(/background-color:\s*var\(--ws-panel-solid\)/)
+
+    const hover = /(\.portal-table--sticky-actions tbody tr:hover[^{]*)\{([^}]*)\}/.exec(css)
+    expect(hover, 'thiếu quy tắc hover cột thao tác dính').not.toBeNull()
+    expect(hover[1]).toContain(':is(th, td):last-child')
+    expect(hover[2]).toMatch(/background-color:\s*var\(--ws-chip-bg\)/)
+  })
+
+  it('--ws-panel-solid có mặt ở cả hai chế độ với nền đục', () => {
+    const css = readFileSync(new URL('../src/tokens/index.css', import.meta.url), 'utf-8')
+    const light = /:root\s*\{([^}]*)\}/.exec(css)
+    const dark = /\[data-bs-theme="dark"\]\s*\{([^}]*)\}/.exec(css)
+    expect(light, 'thiếu khối :root').not.toBeNull()
+    expect(dark, 'thiếu khối tối').not.toBeNull()
+    // #fffffff5 is white at 96% alpha; its opaque composite is plain white, not cream.
+    expect(light[1]).toMatch(/--ws-panel-solid:\s*#ffffff/)
+    expect(dark[1]).toMatch(/--ws-panel-solid:\s*#141f31/)
+  })
+
+  it('mười hai vùng cuộn bảng có aria-label riêng biệt', () => {
+    const labels = [
+      'CertificatesPage.jsx', 'ParticipationsPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx',
+      'AuditLogsPage.jsx', 'ActivitiesPage.jsx', 'CertificateTemplatesPage.jsx', 'CohortsPage.jsx',
+      'SuperAdminAccounts.jsx',
+    ].flatMap((file) => {
+      const src = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+      return [...src.matchAll(/<PortalTable label="([^"]+)"/g)].map((match) => match[1])
+    })
+
+    expect(labels).toHaveLength(12)
+    expect(new Set(labels).size).toBe(12)
+  })
+
   it('PortalMetricCard giữ cấu trúc <dl> và áp tone lên phần tử gốc', () => {
     const html = renderToStaticMarkup(createElement(PortalMetricCard, {
       label: 'Chờ duyệt', value: '3', note: 'Ghi chú', icon: createElement('span', null, 'i'), tone: 'warn',
