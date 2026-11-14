@@ -104,6 +104,19 @@ function contrastRatio(foreground, background) {
   return (lightest + 0.05) / (darkest + 0.05)
 }
 
+// The surfaces a background token actually paints. A solid token yields one
+// surface; a gradient yields one per declared colour stop. `transparent` is a
+// layer hole, not a surface, so it is skipped. Grading a gradient pair now
+// DERIVES its worst stop from --ws-page-bg itself instead of trusting a
+// hand-maintained mirror token (W9).
+function backgroundColors(value, vars) {
+  const resolved = resolveValue(value, vars)
+  if (!/gradient\(/i.test(resolved)) return [parseColor(resolved)]
+  const stops = resolved.match(/#[0-9a-f]{6}\b/gi)
+  if (!stops) throw new Error(`Gradient không có màu dừng: "${resolved}"`)
+  return stops.map((stop) => parseColor(stop))
+}
+
 const PALETTES = {
   light: parseDeclarations(extractBlock(ROOT_SELECTOR)),
   dark: new Map([
@@ -119,9 +132,10 @@ const PALETTES = {
 // Text pairs are held to 4.5:1 (AC-01, spec §9.2). A pair may use the 3:1
 // large-text threshold only when marked `large: true`, and the 3:1 non-text
 // threshold (WCAG 1.4.11) only when marked `nonText: true` — used by the switch
-// knob. A pair may set an explicit `min` (the alert borders, which are neither
-// text nor a control state). None of the brief's text pairs qualify for either
-// exception: all of those tokens are used at 9.5–15px.
+// knob and the invalid field border. A pair may set an explicit `min` (the
+// alert borders, which are neither text nor a control state). None of the
+// brief's text pairs qualify for either exception: all of those tokens are used
+// at 9.5–15px. A gradient background is graded at its worst colour stop (W9).
 const PAIRS = [
   { mode: 'dark', fg: '--ws-fg-2', bg: '--ws-panel' },
   { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-panel' },
@@ -158,21 +172,26 @@ const PAIRS = [
   // Semantic utilities (§8.0 bridge). `.text-primary` is the brand blue in
   // light and its text variant in dark; `.text-danger` reads from
   // --ws-danger-text in both themes. Each is graded on the panel and on the
-  // page, because both carry error text. The page pairs use the gradient's
-  // worst stop, not the --bs-body-bg proxy: the shell paints --ws-page-bg, and
-  // the light gradient's dark stop (#e9eef5) is the tightest surface it draws.
-  { mode: 'light', fg: '--ws-hutech', bg: '--bs-body-bg', name: 'text-primary on page' },
-  { mode: 'dark', fg: '--ws-hutech-text', bg: '--bs-body-bg', name: 'text-primary on page' },
+  // page, because both carry error text. Page pairs use --ws-page-bg itself:
+  // the gate derives the gradient's worst stop per foreground (W9), so no
+  // hand-kept "#e9eef5 / #16406b" mirror can drift from what ships.
+  { mode: 'light', fg: '--ws-hutech', bg: '--ws-page-bg', name: 'text-primary on page' },
+  { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-page-bg', name: 'text-primary on page' },
   { mode: 'light', fg: '--ws-danger-text', bg: '--ws-panel', name: 'text-danger on panel' },
-  { mode: 'light', fg: '--ws-danger-text', bg: '--ws-page-bg-worst', name: 'text-danger on page (gradient worst stop)' },
+  { mode: 'light', fg: '--ws-danger-text', bg: '--ws-page-bg', name: 'text-danger on page' },
   { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-panel', name: 'text-danger on panel' },
-  { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-page-bg-worst', name: 'text-danger on page (gradient worst stop)' },
+  { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-page-bg', name: 'text-danger on page' },
   // `.invalid-feedback` paints from --bs-form-invalid-color (W2), and it sits
   // beside a field on a panel and directly on the page.
   { mode: 'light', fg: '--bs-form-invalid-color', bg: '--ws-panel', name: 'invalid-feedback on panel' },
-  { mode: 'light', fg: '--bs-form-invalid-color', bg: '--ws-page-bg-worst', name: 'invalid-feedback on page (gradient worst stop)' },
+  { mode: 'light', fg: '--bs-form-invalid-color', bg: '--ws-page-bg', name: 'invalid-feedback on page' },
   { mode: 'dark', fg: '--bs-form-invalid-color', bg: '--ws-panel', name: 'invalid-feedback on panel' },
-  { mode: 'dark', fg: '--bs-form-invalid-color', bg: '--ws-page-bg-worst', name: 'invalid-feedback on page (gradient worst stop)' },
+  { mode: 'dark', fg: '--bs-form-invalid-color', bg: '--ws-page-bg', name: 'invalid-feedback on page' },
+  // The invalid field's border (W10) is the 3:1 focus/validity indicator
+  // (WCAG 1.4.11); its field fill is --bs-body-bg, which is the surface it is
+  // drawn against. The 25%-alpha halo Bootstrap pairs with it is decorative.
+  { mode: 'light', fg: '--bs-form-invalid-border-color', bg: '--bs-body-bg', nonText: true, name: 'invalid field border on field' },
+  { mode: 'dark', fg: '--bs-form-invalid-border-color', bg: '--bs-body-bg', nonText: true, name: 'invalid field border on field' },
   // Error text also lands inside a warning alert (a rejected batch), so the
   // same token is graded on that surface (W5).
   { mode: 'light', fg: '--ws-danger-text', bg: '--ws-alert-warn-bg', name: 'text-danger on warning alert' },
@@ -223,10 +242,15 @@ function toReference(value) {
 for (const { mode, fg, bg, large = false, nonText = false, min: explicitMin, name } of PAIRS) {
   const vars = PALETTES[mode]
   const anchor = parseColor(resolveValue(`var(${ANCHOR})`, vars))
-  const background = composite(parseColor(resolveValue(toReference(bg), vars)), anchor)
-  const foreground = composite(parseColor(resolveValue(toReference(fg), vars)), background)
-  const ratio = contrastRatio(foreground, background)
-  const min = explicitMin ?? (large || nonText ? LARGE_TEXT_MIN : NORMAL_TEXT_MIN)
+  const foreground = parseColor(resolveValue(toReference(fg), vars))
+  // Grade against every surface the background paints and keep the worst: a
+  // gradient yields one ratio per colour stop, so the derived worst stop wins
+  // with no hand-maintained mirror (W9).
+  const ratio = Math.min(...backgroundColors(toReference(bg), vars).map((stop) => {
+    const background = composite(stop, anchor)
+    return contrastRatio(composite(foreground, background), background)
+  }))
+  const min = explicitMin ?? (large ? LARGE_TEXT_MIN : nonText ? NON_TEXT_MIN : NORMAL_TEXT_MIN)
   const pass = ratio >= min
   if (!pass) failed = true
   const label = name ? `${name}: ${fg} on ${bg}` : `${fg} on ${bg}`

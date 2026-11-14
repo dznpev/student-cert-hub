@@ -71,10 +71,6 @@
 
   /* Surfaces and text */
   --ws-page-bg: linear-gradient(180deg, #f7fafd, #e9eef5);
-  /* The worst (lowest-contrast) stop of --ws-page-bg, for text the shell paints
-     directly on the gradient. The gate grades page pairs against this, not
-     against the convenient --bs-body-bg proxy. */
-  --ws-page-bg-worst: #e9eef5;
   --ws-panel: #fffffff5;
   --ws-panel-solid: #ffffff;
   --ws-tile: #ffffff;
@@ -174,6 +170,15 @@
      page. Bootstrap's own #dc3545 measures 4.49:1 on the panel and 4.32:1 on
      the page in light — below AA. */
   --bs-form-invalid-color: var(--ws-danger-text);
+  /* The invalid control's border, and the rgb triple behind its focus halo.
+     Bootstrap paints the border #dc3545 and the halo rgba(220, 53, 69, .25);
+     both now follow the HUTECH danger. The halo is decorative reinforcement
+     (W12); the 3:1 indicator is the border, 5.54:1 on the field fill. */
+  --bs-form-invalid-border-color: var(--ws-danger-text);
+  --bs-danger-rgb: 181, 60, 11;
+  /* `.was-validated :valid:focus` keeps rgba(var(--bs-success-rgb), .25):
+     Bootstrap's own #198754. Bridge the triple to --ws-success's bytes. */
+  --bs-success-rgb: 21, 128, 61;
   --bs-table-striped-bg: transparent;
   --bs-table-hover-bg: #f8fafc;
 }
@@ -195,7 +200,9 @@
   --ws-accent-text: #fca58a;
 
   /* Semantic text: the accent's light variant, so `.text-danger` stays legible
-     on the navy panel (8.57:1) and on the page background (9.48:1). */
+     on the navy panel (8.57:1). On the page it is graded at the dark gradient's
+     lightest stop (#16406b), where it measures 5.50:1 — the tightest surface
+     the shell actually paints, not the #0c1524 proxy. */
   --ws-danger-text: #fca58a;
 
   /* Alert surfaces: lifted one step off the navy so the box reads as a box
@@ -228,8 +235,6 @@
     radial-gradient(1200px 640px at 10% -10%, #16406b 0%, transparent 60%),
     radial-gradient(900px 520px at 90% -6%, #123a5e 0%, transparent 55%),
     linear-gradient(180deg, #0f1c2e, #0a121d);
-  /* The lightest stop of the dark gradient — the worst surface for light text. */
-  --ws-page-bg-worst: #16406b;
   --ws-panel: #141f31;
   --ws-panel-solid: #141f31;
   --ws-tile: #18242f;
@@ -265,6 +270,12 @@
   --ws-focus-ring: rgba(109, 189, 237, .25);
   --bs-focus-ring-color: var(--ws-focus-ring);
   --bs-form-invalid-color: var(--ws-danger-text);
+  /* Same bridge in the dark block: the invalid border is the dark danger text
+     (9.48:1 on the #0c1524 field fill) and the triples are the byte values of
+     the dark status text, so the focus halo follows the theme. */
+  --bs-form-invalid-border-color: var(--ws-danger-text);
+  --bs-danger-rgb: 252, 165, 138;
+  --bs-success-rgb: 110, 231, 168;
   --bs-table-striped-bg: transparent;
   --bs-table-hover-bg: #18242f;
 }

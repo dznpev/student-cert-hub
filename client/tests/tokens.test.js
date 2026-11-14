@@ -14,6 +14,25 @@ function tokenBlock(source, selector) {
   return source.slice(start, source.indexOf('}', start) + 1)
 }
 
+// Parses a block's custom properties into name → declared value. Reading the
+// VALUE out of the declaration (on the comment-stripped source) is what makes
+// the assertion falsifiable: prose in a comment can mention a triple and never
+// satisfy it. A name-only check is how `--bs-primary-rgb: 0, 95, 156` — the
+// original I1(a) defect — would ship green.
+function tokenValues(source, selector) {
+  const block = tokenBlock(source, selector)
+  if (!block) return new Map()
+  const body = block.slice(block.indexOf('{') + 1, block.lastIndexOf('}'))
+  const values = new Map()
+  for (const declaration of body.split(';')) {
+    const colon = declaration.indexOf(':')
+    if (colon === -1) continue
+    const name = declaration.slice(0, colon).trim()
+    if (name.startsWith('--')) values.set(name, declaration.slice(colon + 1).trim())
+  }
+  return values
+}
+
 const REQUIRED_TOKENS = [
   '--ws-hutech', '--ws-hutech-d', '--ws-hutech-l', '--ws-hutech-text', '--ws-hutech-border',
   '--ws-accent', '--ws-accent-l', '--ws-warn', '--ws-warn-l',
@@ -118,7 +137,7 @@ describe('tokens/index.css', () => {
       '--ws-alert-success-border', '--ws-alert-warn-border', '--ws-alert-danger-border', '--ws-alert-info-border',
       '--ws-check-mark', '--ws-radio-mark',
       '--ws-switch-knob', '--ws-switch-knob-focus',
-      '--ws-page-bg-worst', '--ws-focus-ring',
+      '--ws-focus-ring',
     ]
     for (const token of semantic) {
       expect(root, `${token} ở khối sáng`).toContain(`${token}:`)
@@ -126,19 +145,55 @@ describe('tokens/index.css', () => {
     }
   })
 
-  // W2/W3: the two Bootstrap variables the wave newly bridges must be declared
-  // in the dark block too. `--bs-focus-ring-color` used to live in `:root` only,
-  // so the dark theme kept the light ring; `--bs-form-invalid-color` was still
-  // Bootstrap's #dc3545 in both blocks.
-  it('--bs-form-invalid-color và --bs-focus-ring-color khai báo ở cả hai khối', () => {
+  // W10: the Bootstrap bridge now also publishes the rgb triples whose
+  // consumers (.form-control.is-invalid:focus, .was-validated :valid:focus)
+  // paint Bootstrap's own red/green. Each is declared in both blocks; an
+  // unbridged triple would silently repaint a HUTECH control with a second
+  // palette when the theme flips.
+  it('--bs-form-invalid-color, --bs-form-invalid-border-color và các rgb triple khai báo ở cả hai khối', () => {
     const root = tokenBlock(stripped, ':root')
     const dark = tokenBlock(stripped, '[data-bs-theme="dark"]')
-    for (const token of ['--bs-form-invalid-color', '--bs-focus-ring-color']) {
+    const bridged = [
+      '--bs-form-invalid-color', '--bs-form-invalid-border-color', '--bs-focus-ring-color',
+      '--bs-primary-rgb', '--bs-link-color-rgb', '--bs-danger-rgb', '--bs-success-rgb',
+    ]
+    for (const token of bridged) {
       expect(root, `${token} ở khối sáng`).toContain(`${token}:`)
       expect(dark, `${token} ở khối tối`).toContain(`${token}:`)
     }
     expect(root).toMatch(/--bs-form-invalid-color:\s*var\(--ws-danger-text\)/)
     expect(dark).toMatch(/--bs-form-invalid-color:\s*var\(--ws-danger-text\)/)
+    expect(root).toMatch(/--bs-form-invalid-border-color:\s*var\(--ws-danger-text\)/)
+    expect(dark).toMatch(/--bs-form-invalid-border-color:\s*var\(--ws-danger-text\)/)
     expect(dark).toMatch(/--bs-focus-ring-color:\s*var\(--ws-focus-ring\)/)
+  })
+
+  // W8: the VALUE of every bridged byte triple, read from the parsed
+  // declaration. The light link triple is the brand; the dark one is the byte
+  // triple of --ws-hutech-text, because dark links are #6dbded (§8.0) and a
+  // brand triple there would violate §11's "two coexisting blues".
+  it('rgb triple của Bootstrap đúng byte ở cả hai khối', () => {
+    const expected = {
+      ':root': {
+        '--bs-primary-rgb': '0, 82, 156',
+        '--bs-link-color-rgb': '0, 82, 156',
+        '--bs-danger-rgb': '181, 60, 11',
+        '--bs-success-rgb': '21, 128, 61',
+      },
+      '[data-bs-theme="dark"]': {
+        '--bs-primary-rgb': '0, 82, 156',
+        '--bs-link-color-rgb': '109, 189, 237',
+        '--bs-danger-rgb': '252, 165, 138',
+        '--bs-success-rgb': '110, 231, 168',
+      },
+    }
+    for (const [selector, tokens] of Object.entries(expected)) {
+      const values = tokenValues(stripped, selector)
+      for (const [token, value] of Object.entries(tokens)) {
+        expect(values.get(token), `${token} ở ${selector}`).toBe(value)
+      }
+    }
+    // The exact triple that started I1: it must never come back, in any block.
+    expect(stripped).not.toContain('0, 95, 156')
   })
 })
