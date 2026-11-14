@@ -412,6 +412,12 @@
   }
 }
 
+/* The recent-certificates table closes the dashboard below the two chart
+   columns, so it needs the stacked panels' vertical gap at its top. */
+.dashboard-recent-certificates {
+  margin-top: var(--ws-s7);
+}
+
 /* Status chip (§6.6, palette in §5.2) ------------------------------------- */
 
 .portal-chip {

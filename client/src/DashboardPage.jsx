@@ -1,6 +1,8 @@
 import PortalIcon from './PortalIcon.jsx'
+import PortalChip from './components/PortalChip.jsx'
 import PortalMetricCard from './components/PortalMetricCard.jsx'
 import PortalPanel from './components/PortalPanel.jsx'
+import PortalTable from './components/PortalTable.jsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArcElement, BarController, BarElement, CategoryScale, Chart,
@@ -26,6 +28,9 @@ const metricAppearance = [
 const BRAND_TONES = ['brand']
 const CERTIFICATE_LABELS = certificateStatuses.map(({ label }) => label)
 const CERTIFICATE_TONES = certificateStatuses.map(({ tone }) => tone)
+
+// The dashboard list is a preview; the Chứng nhận page is the full list.
+const RECENT_CERTIFICATES_LIMIT = 10
 
 // Chart colours are read from the live custom properties, so both charts follow
 // the theme instead of hard-coding a palette (spec §8.3). A tone whose base hue
@@ -62,6 +67,20 @@ const todayFormat = new Intl.DateTimeFormat('vi-VN', {
 })
 const emptyFilters = { selectedCohort: '', selectedActivity: '', fromDate: '', toDate: '', selectedCertificateStatus: '' }
 const formatDate = (value) => value.split('-').reverse().join('/')
+// issuedAt is a plain yyyy-mm-dd day; a certificate still generating or failed
+// has no issue date, and "recent" does not apply to it (ruling F2).
+const formatIssuedDate = (value) => value ? formatDate(String(value).slice(0, 10)) : '—'
+
+function compareRecentCertificates(left, right) {
+  const leftDate = left.issuedAt ?? ''
+  const rightDate = right.issuedAt ?? ''
+  if (leftDate !== rightDate) {
+    if (leftDate === '') return 1
+    if (rightDate === '') return -1
+    return leftDate < rightDate ? 1 : -1
+  }
+  return Number(right.certificateId ?? 0) - Number(left.certificateId ?? 0)
+}
 
 function formatChartValue(value, percentages) {
   return percentages ? percentFormat.format(value / 100) : numberFormat.format(value)
@@ -191,7 +210,7 @@ export default function DashboardPage({ cohorts, students, activities, participa
   const [todayLabel] = useState(() => todayFormat.format(new Date()))
   // Memoised so a keystroke elsewhere on the page does not hand the charts new
   // arrays and make them destroy and recreate their canvases (R154).
-  const { studentCount, activityCount, participationCount, uniqueStudents, certificateCounts, cohortParticipation } = useMemo(
+  const { studentCount, activityCount, participationCount, uniqueStudents, certificateCounts, scopedCertificates, cohortParticipation } = useMemo(
     () => summarizeDashboard({
       cohorts, students, activities, participations, certificates,
       selectedCohort, selectedActivity, fromDate, toDate, selectedCertificateStatus,
@@ -199,6 +218,24 @@ export default function DashboardPage({ cohorts, students, activities, participa
     [cohorts, students, activities, participations, certificates,
       selectedCohort, selectedActivity, fromDate, toDate, selectedCertificateStatus],
   )
+
+  // Ruling F1: the rows are the certificates the tiles counted, read straight
+  // off the memoised summary. Sorting and the 10-row cap are presentation only.
+  const recentCertificates = useMemo(() => {
+    const participationById = new Map(participations.map((item) => [item.participationId, item]))
+    const studentById = new Map(students.map((item) => [item.studentId, item]))
+    return [...scopedCertificates]
+      .sort(compareRecentCertificates)
+      .slice(0, RECENT_CERTIFICATES_LIMIT)
+      .map((certificate) => {
+        const participation = participationById.get(certificate.participationId)
+        return {
+          certificate,
+          student: studentById.get(participation?.studentId),
+          statusInfo: certificateStatuses.find(({ status }) => status === certificate.status),
+        }
+      })
+  }, [scopedCertificates, participations, students])
 
   const participationChart = useMemo(() => ({
     labels: cohortParticipation.map(({ cohortId }) => cohorts.find((item) => item.cohortId === cohortId)?.cohortCode ?? String(cohortId)),
@@ -372,6 +409,35 @@ export default function DashboardPage({ cohorts, students, activities, participa
           </div>
         </div>
       )}
+
+      <PortalPanel className="portal-panel--stacked dashboard-recent-certificates">
+        <PortalTable label="Danh sách chứng nhận gần đây" minWidth="56rem">
+          <caption className="visually-hidden">Danh sách chứng nhận gần đây</caption>
+          <thead>
+            <tr>
+              <th scope="col">Mã chứng nhận</th>
+              <th scope="col">Sinh viên</th>
+              <th scope="col">Ngày cấp</th>
+              <th scope="col">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentCertificates.map(({ certificate, student, statusInfo }) => (
+              <tr key={certificate.certificateId}>
+                <th scope="row" className="portal-table__cell-strong">{certificate.certificateCode}</th>
+                <td>{student ? student.studentCode + ' · ' + student.fullName : '—'}</td>
+                <td>{formatIssuedDate(certificate.issuedAt)}</td>
+                <td><PortalChip tone={statusInfo.tone} label={statusInfo.label} /></td>
+              </tr>
+            ))}
+            {recentCertificates.length === 0 && (
+              <tr>
+                <td colSpan={4} className="text-center text-body-secondary">Không tìm thấy chứng nhận phù hợp.</td>
+              </tr>
+            )}
+          </tbody>
+        </PortalTable>
+      </PortalPanel>
     </>
   )
 }

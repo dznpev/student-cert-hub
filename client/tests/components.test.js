@@ -15,6 +15,7 @@ import StudentPortal from '../src/StudentPortal.jsx'
 import { createAccountGroup } from '../src/accountNavigation.js'
 import { studentAccountSections, studentPages, studentSections } from '../src/studentNavigation.js'
 import DashboardPage from '../src/DashboardPage.jsx'
+import { summarizeDashboard } from '../src/summarizeDashboard.js'
 import { auditOutcomes } from '../src/auditOutcomes.js'
 import { importRowStatuses } from '../src/importRowStatuses.js'
 import { activityStatuses } from '../src/activityStatuses.js'
@@ -452,6 +453,140 @@ describe('trang Tổng quan', () => {
 
     // The legacy metric card is no longer part of the dashboard.
     expect(html).not.toContain('portal-metric-card')
+  })
+})
+
+describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
+  const tableLabel = 'Danh sách chứng nhận gần đây'
+
+  // The certificate-status filter renders the same label as a chip, so every
+  // assertion reads the table from its scroll region's label to </table>.
+  function recentCertificatesTable(html) {
+    const start = html.indexOf(tableLabel)
+    expect(start, 'thiếu bảng chứng nhận gần đây').toBeGreaterThan(-1)
+    return html.slice(start, html.indexOf('</table>', start))
+  }
+
+  // [prefix, header row, ...body rows]: the table renders plain <tr> tags.
+  const rowsOf = (table) => table.split('<tr>').slice(2)
+
+  function render(overrides = {}) {
+    return renderToStaticMarkup(createElement(
+      ThemeContext.Provider,
+      { value: { theme: 'light', toggleTheme() {} } },
+      createElement(DashboardPage, {
+        cohorts: sampleCohorts,
+        students: sampleStudents,
+        activities: sampleActivities,
+        participations: sampleParticipations,
+        certificates: sampleCertificates,
+        ...overrides,
+      }),
+    ))
+  }
+
+  it('liệt kê chứng nhận mới nhất trước, chưa có ngày cấp xếp cuối', () => {
+    const rows = rowsOf(recentCertificatesTable(render()))
+    const codes = rows.map((row) => /CN-MAU-\d{3}/.exec(row)?.[0])
+    expect(codes).toEqual(['CN-MAU-002', 'CN-MAU-001', 'CN-MAU-004', 'CN-MAU-003'])
+
+    // issuedAt === null (Generating, Failed) shows an em dash for Ngày cấp.
+    expect(rows[0]).toContain('26/10/2026')
+    expect(rows[1]).toContain('26/10/2026')
+    expect(rows[2]).toContain('>—<')
+    expect(rows[3]).toContain('>—<')
+  })
+
+  it('hiển thị mã, sinh viên, ngày cấp và chip trạng thái theo bảng trạng thái', () => {
+    const table = recentCertificatesTable(render())
+    expect(table).toContain('>Mã chứng nhận<')
+    expect(table).toContain('>Sinh viên<')
+    expect(table).toContain('>Ngày cấp<')
+    expect(table).toContain('>Trạng thái<')
+    expect(table).toContain('portal-table__cell-strong')
+
+    const [revoked, issued, failed, generating] = rowsOf(table)
+    const students = (studentId) => sampleStudents.find((item) => item.studentId === studentId).fullName
+    expect(revoked).toContain('02300001')
+    expect(revoked).toContain(students(3))
+    expect(revoked).toContain('portal-chip--mute')
+    expect(issued).toContain('02400001')
+    expect(issued).toContain(students(1))
+    expect(issued).toContain('portal-chip--success')
+    expect(failed).toContain('portal-chip--danger')
+    expect(generating).toContain('portal-chip--info')
+  })
+
+  // Ruling F1: the table renders the certificates `summarizeDashboard` counted,
+  // so the Issued rows can never disagree with the Issued KPI.
+  it('số dòng Đang hiệu lực trong bảng khớp chỉ số chứng nhận hiệu lực', () => {
+    const summary = summarizeDashboard({
+      cohorts: sampleCohorts,
+      students: sampleStudents,
+      activities: sampleActivities,
+      participations: sampleParticipations,
+      certificates: sampleCertificates,
+    })
+    const issuedLabel = certificateStatuses.find(({ status }) => status === 'Issued').label
+    const rows = rowsOf(recentCertificatesTable(render()))
+    expect(rows).toHaveLength(summary.scopedCertificates.length)
+    expect(rows.filter((row) => row.includes(issuedLabel))).toHaveLength(summary.certificateCounts.Issued)
+  })
+
+  // Ruling F9: the rows come from the memoised summary's `scopedCertificates`,
+  // never from a fresh filter built in the render body.
+  it('bảng đọc danh sách từ summary đã memo thay vì tự lọc lại', () => {
+    const src = readFileSync(new URL('../src/DashboardPage.jsx', import.meta.url), 'utf-8')
+    expect(src).not.toContain('certificates.filter')
+    expect(src).toMatch(/const \{[^}]*scopedCertificates[^}]*\} = useMemo\(/)
+  })
+
+  it('giới hạn 10 dòng dù phạm vi có nhiều chứng nhận hơn', () => {
+    const cohorts = [{ cohortId: 1, cohortCode: 'K1', cohortName: 'Khóa 1', isActive: true }]
+    const students = [{
+      studentId: 1, studentCode: '00000001', fullName: 'Sinh viên mẫu', email: null,
+      className: null, cohortId: 1, userId: null, isActive: true,
+    }]
+    const activities = [{
+      activityId: 1, code: 'HD001', name: 'Hoạt động mẫu',
+      startDate: '2026-01-01', endDate: '2026-01-01', status: 'Closed',
+    }]
+    const participations = Array.from({ length: 12 }, (_, index) => ({
+      participationId: index + 1, activityId: 1, studentId: 1, approvalStatus: 'Approved',
+    }))
+    const certificates = Array.from({ length: 12 }, (_, index) => ({
+      certificateId: index + 1,
+      certificateCode: 'CN-' + String(index + 1).padStart(3, '0'),
+      participationId: index + 1,
+      issuedAt: '2026-01-' + String(index + 1).padStart(2, '0'),
+      status: 'Issued',
+    }))
+
+    const rows = rowsOf(recentCertificatesTable(render({ cohorts, students, activities, participations, certificates })))
+    expect(rows).toHaveLength(10)
+    expect(rows[0]).toContain('CN-012')
+    expect(rows.at(-1)).toContain('CN-003')
+    expect(rows.join('')).not.toContain('CN-002')
+  })
+
+  it('hiển thị dòng trống colSpan khi không có chứng nhận', () => {
+    const table = recentCertificatesTable(render({ certificates: [] }))
+    const rows = rowsOf(table)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toContain('colSpan="4"')
+    expect(rows[0]).toContain('text-center')
+    expect(table).not.toContain('CN-MAU-')
+  })
+
+  it('nằm cuối trang, trong panel thân tràn và không có cột thao tác', () => {
+    const html = render()
+    expect(html.indexOf('Chứng nhận theo trạng thái')).toBeLessThan(html.indexOf(tableLabel))
+    expect(html).toContain('min-width:56rem')
+    const table = recentCertificatesTable(html)
+    expect(table).not.toContain('portal-table--sticky-actions')
+    const panel = html.slice(html.lastIndexOf('<section class="portal-panel', html.indexOf(tableLabel)), html.indexOf(tableLabel))
+    expect(panel).toContain('portal-panel__body')
+    expect(panel).not.toContain('portal-panel--padded')
   })
 })
 

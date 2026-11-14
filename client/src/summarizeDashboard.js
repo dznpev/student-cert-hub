@@ -22,9 +22,11 @@ export function summarizeDashboard({ cohorts, students, activities, participatio
   const participationIds = new Set(scopedParticipations.map((item) => item.participationId))
   const participatingStudents = new Set(scopedParticipations.map((item) => item.studentId))
   const certificateCounts = Object.fromEntries(certificateStatuses.map(({ status }) => [status, 0]))
+  const scopedCertificates = []
   for (const certificate of matchingCertificates) {
     if (participationIds.has(certificate.participationId) && Object.hasOwn(certificateCounts, certificate.status)) {
       certificateCounts[certificate.status] += 1
+      scopedCertificates.push(certificate)
     }
   }
   return {
@@ -35,6 +37,9 @@ export function summarizeDashboard({ cohorts, students, activities, participatio
     participationCount: scopedParticipations.length,
     uniqueStudents: participatingStudents.size,
     certificateCounts,
+    // The certificates behind certificateCounts, in the same derivation order:
+    // every surface that lists them must read this instead of re-filtering.
+    scopedCertificates,
     scopedParticipations,
     cohortParticipation: cohorts
       .filter((item) => selectedCohort === '' || String(item.cohortId) === selectedCohort)
