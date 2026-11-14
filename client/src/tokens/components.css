@@ -261,6 +261,13 @@
   line-height: 1.4;
 }
 
+/* §6.4 draws the number above the label while the DOM keeps label -> value ->
+   note so <dt>/<dd> stay associated (R68); this is the one rule that reorders
+   the tile back to number, label, note. */
+.portal-metric__value {
+  order: -1;
+}
+
 /* The hover surface is --ws-hutech-l, where --ws-control-idle measures 4.34:1
    (light) / 4.36:1 (dark) — below AC-01 for 10.5px text. --ws-muted measures
    5.37:1 / 5.61:1 on that surface and flips with the theme. */

@@ -1,6 +1,6 @@
 export const activityStatuses = {
-  Draft: { label: 'Bản nháp', badge: 'text-bg-warning' },
-  Open: { label: 'Đang mở', badge: 'text-bg-success' },
-  Closed: { label: 'Đã kết thúc', badge: 'text-bg-secondary' },
-  Archived: { label: 'Đã lưu trữ', badge: 'text-bg-dark' },
+  Draft: { label: 'Bản nháp', tone: 'mute' },
+  Open: { label: 'Đang mở', tone: 'success' },
+  Closed: { label: 'Đã kết thúc', tone: 'mute' },
+  Archived: { label: 'Đã lưu trữ', tone: 'mute' },
 }

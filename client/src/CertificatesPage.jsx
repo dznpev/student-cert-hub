@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import CertificateDownloadPanel from './CertificateDownloadPanel.jsx'
 import CertificateSnapshotPreview from './CertificateSnapshotPreview.jsx'
+import PortalChip from './components/PortalChip.jsx'
 import { certificateStatuses } from './certificateStatuses.js'
 import { createParticipationComparator } from './sortRecords.js'
 import { normalizeSearch } from './normalizeSearch.js'
@@ -252,7 +253,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
                       <td>{student?.fullName ?? 'Chưa xác định'}</td>
                       <td>{activity?.name ?? 'Chưa xác định'}</td>
                       <td>{issuedAt ? dateFormatter.format(new Date(issuedAt)) : '—'}</td>
-                      <td><span className={'badge text-wrap ' + statusInfo.badge}>{statusInfo.label}</span></td>
+                      <td><PortalChip tone={statusInfo.tone} label={statusInfo.label} /></td>
                       <td>{templateName ? `${templateName} · v${templateVersion}` : 'Chưa có thông tin mẫu'}
                         <button type="button" className="btn btn-sm btn-outline-secondary d-block mt-2" disabled={Boolean(processing)}
                           aria-label={'Xem bản mẫu ' + certificateCode} onClick={() => setSnapshotCertificateId(certificateId)}>Xem bản mẫu</button>

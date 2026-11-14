@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import ManagementAccountForm from './ManagementAccountForm.jsx'
+import PortalChip from './components/PortalChip.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 
 const roles = { admin: 'Admin', superAdmin: 'Super Admin', student: 'Sinh viên' }
 const statuses = {
-  demo: { label: 'Tài khoản mẫu', badge: 'text-bg-primary' },
-  locked: { label: 'Đã khóa', badge: 'text-bg-danger' },
+  demo: { label: 'Tài khoản mẫu', tone: 'info' },
+  locked: { label: 'Đã khóa', tone: 'danger' },
   ...studentAccountStatuses,
 }
 
@@ -140,7 +141,7 @@ export default function SuperAdminAccounts({ students, managementAccounts, curre
                     <th scope="row">{row.identifier}</th>
                     <td>{row.name}</td>
                     <td>{roles[row.role]}</td>
-                    <td><span className={'badge text-wrap ' + statuses[row.status].badge}>{statuses[row.status].label}</span></td>
+                    <td><PortalChip tone={statuses[row.status].tone} label={statuses[row.status].label} /></td>
                     <td><div className="d-flex flex-wrap gap-2">
                       {row.account && <button type="button" className="btn btn-sm btn-outline-primary"
                         aria-label={`Sửa tài khoản ${row.identifier}`} disabled={editingAccount !== null || confirmLock !== null || activationTarget !== null}

@@ -1,4 +1,5 @@
 import PortalIcon from './PortalIcon.jsx'
+import PortalMetricCard from './components/PortalMetricCard.jsx'
 import PortalPanel from './components/PortalPanel.jsx'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { ThemeContext } from './themeContext.js'
@@ -263,14 +264,14 @@ export default function DashboardPage({ cohorts, students, activities, participa
         {metrics.map(([label, value, note], index) => {
           const [icon, tone] = metricAppearance[index]
           return (
-            <div className={'portal-metric' + (tone ? ' portal-metric--' + tone : '')} key={label}>
-              <span className="portal-metric__icon" aria-hidden="true"><PortalIcon name={icon} /></span>
-              <div className="portal-metric__text">
-                <span className="portal-metric__value">{numberFormat.format(value)}</span>
-                <span className="portal-metric__label">{label}</span>
-                {note && <span className="portal-metric__note">{note}</span>}
-              </div>
-            </div>
+            <PortalMetricCard
+              key={label}
+              label={label}
+              value={numberFormat.format(value)}
+              note={note}
+              icon={<PortalIcon name={icon} />}
+              tone={tone}
+            />
           )
         })}
       </div>

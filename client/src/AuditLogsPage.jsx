@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PortalChip from './components/PortalChip.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 
 const entityLabels = {
@@ -11,9 +12,9 @@ const entityLabels = {
 }
 
 const outcomes = {
-  Success: { label: 'Thành công', badge: 'text-bg-success' },
-  Failure: { label: 'Thất bại', badge: 'text-bg-danger' },
-  Partial: { label: 'Một phần', badge: 'text-bg-warning' },
+  Success: { label: 'Thành công', tone: 'success' },
+  Failure: { label: 'Thất bại', tone: 'danger' },
+  Partial: { label: 'Một phần', tone: 'warn' },
 }
 
 const timestampFormatter = new Intl.DateTimeFormat('vi-VN', {
@@ -93,7 +94,7 @@ export default function AuditLogsPage({ auditLogs, search = '', onSearchChange =
                       <td>{entry.actorLabel}</td>
                       <th scope="row">{entry.action}</th>
                       <td>{entry.entityLabel}</td>
-                      <td><span className={'badge text-wrap ' + outcome.badge}>{outcome.label}</span></td>
+                      <td><PortalChip tone={outcome.tone} label={outcome.label} /></td>
                       <td>{entry.reason ?? '—'}</td>
                     </tr>
                   )

@@ -1,10 +1,10 @@
 import { demoStudentActivation } from './demoStudentActivation.js'
 
 export const studentAccountStatuses = {
-  active: { label: 'Đã kích hoạt', badge: 'text-bg-success' },
-  pending: { label: 'Chờ kích hoạt', badge: 'text-bg-warning' },
-  disabled: { label: 'Vô hiệu hóa', badge: 'text-bg-danger' },
-  unlinked: { label: 'Chưa liên kết', badge: 'text-bg-secondary' },
+  active: { label: 'Đã kích hoạt', tone: 'success' },
+  pending: { label: 'Chờ kích hoạt', tone: 'warn' },
+  disabled: { label: 'Vô hiệu hóa', tone: 'danger' },
+  unlinked: { label: 'Chưa liên kết', tone: 'mute' },
 }
 
 export function getStudentAccountStatus({ studentCode, userId, accountDisabled, activationPending }) {

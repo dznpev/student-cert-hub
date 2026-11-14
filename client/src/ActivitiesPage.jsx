@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ActivityForm from './ActivityForm.jsx'
+import PortalChip from './components/PortalChip.jsx'
 import { activityStatuses } from './activityStatuses.js'
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
@@ -97,9 +98,7 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
                         : templates.find(({ templateId }) => templateId === activity.templateId)?.templateName ?? 'Chưa xác định'}
                     </td>
                     <td>
-                      <span className={'badge text-wrap ' + activityStatuses[activity.status].badge}>
-                        {activityStatuses[activity.status].label}
-                      </span>
+                      <PortalChip tone={activityStatuses[activity.status].tone} label={activityStatuses[activity.status].label} />
                     </td>
                     <td>
                       <button

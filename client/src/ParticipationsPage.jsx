@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createParticipationComparator } from './sortRecords.js'
 
+import PortalChip from './components/PortalChip.jsx'
 import { approvalStatuses } from './approvalStatuses.js'
 
 export default function ParticipationsPage({ cohorts, activities, students, participations, onReviewParticipation, onReviewParticipations }) {
@@ -226,7 +227,7 @@ export default function ParticipationsPage({ cohorts, activities, students, part
                       <th scope="row">{student?.studentCode ?? '—'}</th>
                       <td>{student?.fullName ?? 'Chưa xác định'}</td>
                       <td>{activity?.name ?? 'Chưa xác định'}</td>
-                      <td><span className={'badge text-wrap ' + status.badge}>{status.label}</span>
+                      <td><PortalChip tone={status.tone} label={status.label} />
                         {approvalStatus === 'Approved' && <div className="small text-body-secondary mt-2">
                           <div>Người duyệt: {approvedByLabel || 'Chưa có thông tin'}</div>
                           {approvedAt && <div>{new Date(approvedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</div>}

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import CertificateTemplateImage from './CertificateTemplateImage.jsx'
+import PortalChip from './components/PortalChip.jsx'
 import { normalizeSearch } from './normalizeSearch.js'
 
 const CertificateTemplatePdf = lazy(() => import('./CertificateTemplatePdf.jsx'))
@@ -187,10 +188,8 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
                     </td>
                     <td>
                       <div className="d-flex flex-wrap gap-2">
-                        <span className={'badge text-wrap ' + (isActive ? 'text-bg-success' : 'text-bg-secondary')}>
-                          {isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'}
-                        </span>
-                        {isDefault && isActive && <span className="badge text-bg-primary">Mặc định</span>}
+                        <PortalChip tone={isActive ? 'success' : 'mute'} label={isActive ? 'Đang sử dụng' : 'Ngừng sử dụng'} />
+                        {isDefault && isActive && <PortalChip tone="info" label="Mặc định" />}
                       </div>
                     </td>
                     <td><div className="d-flex flex-wrap gap-2">

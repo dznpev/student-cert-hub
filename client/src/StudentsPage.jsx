@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { normalizeSearch } from './normalizeSearch.js'
 import { createStudentComparator } from './sortRecords.js'
+import PortalChip from './components/PortalChip.jsx'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 import StudentProfileForm from './StudentProfileForm.jsx'
 
@@ -180,9 +181,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
                       <td>{student.className ?? 'Chưa có'}</td>
                       <td>{cohort?.cohortCode ?? 'Chưa xác định'}</td>
                       <td>
-                        <span className={'badge text-wrap ' + accountStatus.badge}>
-                          {accountStatus.label}
-                        </span>
+                        <PortalChip tone={accountStatus.tone} label={accountStatus.label} />
                       </td>
                       <td>
                         <button

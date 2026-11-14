@@ -4,6 +4,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import PortalChip from '../src/components/PortalChip.jsx'
+import PortalMetricCard from '../src/components/PortalMetricCard.jsx'
 import PortalTable from '../src/components/PortalTable.jsx'
 import DashboardPage from '../src/DashboardPage.jsx'
 import { ThemeContext } from '../src/themeContext.js'
@@ -99,6 +100,39 @@ describe('component dùng chung', () => {
     )
     expect(wide).toContain('min-width:85rem')
     expect(wide).toContain('portal-table portal-table--sticky-actions')
+  })
+
+  it('PortalMetricCard không dùng ô icon pastel', () => {
+    const src = read('PortalMetricCard.jsx')
+    expect(src).toContain('portal-metric__icon')
+    expect(src).not.toContain('bg-subtle')
+  })
+
+  it('không còn text-bg-* trong các trang dùng badge', () => {
+    for (const file of [
+      'SuperAdminAccounts.jsx', 'CertificatesPage.jsx', 'ParticipationsPage.jsx', 'ImportsPage.jsx',
+      'AuditLogsPage.jsx', 'ActivitiesPage.jsx', 'CertificateTemplatesPage.jsx', 'StudentsPage.jsx',
+    ]) {
+      expect(readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8'), file).not.toContain('text-bg-')
+    }
+  })
+
+  it('PortalMetricCard giữ cấu trúc <dl> và áp tone lên phần tử gốc', () => {
+    const html = renderToStaticMarkup(createElement(PortalMetricCard, {
+      label: 'Chờ duyệt', value: '3', note: 'Ghi chú', icon: createElement('span', null, 'i'), tone: 'warn',
+    }))
+    expect(html).toContain('class="portal-metric portal-metric--warn"')
+    expect(html).toContain('portal-metric__icon')
+    // DOM order stays label -> value -> note so <dt>/<dd> remain associated;
+    // the number is lifted above the label by the CSS `order` instead (R68).
+    expect(html).toMatch(/<dt class="portal-metric__label">Chờ duyệt<\/dt><dd class="portal-metric__value">3<\/dd><dd class="portal-metric__note">Ghi chú<\/dd>/)
+
+    // Without a tone the card falls back to the default variant and drops the
+    // optional note and icon.
+    const plain = renderToStaticMarkup(createElement(PortalMetricCard, { label: 'Tổng', value: 7 }))
+    expect(plain).toContain('class="portal-metric portal-metric--default"')
+    expect(plain).not.toContain('portal-metric__note')
+    expect(plain).not.toContain('portal-metric__icon')
   })
 })
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PortalChip from './components/PortalChip.jsx'
 import { previewStudentFile } from './previewStudentFile.js'
 import { previewParticipationFile } from './previewParticipationFile.js'
 import { summarizeImportRows } from './summarizeImportRows.js'
@@ -9,11 +10,11 @@ const importTypes = {
 }
 
 const rowStatuses = {
-  Valid: { label: 'Hợp lệ', badge: 'text-bg-success' },
-  Imported: { label: 'Đã nhập', badge: 'text-bg-success' },
-  Skipped: { label: 'Bỏ qua', badge: 'text-bg-warning' },
-  Duplicate: { label: 'Trùng', badge: 'text-bg-warning' },
-  Error: { label: 'Lỗi', badge: 'text-bg-danger' },
+  Valid: { label: 'Hợp lệ', tone: 'info' },
+  Imported: { label: 'Đã nhập', tone: 'success' },
+  Skipped: { label: 'Bỏ qua', tone: 'mute' },
+  Duplicate: { label: 'Trùng', tone: 'warn' },
+  Error: { label: 'Lỗi', tone: 'danger' },
 }
 
 const batchStatuses = {
@@ -22,7 +23,7 @@ const batchStatuses = {
 
 function ImportRowStatus({ row }) {
   const status = rowStatuses[row.isDuplicate && row.processingStatus === 'Skipped' ? 'Duplicate' : row.processingStatus]
-  return <span className={'badge ' + status.badge}>{status.label}</span>
+  return <PortalChip tone={status.tone} label={status.label} />
 }
 
 const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
@@ -387,7 +388,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                     <td className="text-end">{batch.duplicateRows}</td>
                     <td className="text-end">{batch.skippedRows}</td>
                     <td className="text-end">{batch.errorRows}</td>
-                    <td className="ps-4 ps-lg-5"><span className={batch.errorRows ? 'badge text-bg-warning' : 'badge text-bg-success'}>{batchStatuses[batch.batchStatus]}{batch.errorRows > 0 && ' · Có lỗi'}</span></td>
+                    <td className="ps-4 ps-lg-5"><PortalChip tone={batch.errorRows ? 'warn' : 'success'} label={batchStatuses[batch.batchStatus] + (batch.errorRows > 0 ? ' · Có lỗi' : '')} /></td>
                     <td><button type="button" className="btn btn-sm btn-outline-primary" disabled={busy}
                       aria-label={'Xem chi tiết đợt ' + batch.batchId + ' · ' + batch.fileName}
                       onClick={() => { setSelectedBatchId(batch.batchId); setSelectedRowStatus(''); setErrorReportError('') }}>Xem chi tiết</button></td>
