@@ -1,0 +1,64 @@
+﻿main.jsx: Khởi động ứng dụng React và nạp CSS dùng chung.
+App.jsx: Điều phối vai trò, dữ liệu dùng chung và tạo tài khoản mẫu chờ kích hoạt khi nhập hồ sơ mới.
+vite.config.js: Cấu hình Vite để chạy và build ứng dụng React.
+AdminLayout.jsx: Bố cục khu quản trị, điều hướng khu tài khoản và về trang chính qua logo HUTECH.
+PortalSidebar.jsx: Hiển thị logo và menu dọc dùng chung cho khu quản trị và cổng sinh viên.
+AccountMenu.jsx: Menu hồ sơ, tài khoản, chuyển chế độ sáng tối và đăng xuất.
+ThemeProvider.jsx: Áp dụng và lưu lựa chọn giao diện sáng hoặc tối cho ứng dụng.
+themeContext.js: Chia sẻ chế độ giao diện và thao tác chuyển chế độ giữa các màn hình.
+
+DashboardPage.jsx: Hiển thị chỉ số, biểu đồ và xuất báo cáo Excel theo bộ lọc khóa, hoạt động, ngày tổ chức và trạng thái chứng nhận.
+CohortsPage.jsx: Xem, lọc, thêm, sửa và ngừng sử dụng khóa tuyển sinh.
+StudentsPage.jsx: Tìm, lọc, xem, sửa và đổi trạng thái sử dụng hồ sơ sinh viên.
+StudentProfileForm.jsx: Form sửa hồ sơ cho quản trị viên hoặc chỉ sửa email cho sinh viên.
+ActivitiesPage.jsx: Tìm, lọc, thêm và sửa hoạt động.
+ActivityForm.jsx: Nhập và kiểm tra thông tin khi thêm hoặc sửa hoạt động.
+ParticipationsPage.jsx: Lọc lượt tham gia, duyệt hoặc từ chối từng lượt hoặc hàng loạt.
+CertificatesPage.jsx: Tìm lọc, xử lý chứng nhận và chọn tải PDF hoặc ZIP theo lô trong kho quản trị mẫu.
+CertificateDownloadPanel.jsx: Hiển thị bảng chuẩn bị tải PDF hoặc ZIP với trạng thái mô phỏng và thông báo chờ API.
+ImportsPage.jsx: Xem trước, xác nhận nhập, xem chi tiết từng đợt và xuất lại báo cáo lỗi sinh viên hoặc lượt tham gia.
+AuditLogsPage.jsx: Xem, tìm kiếm và lọc nhật ký hệ thống.
+SuperAdminAccounts.jsx: Tìm lọc, tạo/sửa và khóa/mở tài khoản quản trị, cấp mã kích hoạt thử cho sinh viên chưa kích hoạt.
+ManagementAccountForm.jsx: Form tạo/sửa tên đăng nhập, tên hiển thị, hai vai trò quản trị và nhập mật khẩu thử khi tạo.
+studentAccountStatuses.js: Xác định trạng thái và nhãn tài khoản sinh viên dùng chung cho quản trị và đăng nhập.
+CertificateTemplatesPage.jsx: Tìm, lọc và quản lý mẫu chứng nhận, phiên bản, mẫu mặc định và trạng thái sử dụng trong Super Admin.
+CertificateTemplateImage.jsx: Đặt và định dạng chữ hoặc QR, xem thử và hoàn tác trên ảnh hoặc trang PDF.
+CertificateTemplatePdf.jsx: Hiển thị từng trang PDF để đặt và xem lại vị trí chữ và QR.
+TemplatePreviewQr.jsx: Tạo QR minh họa dẫn đến chứng nhận mẫu để xem bố cục trên ảnh.
+
+StudentPortal.jsx: Điều phối cổng sinh viên, khu tài khoản và sửa email cá nhân sau đăng nhập.
+StudentOverview.jsx: Hiển thị số lượt tham gia, lượt chờ duyệt và chứng nhận còn hiệu lực của sinh viên.
+StudentLogin.jsx: Đăng nhập sinh viên hoặc tài khoản quản trị theo vai trò, xác minh mã kích hoạt và tự đặt mật khẩu lần đầu trong phiên mẫu.
+StudentPasswordReset.jsx: Yêu cầu mã, mở liên kết thử và đặt lại mật khẩu sinh viên trong phiên.
+StudentAccountLink.jsx: Kiểm tra liên kết kích hoạt hoặc đặt lại mật khẩu thử và hiển thị form đặt mật khẩu.
+PasswordChangeForm.jsx: Form đổi mật khẩu mẫu dùng chung cho Sinh viên, Admin và Super Admin.
+demoPassword.js: Cung cấp mật khẩu mẫu ban đầu dùng chung cho đăng nhập và đổi mật khẩu.
+StudentRecords.jsx: Hiển thị lượt tham gia, chứng nhận và giao diện tải PDF của sinh viên đang xem.
+NotificationsPage.jsx: Hiển thị thông báo sinh viên và cho phép đánh dấu đã đọc.
+CertificateVerification.jsx: Trang tra cứu công khai theo mã chứng nhận.
+CertificateVerificationLink.jsx: Tạo liên kết tra cứu và mã QR cho từng chứng nhận.
+
+activityStatuses.js: Cung cấp nhãn và màu trạng thái hoạt động.
+approvalStatuses.js: Cung cấp nhãn và màu trạng thái duyệt lượt tham gia.
+certificateStatuses.js: Cung cấp nhãn và màu trạng thái chứng nhận.
+normalizeSearch.js: Chuẩn hóa chữ để tìm kiếm không phân biệt dấu và hoa thường.
+sortRecords.js: Cung cấp quy tắc sắp xếp danh sách theo mã và tên tiếng Việt.
+readImportFile.js: Đọc tệp XLSX hoặc CSV cho chức năng nhập dữ liệu.
+previewStudentFile.js: Kiểm tra dữ liệu sinh viên và tạo kết quả xem trước theo từng dòng.
+previewParticipationFile.js: Đối chiếu MSSV và lượt đã có để tạo bản xem trước lượt tham gia.
+summarizeImportRows.js: Đếm các nhóm kết quả để dùng chung cho xem trước, lịch sử nhập và nhật ký.
+reviewParticipations.js: Kiểm tra và cập nhật kết quả duyệt hoặc từ chối từng lượt tham gia.
+queueCertificates.js: Tạo yêu cầu chứng nhận và xử lý mô phỏng phát hành, thử lại hoặc thu hồi.
+summarizeDashboard.js: Tính số liệu tổng quan theo bộ lọc và tỷ lệ tham gia của sinh viên đang hoạt động theo khóa.
+exportDashboardReport.js: Tạo báo cáo Excel gồm số liệu tổng quan và chi tiết lượt tham gia.
+
+sampleCohorts.js: Dữ liệu mẫu cho danh mục khóa tuyển sinh.
+sampleStudents.js: Dữ liệu mẫu cho danh sách sinh viên.
+sampleActivities.js: Dữ liệu mẫu cho danh mục hoạt động.
+sampleParticipations.js: Dữ liệu mẫu cho danh sách lượt tham gia.
+sampleCertificates.js: Dữ liệu mẫu cho kho chứng nhận.
+sampleCertificateTemplates.js: Dữ liệu mẫu cho danh mục mẫu chứng nhận.
+sampleImportHistory.js: Dữ liệu mẫu cho lịch sử nhập.
+sampleAuditLogs.js: Dữ liệu mẫu cho nhật ký hệ thống.
+demoManagementAccounts.js: Cung cấp định danh và vai trò cho tài khoản quản trị mẫu.
+demoStudentActivation.js: Cung cấp MSSV và mã dùng để thử kích hoạt tài khoản sinh viên.

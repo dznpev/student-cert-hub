@@ -1,0 +1,1999 @@
+/*
+ * HUTECH shared component styles.
+ *
+ * Every colour here is a var(--ws-*) token, with one sanctioned exception: the
+ * certificate-template editor's `.template-editor-scope` block (§6.11), whose
+ * overlays sit on an image the user uploads. That block is the only raw colour
+ * in this file.
+ * Geometry uses the radius and spacing scales from §5.3 / §5.5, with the fixed
+ * component sizes of §5.7 where the scale has no matching step.
+ *
+ * References: §6.3 panel, §6.5 table, §6.6 chip, §6.7 filters, §6.8.1 page
+ * header, §7 component states, §12.2 empty state.
+ */
+
+/* Panel (§6.3) ------------------------------------------------------------ */
+
+.portal-panel {
+  overflow: hidden;
+  background-color: var(--ws-panel);
+  border-radius: var(--ws-r);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s4);
+  padding: var(--ws-s5) var(--ws-s6);
+  border-bottom: 1px solid var(--ws-line);
+}
+
+.portal-panel__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--ws-hutech);
+}
+
+/* Base icon box; every container below re-sizes it with a two-class rule. */
+.portal-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.portal-panel__icon .portal-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.portal-panel__title {
+  margin: 0;
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: var(--ws-t-base);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.portal-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s3);
+  margin-left: auto;
+}
+
+/* 26x26 icon button inside a panel header (§6.3, states in §7.6) */
+.portal-panel__actions .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--ws-control);
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--ws-r-tick);
+  transition: background-color var(--ws-dur-fast) ease, color var(--ws-dur-fast) ease;
+}
+
+.portal-panel__actions .btn-icon .portal-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.portal-panel__actions .btn-icon:hover {
+  color: var(--ws-fg);
+  background-color: var(--ws-chip-bg);
+}
+
+.portal-panel__actions .btn-icon:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.portal-panel__actions .btn-icon:active {
+  background-color: var(--ws-chip-bg);
+}
+
+.portal-panel__actions .btn-icon:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.portal-panel__body {
+  padding: 0 0 var(--ws-s2);
+}
+
+/* Panels whose body holds forms or prose instead of a flush table: the bare
+   body above is edge-to-edge, so a padded panel re-adds the inset from the
+   spacing scale (§5.5) rather than Bootstrap's off-scale utilities. */
+.portal-panel--padded > .portal-panel__body {
+  padding: var(--ws-s7);
+}
+
+@media (min-width: 768px) {
+  .portal-panel--padded > .portal-panel__body {
+    padding: var(--ws-s9);
+  }
+}
+
+/* Panels stacked on one page share one vertical gap from the same scale. */
+.portal-panel--stacked {
+  margin-bottom: var(--ws-s7);
+}
+
+/* A bordered block nested inside a padded panel body — a record detail, not a
+   panel of its own. Border colour and radius come from the token scales, and
+   the inset from the spacing scale, so it cannot drift onto Bootstrap's
+   off-scale `rounded-3` / `p-3` utilities. */
+.portal-inset {
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  margin-bottom: var(--ws-s7);
+  padding: var(--ws-s7);
+}
+
+/* Bootstrap surfaces that are not portal panels yet -----------------------
+ * Only the activity form (`ActivityForm.jsx`) and the unreachable-section
+ * fallback in `App.jsx` still render Bootstrap's `.card` / `.card-body`; these
+ * rules keep their surface on tokens now that the legacy admin palette is gone.
+ * Every other surface in the app is a `.portal-panel`.
+ */
+
+.page-title {
+  font-family: var(--ws-font-head);
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  font-weight: 700;
+}
+
+.content-card {
+  max-width: 56rem;
+  border-color: var(--ws-line);
+  border-radius: var(--ws-r);
+}
+
+.activities-card {
+  background-color: var(--ws-panel);
+  border-color: var(--ws-line);
+  border-radius: var(--ws-r);
+}
+
+/* Bootstrap semantic surfaces (§8.0 bridge) -------------------------------
+ * The app keeps Bootstrap's class names (§12.1) and the bridge recolours them.
+ * The `--bs-*` variables reach most of them; the ones below carry their own
+ * hardcoded colours or !important utilities, so they need a rule each.
+ */
+
+/* Semantic text utilities. `.text-primary` paints from --bs-primary-rgb with
+   !important, i.e. #00529c, which measures 2.12:1 on the dark panel: dark mode
+   uses the text variant of the brand exactly like links and outline buttons
+   (§5.1). `.text-danger` is what a user reads when a form rejects them, so
+   both themes read it from --ws-danger-text. */
+[data-bs-theme="dark"] .text-primary {
+  color: var(--ws-hutech-text) !important;
+}
+
+.text-danger {
+  color: var(--ws-danger-text) !important;
+}
+
+/* Feedback surfaces (§8.0 names the alert explicitly): keep the class, take
+   the subtle surface as the fill, the status hue as the text, and a mid-tint as
+   the border. A border equal to the fill leaves the box with no edge (it is the
+   one deliberate departure from §8.0's "border = --ws-*-l"; the tokens and the
+   reason are in tokens/index.css). The -text variants carry the dark theme,
+   where the base hues are too dark on the lifted surface. */
+.alert-success {
+  --bs-alert-color: var(--ws-success);
+  --bs-alert-bg: var(--ws-alert-success-bg);
+  --bs-alert-border-color: var(--ws-alert-success-border);
+  --bs-alert-link-color: var(--ws-success);
+}
+
+.alert-warning {
+  --bs-alert-color: var(--ws-warn);
+  --bs-alert-bg: var(--ws-alert-warn-bg);
+  --bs-alert-border-color: var(--ws-alert-warn-border);
+  --bs-alert-link-color: var(--ws-warn);
+}
+
+.alert-danger {
+  --bs-alert-color: var(--ws-accent);
+  --bs-alert-bg: var(--ws-alert-danger-bg);
+  --bs-alert-border-color: var(--ws-alert-danger-border);
+  --bs-alert-link-color: var(--ws-accent);
+}
+
+.alert-info {
+  --bs-alert-color: var(--ws-hutech);
+  --bs-alert-bg: var(--ws-alert-info-bg);
+  --bs-alert-border-color: var(--ws-alert-info-border);
+  --bs-alert-link-color: var(--ws-hutech);
+}
+
+[data-bs-theme="dark"] .alert-success {
+  --bs-alert-color: var(--ws-success-text);
+  --bs-alert-link-color: var(--ws-success-text);
+}
+
+[data-bs-theme="dark"] .alert-warning {
+  --bs-alert-color: var(--ws-warn-text);
+  --bs-alert-link-color: var(--ws-warn-text);
+}
+
+[data-bs-theme="dark"] .alert-danger {
+  --bs-alert-color: var(--ws-accent-text);
+  --bs-alert-link-color: var(--ws-accent-text);
+}
+
+[data-bs-theme="dark"] .alert-info {
+  --bs-alert-color: var(--ws-hutech-text);
+  --bs-alert-link-color: var(--ws-hutech-text);
+}
+
+/* A list inside a panel belongs to that panel: Bootstrap would repaint every
+   row with the page colour, so the rows inherit the panel surface and keep the
+   hairline between them (§6.3). */
+.list-group {
+  --bs-list-group-bg: transparent;
+  --bs-list-group-border-color: var(--ws-line);
+}
+
+/* A checked checkbox/radio is a filled control, and Bootstrap hardcodes
+   #0d6efd on it — a fourth blue next to the brand and the two legacy ones
+   (§11). It fills with the brand in both themes. On the dark panel #00529c is
+   only 2.12:1, so the fill switches to the light text variant and the mark
+   takes the dark ink (both tokens, in both blocks of tokens/index.css). */
+.form-check-input:checked {
+  background-color: var(--ws-hutech);
+  border-color: var(--ws-hutech);
+}
+
+.form-check-input:checked[type="checkbox"] {
+  --bs-form-check-bg-image: var(--ws-check-mark);
+}
+
+.form-check-input:checked[type="radio"] {
+  --bs-form-check-bg-image: var(--ws-radio-mark);
+}
+
+[data-bs-theme="dark"] .form-check-input:checked {
+  background-color: var(--ws-hutech-text);
+  border-color: var(--ws-hutech-text);
+}
+
+/* A checked switch paints its knob from --bs-form-switch-bg, which Bootstrap
+   bakes as a white circle: on the light --ws-hutech-text track of the dark
+   theme that knob is 2.07:1, under the 3:1 non-text convention. The knob is a
+   token pair (white on the brand, panel ink on the light track), so it follows
+   the fill in both themes. The focus knob is the same circle — Bootstrap paints
+   it #86b7fe, a blue from outside the token set — and only paints while the
+   switch is unchecked: a checked switch keeps the checked knob. */
+.form-switch .form-check-input:checked {
+  --bs-form-switch-bg: var(--ws-switch-knob);
+}
+
+.form-switch .form-check-input:focus:not(:checked) {
+  --bs-form-switch-bg: var(--ws-switch-knob-focus);
+}
+
+/* Bootstrap hardcodes #86b7fe and rgba(13, 110, 253, .25) on the focused
+   field — a fifth blue on a real focus state, in both themes. Both move to the
+   brand tokens, and --bs-focus-ring-color is declared in the dark block too, so
+   the ring follows the theme. The checkbox/radio/switch shares the same
+   hardcoded pair on `:focus`, so it takes the same bridge. */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: var(--ws-hutech);
+  box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color);
+}
+
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-select:focus,
+[data-bs-theme="dark"] .form-check-input:focus {
+  border-color: var(--ws-hutech-text);
+}
+
+/* Page header (§6.8.1) ---------------------------------------------------- */
+
+.portal-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ws-s7);
+  margin-bottom: var(--ws-s5);
+}
+
+.portal-page-header__text {
+  min-width: 0;
+}
+
+.portal-page-header__title {
+  margin: 0;
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.25px;
+}
+
+.portal-page-header__description {
+  margin: var(--ws-s3) 0 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-card);
+  line-height: 1.5;
+}
+
+.portal-page-header__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ws-s4);
+  margin-left: auto;
+}
+
+/* Dashboard (§6.4 KPI tiles, §6.8 hero) ----------------------------------
+ * The hero is the greeting panel used only on the two overview pages; every
+ * other page uses the surface-less `.portal-page-header` above. Tile icons are
+ * painted in the brand colour directly — never inside a pastel box (§11).
+ */
+
+.portal-hero {
+  margin-bottom: var(--ws-s7);
+  padding: var(--ws-s7) var(--ws-s8);
+  background-color: var(--ws-panel);
+  border-radius: var(--ws-r);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-hero__date {
+  margin: 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-sub);
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.portal-hero__title {
+  margin: var(--ws-s1) 0 0;
+  color: var(--ws-hutech);
+  font-family: var(--ws-font-head);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.25px;
+}
+
+.portal-hero__description {
+  margin: var(--ws-s2) 0 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-card);
+  line-height: 1.5;
+}
+
+.portal-hero__note {
+  display: inline-block;
+  margin: var(--ws-s3) 0 0;
+  padding: var(--ws-s1) var(--ws-s4);
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+  border: 1px solid var(--ws-hutech-border);
+  border-radius: var(--ws-r-pill);
+  font-size: var(--ws-t-chip);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Four tiles per row (§6.4): the seven dashboard metrics flow 4 + 3. */
+.portal-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ws-s4);
+  padding: var(--ws-s5) var(--ws-s6);
+  margin-bottom: var(--ws-s7);
+}
+
+/* The personal overview has three tiles, so it fills its row instead of leaving
+   a fourth column empty. The narrower rules below still collapse it to two and
+   then one column, because they come later in the cascade. */
+.portal-metric-grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.portal-metric {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ws-s3);
+  min-width: 0;
+  padding: var(--ws-s6) var(--ws-s7);
+  /* Bootstrap's reboot gives <dl> a 1rem bottom margin and <dd> .5rem. Reset
+     them per class, not globally: other pages' <dl>s keep their spacing. */
+  margin: 0;
+  background-color: var(--ws-tile);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-card);
+  transition: background-color var(--ws-dur-fast) ease, border-color var(--ws-dur-fast) ease;
+}
+
+.portal-metric:hover {
+  background-color: var(--ws-hutech-l);
+  border-color: var(--ws-hutech-border);
+}
+
+.portal-metric__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--ws-hutech);
+}
+
+.portal-metric__icon .portal-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.portal-metric__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-s1);
+  min-width: 0;
+}
+
+.portal-metric__label {
+  color: var(--ws-muted);
+  font-size: var(--ws-t-chip);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* 21px / 800 is the large-metric size fixed by §5.4 (not a scale step). */
+.portal-metric__value {
+  margin: 0;
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.portal-metric__note {
+  margin: 0;
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-rail);
+  line-height: 1.4;
+}
+
+/* §6.4 draws the number above the label while the DOM keeps label -> value ->
+   note so <dt>/<dd> stay associated (R68); this is the one rule that reorders
+   the tile back to number, label, note. */
+.portal-metric__value {
+  order: -1;
+}
+
+/* The hover surface is --ws-hutech-l, where --ws-control-idle measures 4.34:1
+   (light) / 4.36:1 (dark) — below AC-01 for 10.5px text. --ws-muted measures
+   5.37:1 / 5.61:1 on that surface and flips with the theme. */
+.portal-metric:hover .portal-metric__note {
+  color: var(--ws-muted);
+}
+
+/* Business tone applied to icon + number (§6.4). */
+.portal-metric--success :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-success);
+}
+
+.portal-metric--warn :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-warn);
+}
+
+.portal-metric--danger :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-accent);
+}
+
+/* Chart panel body: the shared panel body is flush (0 0 4px, §6.3), so the
+   chart's own padding lives here on the spacing scale. */
+.dashboard-panel__body {
+  padding: var(--ws-s6) var(--ws-s7) var(--ws-s7);
+}
+
+/* Chart canvas and its doughnut legend (moved out of the legacy index.css). */
+.dashboard-chart {
+  position: relative;
+  min-width: 0;
+  height: 19rem;
+}
+
+.dashboard-chart-with-legend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ws-s7);
+  align-items: center;
+}
+
+.dashboard-chart-legend {
+  display: grid;
+  gap: var(--ws-s6);
+  font-size: var(--ws-t-lead);
+}
+
+.dashboard-chart-legend-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ws-s4);
+}
+
+.dashboard-chart-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--ws-r-tick);
+}
+
+@media (min-width: 1200px) {
+  .dashboard-chart-with-legend {
+    grid-template-columns: minmax(0, 19rem) minmax(10rem, 1fr);
+    column-gap: var(--ws-s9);
+  }
+
+  .dashboard-chart-with-legend .dashboard-chart-legend {
+    justify-self: center;
+  }
+}
+
+/* The recent-certificates table closes the dashboard below the two chart
+   columns, so it needs the stacked panels' vertical gap at its top. */
+.dashboard-recent-certificates {
+  margin-top: var(--ws-s7);
+}
+
+/* Status chip (§6.6, palette in §5.2) ------------------------------------- */
+
+.portal-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 3px 9px;
+  color: var(--ws-muted);
+  white-space: nowrap;
+  background-color: var(--ws-chip-bg);
+  border-radius: var(--ws-r-pill);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: .02em;
+}
+
+.portal-chip--success {
+  color: var(--ws-success);
+  background-color: var(--ws-success-l);
+}
+
+.portal-chip--warn {
+  color: var(--ws-warn);
+  background-color: var(--ws-warn-l);
+}
+
+.portal-chip--danger {
+  color: var(--ws-accent);
+  background-color: var(--ws-accent-l);
+}
+
+.portal-chip--info {
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+}
+
+.portal-chip--mute {
+  color: var(--ws-muted);
+  background-color: var(--ws-chip-bg);
+}
+
+/* Chip inside a selectable row must still show a focus ring (§7.4) */
+.portal-table tr:focus-visible .portal-chip,
+.portal-table tr[aria-selected="true"]:focus-visible .portal-chip {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+/* Table (§6.5) ------------------------------------------------------------ */
+
+.admin-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: var(--ws-r-card);
+}
+
+.admin-table-scroll:focus-visible {
+  /* Inset ring: the panel body is flush with the scroll region (§6.3 body
+     padding 0 0 4px, panel overflow hidden), so an outward ring would be
+     clipped and AC-02 forbids that. */
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: -2px;
+}
+
+.portal-table {
+  width: 100%;
+  color: var(--ws-fg-2);
+  border-collapse: collapse;
+  font-size: var(--ws-t-chip);
+}
+
+.portal-table thead th {
+  padding: var(--ws-s4) var(--ws-s6);
+  color: var(--ws-control-idle);
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--ws-line);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.portal-table td,
+.portal-table tbody th {
+  padding: var(--ws-s4) var(--ws-s6);
+  color: var(--ws-fg-2);
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--ws-line);
+}
+
+/* Row header holds data, not a column label: it follows the emphasised cell */
+.portal-table tbody th {
+  color: var(--ws-fg);
+  text-align: left;
+  font-weight: 600;
+}
+
+.portal-table tbody tr {
+  transition: background-color var(--ws-dur-fast) ease;
+}
+
+.portal-table tbody tr:hover {
+  background-color: var(--ws-chip-bg);
+}
+
+/* Emphasised column: certificate code, full name (§6.5) */
+.portal-table__cell-strong {
+  color: var(--ws-fg);
+  font-weight: 600;
+}
+
+.portal-table a {
+  color: var(--ws-hutech);
+  text-decoration: none;
+}
+
+.portal-table a:hover {
+  text-decoration: underline;
+}
+
+/* Sticky action column, driven by a wide min-width table (§6.5) */
+.portal-table--sticky-actions :is(th, td):last-child:not([colspan]) {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  white-space: nowrap;
+  background-color: var(--ws-panel-solid);
+  border-left: 1px solid var(--ws-line);
+  box-shadow: -6px 0 12px -10px var(--ws-control);
+}
+
+.portal-table--sticky-actions tbody tr:hover :is(th, td):last-child {
+  background-color: var(--ws-chip-bg);
+}
+
+/* Per-page column widths (moved out of the legacy index.css). `PortalTable`
+   owns the table shell and scroll region; these classes only describe the
+   columns of the two fixed-layout tables and the participation reason cell. */
+.cohort-status-filter {
+  max-width: 12.5rem;
+}
+
+.cohort-code-col {
+  width: 3rem;
+}
+
+.cohort-actions-col {
+  width: 4.75rem;
+  white-space: nowrap;
+}
+
+@media (min-width: 576px) {
+  .cohort-code-col {
+    width: 5rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .cohort-code-col {
+    width: 5.5rem;
+  }
+
+  .cohort-status-col {
+    width: 28%;
+  }
+
+  .cohort-actions-col {
+    width: 11.5rem;
+  }
+}
+
+.students-col-code {
+  width: 12%;
+}
+
+.students-col-name {
+  width: 22%;
+}
+
+.students-col-class {
+  width: 10%;
+}
+
+.students-col-cohort {
+  width: 16%;
+}
+
+.students-col-actions {
+  width: 7rem;
+}
+
+.students-col-account {
+  width: 14%;
+}
+
+.participation-select-col {
+  width: 2.75rem;
+}
+
+.participation-reason {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Buttons (§6.7, §7.1) ---------------------------------------------------- */
+
+.btn {
+  --bs-btn-font-size: var(--ws-t-base);
+  --bs-btn-padding-y: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border-radius: var(--ws-r-sm);
+  transition: color var(--ws-dur-fast) ease, background-color var(--ws-dur-fast) ease,
+    border-color var(--ws-dur-fast) ease;
+}
+
+/* Compact variants keep their own scale: §5.7 fixes only the standard button at
+   32px (and the panel-header icon button at 26x26). `.btn-sm` stays near 26px
+   with the §5.4 sub-text size and Bootstrap's compact horizontal padding;
+   `.btn-link` is content-sized again, with its vertical padding restored. */
+.btn.btn-sm {
+  --bs-btn-font-size: var(--ws-t-sub);
+  --bs-btn-padding-y: var(--ws-s1);
+  min-height: 26px;
+}
+
+.btn.btn-link {
+  --bs-btn-padding-y: var(--ws-s2);
+  min-height: 0;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.btn-primary {
+  --bs-btn-color: var(--ws-on-brand);
+  --bs-btn-bg: var(--ws-hutech);
+  --bs-btn-border-color: var(--ws-hutech);
+  --bs-btn-hover-color: var(--ws-on-brand);
+  --bs-btn-hover-bg: var(--ws-hutech-d);
+  --bs-btn-hover-border-color: var(--ws-hutech-d);
+  --bs-btn-active-color: var(--ws-on-brand);
+  --bs-btn-active-bg: var(--ws-hutech-d);
+  --bs-btn-active-border-color: var(--ws-hutech-d);
+  --bs-btn-disabled-color: var(--ws-on-brand);
+  --bs-btn-disabled-bg: var(--ws-hutech);
+  --bs-btn-disabled-border-color: var(--ws-hutech);
+  --bs-btn-focus-box-shadow: none;
+}
+
+.btn-primary:disabled,
+.btn-primary.disabled {
+  opacity: .45;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--ws-hutech);
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: var(--ws-hutech);
+  --bs-btn-hover-color: var(--ws-hutech-d);
+  --bs-btn-hover-bg: var(--ws-hutech-l);
+  --bs-btn-hover-border-color: var(--ws-hutech);
+  --bs-btn-active-color: var(--ws-hutech-d);
+  --bs-btn-active-bg: var(--ws-hutech-l);
+  --bs-btn-active-border-color: var(--ws-hutech);
+  --bs-btn-disabled-color: var(--ws-hutech);
+  --bs-btn-disabled-border-color: var(--ws-hutech);
+  --bs-btn-focus-box-shadow: none;
+}
+
+/* Filter field (§6.7, states in §7.2) ------------------------------------- */
+
+/* One rule set for both field shapes, so the revocation textarea can never
+   drift from the inputs beside it. `.fld` is the single-line field;
+   `.fld-multiline` is its textarea twin, which cannot simply take `.fld`
+   because the fixed height of §5.7 would collapse it. Only the shape-specific
+   declarations below stay separate. */
+.fld,
+.fld-multiline {
+  color: var(--ws-fg);
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+  transition: border-color var(--ws-dur-fast) ease, background-color var(--ws-dur-fast) ease;
+}
+
+/* The 32px field height of §5.7 belongs to the single-line shape only. */
+.fld {
+  height: 32px;
+  padding: 0 var(--ws-s4);
+  line-height: 1.4;
+}
+
+/* A textarea's height follows `rows` and the user's resize instead. */
+.fld-multiline {
+  display: block;
+  width: 100%;
+  padding: var(--ws-s3) var(--ws-s4);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.fld::placeholder,
+.fld-multiline::placeholder {
+  color: var(--ws-muted);
+  opacity: 1;
+}
+
+:is(.fld, .fld-multiline):hover {
+  border-color: var(--ws-hutech-border);
+}
+
+:is(.fld, .fld-multiline):focus-visible {
+  border-color: var(--ws-hutech);
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+:is(.fld, .fld-multiline):disabled {
+  color: var(--ws-control-idle);
+  background-color: var(--ws-chip-bg);
+  cursor: not-allowed;
+}
+
+:is(.fld, .fld-multiline):is(.is-invalid, [aria-invalid="true"]) {
+  border-color: var(--ws-accent);
+}
+
+/* A <select> keeps the browser's own dropdown arrow, which paints inside the
+   field's inline-end padding: `.fld`'s symmetric `0 var(--ws-s4)` would clip
+   it, so a select reserves the arrow's room from the spacing scale instead.
+   `appearance` is deliberately untouched — that is what keeps the arrow. */
+select.fld {
+  padding-right: var(--ws-s9);
+}
+
+/* Certificate template editor (§6.11) -------------------------------------
+ * The field overlays sit on an image/PDF the user uploads, so their backdrop
+ * is unknown and no token can guarantee legibility. This block is the
+ * project's one sanctioned raw-colour exception: the dashed outline and the
+ * white glow are declared as custom properties here and used only by the
+ * scoped rules below. The overlay never follows the theme — it always works
+ * on the user's own image. The geometry also lives here now (R140); the
+ * unscoped copies were removed from index.css.
+ */
+
+.template-editor-scope {
+  --template-outline: #2f5fc4;
+  --template-glow: #fff;
+}
+
+.template-editor-scope .template-field-overlay {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.template-editor-scope .template-field-overlay[data-editable="true"] {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Later and equally specific to the `grab` rule above, so the drag cursor
+   actually switches while the pointer is down (R145). */
+.template-editor-scope .template-field-overlay[data-editable="true"]:active {
+  cursor: grabbing;
+}
+
+.template-editor-scope .template-field-overlay[data-selected="true"],
+.template-editor-scope .template-field-overlay:focus-visible {
+  outline: 2px dashed var(--template-outline);
+  outline-offset: 3px;
+  z-index: 1;
+}
+
+/* The label's ink is the field's own configured colour, set inline on the
+   overlay, so no third raw colour is needed here. */
+.template-editor-scope .template-sample-value {
+  font-size: clamp(0.65rem, 1.2vw, 1rem);
+  font-weight: 500;
+  white-space: nowrap;
+  text-shadow: 0 0 3px var(--template-glow), 0 0 6px var(--template-glow);
+}
+
+/* Empty state (§12.2) ----------------------------------------------------- */
+
+.portal-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--ws-s4);
+  padding: var(--ws-s9) var(--ws-s7);
+  text-align: center;
+}
+
+.portal-empty-state__icon {
+  display: inline-flex;
+  color: var(--ws-control);
+}
+
+.portal-empty-state__icon .portal-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.portal-empty-state__description {
+  margin: 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-card);
+}
+
+.portal-empty-state__hint {
+  margin: 0;
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-chip);
+}
+
+.portal-empty-state__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s4);
+}
+
+/* Dark mode (§5.2, §8.2) --------------------------------------------------
+ * Only colours that need a different token are overridden here: backgrounds,
+ * borders and body text already follow the tokens declared in tokens/index.css.
+ * Blue TEXT on a dark surface must use --ws-hutech-text, never --ws-hutech.
+ */
+
+/* Catch-all: covers interactive elements that have no dark-specific ring of
+   their own, painting it in the light-blue text token. The :not() argument
+   contributes its class specificity, so this rule is (0,3,0) — equal to the
+   `.btn` / `.fld` / `.admin-table-scroll` dark rings below, and below the
+   two-class panel icon ring — and every explicit dark ring follows it in
+   source order, so those rules win the ties and keep their own token.
+   .template-field-overlay is excluded because spec §6.11's scoped exception
+   (its own 2px dashed ring) must survive dark mode: the editor always works on
+   the user's own image, a light canvas where a light-blue ring would fall
+   below AC-10. */
+[data-bs-theme="dark"] :focus-visible:not(.template-field-overlay) {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-panel__icon {
+  color: var(--ws-hutech-text);
+}
+
+/* Hero and tile surfaces: blue TEXT on dark uses --ws-hutech-text (§5.1). */
+[data-bs-theme="dark"] .portal-hero__title,
+[data-bs-theme="dark"] .portal-hero__note {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-metric__icon {
+  color: var(--ws-hutech-text);
+}
+
+/* Tone text needs the brightened variants on a dark tile (§5.2). */
+[data-bs-theme="dark"] .portal-metric--success :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-success-text);
+}
+
+[data-bs-theme="dark"] .portal-metric--warn :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-warn-text);
+}
+
+[data-bs-theme="dark"] .portal-metric--danger :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-accent-text);
+}
+
+[data-bs-theme="dark"] .portal-panel__actions .btn-icon:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-chip--success {
+  color: var(--ws-success-text);
+}
+
+[data-bs-theme="dark"] .portal-chip--warn {
+  color: var(--ws-warn-text);
+}
+
+[data-bs-theme="dark"] .portal-chip--danger {
+  color: var(--ws-accent-text);
+}
+
+[data-bs-theme="dark"] .portal-chip--info {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-table tr:focus-visible .portal-chip,
+[data-bs-theme="dark"] .portal-table tr[aria-selected="true"]:focus-visible .portal-chip {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .admin-table-scroll:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-table a {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .btn:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  --bs-btn-color: var(--ws-hutech-text);
+  --bs-btn-border-color: var(--ws-hutech-text);
+  /* Bootstrap paints :hover, :focus-visible and checked toggle buttons from the
+     hover/active slots, so these belong on the base selector, not under
+     :hover: the light rule's tinted background + dark blue text pair would be
+     illegible on dark (measured 1.37:1). */
+  --bs-btn-hover-color: var(--ws-on-scrim);
+  --bs-btn-hover-bg: var(--ws-hutech);
+  --bs-btn-hover-border-color: var(--ws-hutech);
+  --bs-btn-active-color: var(--ws-on-scrim);
+  --bs-btn-active-bg: var(--ws-hutech);
+  --bs-btn-active-border-color: var(--ws-hutech);
+  --bs-btn-disabled-color: var(--ws-hutech-text);
+  --bs-btn-disabled-border-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] :is(.fld, .fld-multiline):focus-visible {
+  border-color: var(--ws-hutech-text);
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] :is(.fld, .fld-multiline):is(.is-invalid, [aria-invalid="true"]) {
+  border-color: var(--ws-accent-text);
+}
+
+/* The brief's verbatim hover rule (§7.1). Bootstrap paints :hover from the
+   --bs-btn-hover-* slots, which the base rule above already supplies with the
+   same pair; this rule keeps the brief's literal declarations. */
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  --bs-btn-color: var(--ws-on-scrim);
+  --bs-btn-bg: var(--ws-hutech);
+}
+
+/* Motion (§5.6, AC-06) ----------------------------------------------------
+ * No transition may run at all when the user asks for reduced motion, so the
+ * rule covers every element instead of enumerating today's animated ones.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Theme-change fade for every surface the token bridge recolours: Bootstrap
+   chrome plus the portal surfaces that replaced the legacy `.card` (R158).
+   Selectors that declare their own transition are deliberately absent —
+   `.portal-metric`, `.portal-nav__item`, `.portal-bell`, `.portal-sidebar__panel`,
+   the account-menu trigger/item, `.btn`, `.fld` and table rows — because this
+   shorthand would replace theirs. `.form-control` and `.form-select` are absent
+   for the same reason: Bootstrap gives them a 150 ms interaction transition.
+   The table row/cell selector is absent for the opposite reason: Bootstrap
+   gives table cells NO transition at all, so there is none to protect and none
+   to restore — their background simply follows the token change. Listing the
+   sidebar here is what killed its mobile slide (R150). */
+@media (prefers-reduced-motion: no-preference) {
+  :is(body, .card, .text-body-secondary,
+    .portal-panel, .portal-topbar,
+    .portal-footer, .portal-account-menu, .portal-notifications) {
+    transition: background-color var(--ws-dur-slow) ease, color var(--ws-dur-slow) ease,
+      border-color var(--ws-dur-slow) ease, box-shadow var(--ws-dur-slow) ease;
+  }
+}
+
+/* App shell (§6.2, §6.9.4) ------------------------------------------------
+ * Three-row grid: topbar / content / footer, with the sidebar spanning all
+ * three rows in the 238px first column. Below 992px the sidebar turns into an
+ * off-canvas overlay and the content takes the full width.
+ */
+
+.portal-shell {
+  /* Declared once: grid column, overlay width and panel geometry all derive
+     from this custom property (R36). */
+  --portal-sidebar-w: 238px;
+  display: grid;
+  grid-template-columns: var(--portal-sidebar-w) minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  background: var(--ws-page-bg);
+}
+
+/* R136: a shell without navigation (the preview picker) has no sidebar column,
+   so the topbar, content and footer span the single available column instead of
+   leaving a 238px gap where the sidebar used to be. */
+.portal-shell--no-sidebar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.portal-shell--no-sidebar .portal-topbar,
+.portal-shell--no-sidebar .portal-main,
+.portal-shell--no-sidebar .portal-footer {
+  grid-column: 1;
+}
+
+.portal-sidebar {
+  display: flex;
+  flex-direction: column;
+  grid-row: 1 / span 3;
+  grid-column: 1;
+  min-width: 0;
+}
+
+/* The visible sidebar surface. It is the element that slides on mobile, so the
+   fixed "Menu" trigger (a sibling below) keeps a viewport containing block. */
+.portal-sidebar__panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--ws-sidebar);
+  border-right: 1px solid var(--ws-line);
+  transition: transform var(--ws-dur-normal) ease;
+}
+
+.portal-sidebar__brand {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ws-s4);
+  padding: var(--ws-s6);
+  border-bottom: 1px solid var(--ws-line);
+}
+
+.portal-sidebar__logo-button {
+  display: inline-flex;
+  flex: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--ws-r-card);
+  cursor: pointer;
+}
+
+/* Logo chip (§8.3): --ws-on-brand is pure white in both themes, so the blue
+   HUTECH wordmark always sits on white and never drops to 2.12:1. */
+.portal-logo-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--ws-s2) var(--ws-s4);
+  background-color: var(--ws-on-brand);
+  border-radius: var(--ws-r-card);
+}
+
+.portal-logo-chip__img {
+  display: block;
+  width: 70px;
+  height: auto;
+}
+
+.portal-sidebar__names {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-s1);
+  min-width: 0;
+}
+
+.portal-sidebar__product {
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: var(--ws-t-card);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.portal-sidebar__brandline {
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* The mobile overlay trigger is fixed: an off-canvas panel must never hide
+   its own only trigger (R31). It is revealed by the <992px media query. */
+.portal-sidebar__toggle {
+  display: none;
+}
+
+.portal-sidebar__logo-button:focus-visible,
+.portal-sidebar__toggle:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.portal-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ws-s2);
+  min-height: 0;
+  padding: var(--ws-s5) var(--ws-s4) var(--ws-s7);
+  overflow-y: auto;
+}
+
+.portal-nav__group-label {
+  margin: 0;
+  padding: var(--ws-s6) var(--ws-s4) var(--ws-s2);
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.portal-nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-s1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.portal-nav__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s4);
+  width: 100%;
+  padding: var(--ws-s4);
+  color: var(--ws-fg-2);
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--ws-r-sm);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-card);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) ease, color var(--ws-dur-fast) ease;
+}
+
+.portal-nav__item:hover {
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+}
+
+.portal-nav__item:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: -2px;
+}
+
+.portal-nav__icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  color: inherit;
+  opacity: .75;
+}
+
+.portal-nav__icon .portal-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.portal-nav__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-nav__badge {
+  margin-left: auto;
+  padding: var(--ws-s1) var(--ws-s3);
+  color: var(--ws-on-brand);
+  background-color: var(--ws-hutech);
+  border-radius: var(--ws-r-pill);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.portal-nav__item--active {
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+}
+
+.portal-nav__item--active .portal-nav__icon {
+  opacity: 1;
+}
+
+/* 3px left tick on the selected item (§6.2, §7.3) */
+.portal-nav__item--active::before {
+  position: absolute;
+  top: var(--ws-s2);
+  bottom: var(--ws-s2);
+  left: 0;
+  width: 3px;
+  background-color: var(--ws-hutech);
+  border-radius: 0 var(--ws-r-pill) var(--ws-r-pill) 0;
+  content: '';
+}
+
+.portal-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  grid-row: 1;
+  grid-column: 2;
+  align-items: center;
+  gap: var(--ws-s4) var(--ws-s7);
+  min-height: 58px;
+  padding: 0 var(--ws-s8);
+  background-color: var(--ws-panel);
+  border-bottom: 1px solid var(--ws-line);
+}
+
+.portal-topbar__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-s1);
+  min-width: 0;
+}
+
+.portal-topbar__title {
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: var(--ws-t-lead);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.portal-topbar__context {
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-sub);
+}
+
+.portal-topbar__search {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--ws-s3);
+  min-width: 0;
+  max-width: 340px;
+  height: 34px;
+  padding: 0 var(--ws-s4);
+  color: var(--ws-control);
+  background-color: var(--ws-chip-bg);
+  border-radius: var(--ws-r-sm);
+}
+
+.portal-topbar__search:focus-within {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.portal-search__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  color: var(--ws-fg);
+  background: none;
+  border: 0;
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+}
+
+.portal-search__input::placeholder {
+  color: var(--ws-muted);
+  opacity: 1;
+}
+
+.portal-search__input:focus-visible {
+  outline: none;
+}
+
+.portal-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s4);
+  min-width: 0;
+  margin-left: auto;
+}
+
+.portal-topbar__role {
+  color: var(--ws-muted);
+  font-size: var(--ws-t-sub);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.portal-main {
+  grid-row: 2;
+  grid-column: 2;
+  min-width: 0;
+  padding: var(--ws-s8) var(--ws-s9);
+}
+
+/* Account pages rendered inside <main> (R33) ------------------------------ */
+
+.portal-account-page {
+  padding: var(--ws-s6) var(--ws-s7) var(--ws-s7);
+}
+
+.portal-account-page__list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--ws-s3) var(--ws-s7);
+  margin: 0;
+}
+
+.portal-account-page__list dt {
+  color: var(--ws-muted);
+  font-size: var(--ws-t-chip);
+  font-weight: 600;
+}
+
+.portal-account-page__list dd {
+  margin: 0;
+  color: var(--ws-fg);
+  font-size: var(--ws-t-card);
+}
+
+.portal-account-page__note {
+  margin: var(--ws-s4) 0 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-chip);
+}
+
+.portal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  grid-row: 3;
+  grid-column: 2;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ws-s2) var(--ws-s7);
+  padding: var(--ws-s6) var(--ws-s9);
+  color: var(--ws-fg-2);
+  /* The footer is chrome, not content: it sits on the page canvas rather than
+     on the panel surface. Painting it --ws-panel made it a second white band
+     indistinguishable from a content panel. */
+  background-color: transparent;
+  border-top: 1px solid var(--ws-line);
+  font-size: var(--ws-t-sub);
+}
+
+.portal-footer__brand {
+  color: var(--ws-fg);
+  font-weight: 600;
+}
+
+.portal-footer__muted {
+  color: var(--ws-fg-2);
+  font-weight: 400;
+}
+
+/* Account menu (§6.2 topbar account block) -------------------------------- */
+
+.portal-account-menu__wrap {
+  position: relative;
+}
+
+.portal-account-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ws-s3);
+  min-height: 40px;
+  padding: var(--ws-s1) var(--ws-s4) var(--ws-s1) var(--ws-s1);
+  color: var(--ws-fg);
+  background-color: transparent;
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-pill);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) ease, border-color var(--ws-dur-fast) ease;
+}
+
+.portal-account-menu__trigger:hover {
+  background-color: var(--ws-hutech-l);
+  border-color: var(--ws-hutech-border);
+}
+
+.portal-account-menu__trigger:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.portal-account-menu__avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: var(--ws-on-brand);
+  background-color: var(--ws-hutech);
+  border-radius: var(--ws-r-sm);
+}
+
+.portal-account-menu__name {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-account-menu__caret {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.portal-account-menu {
+  position: absolute;
+  top: calc(100% + var(--ws-s2));
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: var(--ws-s2);
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-card);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-account-menu[aria-hidden="true"] {
+  display: none;
+}
+
+.portal-account-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ws-s3);
+  width: 100%;
+  padding: var(--ws-s3) var(--ws-s4);
+  color: var(--ws-fg-2);
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--ws-r-sm);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) ease, color var(--ws-dur-fast) ease;
+}
+
+.portal-account-menu__item:hover {
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+}
+
+.portal-account-menu__item:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: -2px;
+}
+
+.portal-account-menu__theme-icon {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.portal-account-menu__theme-icon svg {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.portal-account-menu__theme-icon svg.is-visible {
+  opacity: 1;
+}
+
+.portal-account-menu__divider {
+  margin: var(--ws-s2) 0;
+  border: 0;
+  border-top: 1px solid var(--ws-line);
+}
+
+/* Shell dark rules (§7.3, §8.3) -------------------------------------------
+ * Blue TEXT on a dark surface uses --ws-hutech-text. They follow the shared
+ * dark catch-all above, so the equal-specificity rings here win the tie.
+ */
+
+[data-bs-theme="dark"] .portal-nav__item:hover,
+[data-bs-theme="dark"] .portal-nav__item--active {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-nav__item:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-topbar__search {
+  color: var(--ws-control-idle);
+}
+
+[data-bs-theme="dark"] .portal-topbar__search:focus-within {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-account-menu__trigger:focus-visible,
+[data-bs-theme="dark"] .portal-sidebar__logo-button:focus-visible,
+[data-bs-theme="dark"] .portal-sidebar__toggle:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-account-menu__item:hover {
+  color: var(--ws-hutech-text);
+}
+
+/* Responsive (§6.2, §12.2) ----------------------------------------------- */
+
+@media (min-width: 992px) {
+  .portal-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .portal-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portal-sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 40;
+    width: var(--portal-sidebar-w);
+    /* Transparent and click-through; only the panel/toggle take pointers. */
+    pointer-events: none;
+  }
+
+  /* The panel carries the slide transform. The fixed Menu trigger is its
+     sibling, so its containing block is the viewport and it stays put
+     regardless of how the panel animates (R37). */
+  .portal-sidebar__panel {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    /* Off-canvas: keep the links out of the tab order until the overlay opens. */
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+
+  .portal-sidebar--open .portal-sidebar__panel {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: var(--ws-shadow-panel);
+    pointer-events: auto;
+  }
+
+  .portal-sidebar__brand {
+    padding-inline-start: calc(var(--ws-s10) + var(--ws-s7));
+  }
+
+  .portal-sidebar__toggle {
+    position: fixed;
+    top: var(--ws-s6);
+    left: var(--ws-s2);
+    z-index: 60;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 var(--ws-s3);
+    color: var(--ws-fg);
+    background-color: var(--ws-panel);
+    border: 1px solid var(--ws-line);
+    border-radius: var(--ws-r-sm);
+    font-family: var(--ws-font-body);
+    font-size: var(--ws-t-chip);
+    font-weight: 600;
+    visibility: visible;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  .portal-topbar,
+  .portal-main,
+  .portal-footer {
+    grid-column: 1 / -1;
+  }
+
+  .portal-topbar {
+    padding-inline-start: calc(var(--ws-s10) + var(--ws-s7));
+  }
+
+  /* Four tiles per row is too tight under the narrow shell (§13.4). */
+  .portal-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .portal-topbar {
+    padding-right: var(--ws-s5);
+    padding-left: calc(var(--ws-s10) + var(--ws-s7));
+  }
+
+  .portal-topbar__context {
+    display: none;
+  }
+
+  /* Below 576px the search collapses entirely: keeping only a non-interactive
+     magnifier chip would leave a dead control (R40). */
+  .portal-topbar__search {
+    display: none;
+  }
+
+  .portal-account-menu__name {
+    display: none;
+  }
+
+  .portal-main {
+    padding: var(--ws-s7) var(--ws-s5);
+  }
+
+  .portal-metric-grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--ws-s5) var(--ws-s4);
+  }
+
+  .portal-footer {
+    padding: var(--ws-s6) var(--ws-s5);
+  }
+}
+
+/* Student portal (§6.9.2 notification bell) --------------------------------
+ * The bell is the student shell's only topbar control that the admin shell does
+ * not have; its popover hangs under it, next to the account menu.
+ */
+
+.portal-bell__wrap {
+  position: relative;
+  display: flex;
+}
+
+.portal-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--ws-hutech);
+  background-color: transparent;
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) ease, border-color var(--ws-dur-fast) ease;
+}
+
+.portal-bell:hover {
+  background-color: var(--ws-hutech-l);
+  border-color: var(--ws-hutech-border);
+}
+
+.portal-bell:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+/* R126: the unread count keeps a filled pill, painted with the accent surface
+   instead of Bootstrap's un-bridged danger red. */
+.portal-bell__badge {
+  position: absolute;
+  top: calc(-1 * var(--ws-s3));
+  right: calc(-1 * var(--ws-s3));
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--ws-s2);
+  color: var(--ws-on-brand);
+  background-color: var(--ws-accent);
+  border-radius: var(--ws-r-pill);
+  font-size: var(--ws-t-badge);
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.portal-notifications {
+  position: absolute;
+  top: calc(100% + var(--ws-s4));
+  right: 0;
+  z-index: 30;
+  width: min(28rem, calc(100vw - var(--ws-s8) * 2));
+  max-height: 70vh;
+  overflow-y: auto;
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-notifications[aria-hidden="true"] {
+  display: none;
+}
+
+[data-bs-theme="dark"] .portal-bell {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-bell:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}
+
+/* Standalone screens (§6.10) ----------------------------------------------
+ * Sign-in, activation link, password reset and the public verification lookup
+ * have no shell: one centred card on the page gradient, the logo in its white
+ * chip (§8.3) and their own theme toggle.
+ */
+
+.portal-auth-screen {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--ws-s8);
+  /* The token already carries both the light and the dark page gradient. */
+  background: var(--ws-page-bg);
+}
+
+.portal-auth-card {
+  width: 100%;
+  /* 27rem and the 24px/32px inset are fixed by §6.10, not scale steps. */
+  max-width: 27rem;
+  padding: 24px 32px;
+  background-color: var(--ws-panel);
+  border-radius: var(--ws-r);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-auth-header {
+  margin-bottom: var(--ws-s8);
+  text-align: center;
+}
+
+.portal-auth-logo {
+  margin-bottom: var(--ws-s5);
+}
+
+.portal-auth-logo__img {
+  display: block;
+  width: min(10rem, 100%);
+  height: auto;
+}
+
+.portal-auth-eyebrow {
+  margin: 0 0 var(--ws-s2);
+  color: var(--ws-hutech);
+  font-size: var(--ws-t-chip);
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+/* 25px / 800 is the standalone title size fixed by §6.10 (not a scale step). */
+.portal-auth-title {
+  margin: 0 0 var(--ws-s3);
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.25px;
+}
+
+.portal-auth-description {
+  margin: 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-card);
+  line-height: 1.5;
+}
+
+.portal-theme-toggle {
+  position: fixed;
+  top: var(--ws-s7);
+  right: var(--ws-s7);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  box-shadow: var(--ws-shadow-panel);
+  font-size: var(--ws-t-lead);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.portal-theme-toggle:hover {
+  background-color: var(--ws-chip-bg);
+}
+
+.portal-theme-toggle:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+[data-bs-theme="dark"] .portal-auth-eyebrow {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-theme-toggle:focus-visible {
+  outline-color: var(--ws-hutech-text);
+}

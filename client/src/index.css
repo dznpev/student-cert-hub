@@ -1,0 +1,24 @@
+@import './tokens/index.css';
+@import './tokens/components.css';
+
+/* "Thêm phiên bản" on the certificate-template table: an outlined action
+   painted from the brand tokens instead of a bespoke pair. */
+.template-version-button {
+  --bs-btn-color: var(--ws-hutech);
+  --bs-btn-border-color: var(--ws-hutech);
+  --bs-btn-hover-color: var(--ws-on-brand);
+  --bs-btn-hover-bg: var(--ws-hutech);
+  --bs-btn-hover-border-color: var(--ws-hutech);
+  --bs-btn-active-color: var(--ws-on-brand);
+  --bs-btn-active-bg: var(--ws-hutech-d);
+  --bs-btn-active-border-color: var(--ws-hutech-d);
+  --bs-btn-disabled-color: var(--ws-hutech);
+  --bs-btn-disabled-border-color: var(--ws-hutech);
+}
+
+[data-bs-theme="dark"] .template-version-button {
+  --bs-btn-color: var(--ws-hutech-text);
+  --bs-btn-border-color: var(--ws-hutech-text);
+  --bs-btn-disabled-color: var(--ws-hutech-text);
+  --bs-btn-disabled-border-color: var(--ws-hutech-text);
+}

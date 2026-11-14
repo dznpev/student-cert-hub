@@ -1,0 +1,281 @@
+/*
+ * HUTECH design tokens — the single source of truth for the redesign.
+ *
+ * Values come verbatim from the design spec: §5.1 (colour), §5.2 (dark
+ * palette), §5.3 (radius), §5.4 (typography), §5.5 (spacing), §5.6 (motion)
+ * and the Bootstrap bridge decided in §8.0.
+ *
+ * Rules:
+ * - This is the only file allowed to hold raw colour values.
+ * - Styles outside the token blocks must use var(--ws-*) / var(--bs-*).
+ * - Dark mode is driven by [data-bs-theme="dark"] on <html> (user choice),
+ *   never by the operating system colour-scheme preference.
+ */
+
+:root {
+  /* Brand */
+  --ws-hutech: #00529c;
+  --ws-hutech-d: #003d75;
+  --ws-hutech-l: #e6f0f9;
+  --ws-hutech-border: #b9cee4;
+  --ws-on-brand: #ffffff;
+
+  /* Status hues (chip backgrounds are the -l variants) */
+  --ws-accent: #c2410c;
+  --ws-accent-l: #fef2f0;
+  --ws-warn: #b45309;
+  --ws-warn-l: #fffbeb;
+  --ws-success: #15803d;
+  --ws-success-l: #ecfdf3;
+  --ws-fav: #e11d48;
+
+  /* Semantic text. `.text-danger` is the error message a user has to read when
+     a form rejects them, so it gets a text token of its own: #b53c0b measures
+     5.80:1 on --ws-panel, 5.54:1 on --bs-body-bg and 4.98:1 on the darkest
+     stop of the page gradient (#e9eef5), which is the tightest surface the
+     shell actually paints. */
+  --ws-danger-text: #b53c0b;
+
+  /* Alert surfaces (§8.0). Light reuses the status -l tints verbatim; the dark
+     block lifts them, because #2e1a12 differs from the #141f31 panel by
+     1.00:1 and would not read as a box at all. */
+  --ws-alert-success-bg: var(--ws-success-l);
+  --ws-alert-warn-bg: var(--ws-warn-l);
+  --ws-alert-danger-bg: var(--ws-accent-l);
+  --ws-alert-info-bg: var(--ws-hutech-l);
+
+  /* Alert borders — a declared deviation from §8.0's "border = --ws-*-l": a
+     border equal to the fill leaves the box with no edge at all (1.01–1.10:1
+     against the page in light, 1.26:1 against the panel in dark). Each border
+     is a mid-tint of its status that reads against its own fill (1.77–2.02:1)
+     and against the page, so the alert reads as a box. */
+  --ws-alert-success-border: #8cc7a8;
+  --ws-alert-warn-border: #e6b95c;
+  --ws-alert-danger-border: #e79c87;
+  --ws-alert-info-border: #86b0d7;
+
+  /* Marks painted inside a checked control. Bootstrap bakes a white stroke
+     into its data URIs; on a dark surface the checkbox fills with
+     --ws-hutech-text (a light fill), so the mark has to be a token too. */
+  --ws-check-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+  --ws-radio-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23ffffff'/%3e%3c/svg%3e");
+  /* The switch knob. Bootstrap bakes a white circle into the checked switch, so
+     the knob stays #ffffff on the #00529c track here (7.82:1); the dark block
+     flips it to the panel ink, because the track turns into the light
+     --ws-hutech-text and white would be 2.07:1 there. */
+  --ws-switch-knob: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23ffffff'/%3e%3c/svg%3e");
+  /* The same knob in its focus state, where Bootstrap paints #86b7fe — another
+     blue from outside the token set. Drawn in the brand on the unchecked
+     (page-coloured) track. */
+  --ws-switch-knob-focus: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%2300529c'/%3e%3c/svg%3e");
+
+  /* Surfaces and text */
+  --ws-page-bg: linear-gradient(180deg, #f7fafd, #e9eef5);
+  --ws-panel: #fffffff5;
+  --ws-panel-solid: #ffffff;
+  --ws-tile: #ffffff;
+  --ws-fg: #0f172a;
+  --ws-fg-2: #4a5768;
+  --ws-muted: #556274;
+  --ws-line: #e4eaf3;
+  --ws-control: #708197;
+  --ws-control-idle: #667080;
+  /*
+   * --ws-control-idle is intentionally not spec §5.1's #79879a: that value is
+   * 3.65:1 on --ws-panel and fails AC-01 for 9.5px labels. #667080 measures 5.00:1.
+   */
+  --ws-chip-bg: #edf1f6;
+  --ws-chip-bg: #edf1f6;
+  --ws-sidebar: #fffffff5;
+
+  /* Glass / scrim */
+  --ws-scrim: #0c1524a8;
+  --ws-scrim-edge: #ffffff2b;
+  --ws-on-scrim: #f3f7fc;
+  --ws-on-scrim-muted: #c3d4e6;
+  --ws-blur: blur(16px);
+
+  /* Radius scale — no value outside this scale is allowed */
+  --ws-r-pill: 99px;
+  --ws-r-dialog: 20px;
+  --ws-r: 16px;
+  --ws-r-bar: 14px;
+  --ws-r-card: 12px;
+  --ws-r-sm: 9px;
+  --ws-r-tick: 6px;
+
+  /* Spacing scale — --ws-s1 … --ws-s10 only */
+  --ws-s1: 2px;
+  --ws-s2: 4px;
+  --ws-s3: 6px;
+  --ws-s4: 9px;
+  --ws-s5: 11px;
+  --ws-s6: 13px;
+  --ws-s7: 16px;
+  --ws-s8: 20px;
+  --ws-s9: 26px;
+  --ws-s10: 34px;
+
+  /* Elevation */
+  --ws-shadow-panel: 0 2px 10px #0c152417, 0 12px 34px #0c152414;
+  --ws-shadow-dialog: 0 24px 70px #0c15245c;
+
+  /* Type scale */
+  --ws-t-badge: 9.5px;
+  --ws-t-rail: 10.5px;
+  --ws-t-chip: 11.5px;
+  --ws-t-sub: 12.5px;
+  --ws-t-card: 13.5px;
+  --ws-t-base: 14px;
+  --ws-t-lead: 15px;
+
+  /* Motion */
+  --ws-dur-instant: 160ms;
+  --ws-dur-fast: 180ms;
+  --ws-dur-normal: 200ms;
+  --ws-dur-slow: 220ms;
+
+  /* Families */
+  --ws-font-head: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ws-font-body: 'Noto Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Bootstrap bridge (§8.0) — every Bootstrap class in the app follows these */
+  --bs-primary: var(--ws-hutech);
+  /* The brand byte-triple, not #005f9c: `.text-primary` / `.bg-primary` /
+     `.text-bg-primary` paint from this value, and a second triple would be the
+     "two coexisting blues" anti-pattern of §11. */
+  --bs-primary-rgb: 0, 82, 156;
+  --bs-link-color: var(--ws-hutech);
+  --bs-link-color-rgb: 0, 82, 156;
+  --bs-body-color: var(--ws-fg);
+  --bs-body-bg: #f7fafd;
+  --bs-emphasis-color: var(--ws-fg);
+  --bs-secondary-color: var(--ws-fg-2);
+  --bs-secondary-bg: var(--ws-chip-bg);
+  --bs-tertiary-color: var(--ws-muted);
+  --bs-tertiary-bg: var(--ws-chip-bg);
+  --bs-border-color: var(--ws-line);
+  --bs-body-font-family: var(--ws-font-body);
+  --bs-body-font-size: var(--ws-t-base);
+  --bs-body-line-height: 1.5;
+  --bs-border-radius: var(--ws-r-sm);
+  --bs-border-radius-sm: var(--ws-r-tick);
+  --bs-border-radius-lg: var(--ws-r-card);
+  /* The focus ring is a token pair: light uses the brand blue at 25% alpha, the
+     dark block the byte triple of --ws-hutech-text. */
+  --ws-focus-ring: rgba(0, 82, 156, .25);
+  --bs-focus-ring-color: var(--ws-focus-ring);
+  /* The text `.invalid-feedback` paints with: the same error colour as
+     `.text-danger`, so a validation message is legible on the panel and on the
+     page. Bootstrap's own #dc3545 measures 4.49:1 on the panel and 4.32:1 on
+     the page in light — below AA. */
+  --bs-form-invalid-color: var(--ws-danger-text);
+  /* The invalid control's border, and the rgb triple behind its focus halo.
+     Bootstrap paints the border #dc3545 and the halo rgba(220, 53, 69, .25);
+     both now follow the HUTECH danger. The halo is decorative reinforcement
+     (W12); the 3:1 indicator is the border, 5.54:1 on the field fill. */
+  --bs-form-invalid-border-color: var(--ws-danger-text);
+  --bs-danger-rgb: 181, 60, 11;
+  /* `.was-validated :valid:focus` keeps rgba(var(--bs-success-rgb), .25):
+     Bootstrap's own #198754. Bridge the triple to --ws-success's bytes. */
+  --bs-success-rgb: 21, 128, 61;
+  --bs-table-striped-bg: transparent;
+  --bs-table-hover-bg: #f8fafc;
+}
+
+[data-bs-theme="dark"] {
+  /* Brand — --ws-hutech stays the button/background blue; blue TEXT on a dark
+     surface must use --ws-hutech-text (#00529c is only 2.12:1 on dark). */
+  --ws-hutech-text: #6dbded;
+  --ws-hutech-l: #12283f;
+  --ws-hutech-border: #3d6a99;
+  --ws-on-brand: #ffffff;
+
+  /* Status hues — chip text needs the lighter -text variants on dark chips */
+  --ws-success-l: #12301f;
+  --ws-warn-l: #2c2413;
+  --ws-accent-l: #2e1a12;
+  --ws-success-text: #6ee7a8;
+  --ws-warn-text: #fbbf5c;
+  --ws-accent-text: #fca58a;
+
+  /* Semantic text: the accent's light variant, so `.text-danger` stays legible
+     on the navy panel (8.57:1). On the page it is graded at the dark gradient's
+     lightest stop (#16406b), where it measures 5.50:1 — the tightest surface
+     the shell actually paints, not the #0c1524 proxy. */
+  --ws-danger-text: #fca58a;
+
+  /* Alert surfaces: lifted one step off the navy so the box reads as a box
+     (1.39–1.46:1 against the page background and 1.26–1.32:1 against the
+     panel, where the -l tints measure 1.11–1.28 and 1.00–1.16). */
+  --ws-alert-success-bg: #1a3a28;
+  --ws-alert-warn-bg: #3a2f1a;
+  --ws-alert-danger-bg: #452a1f;
+  --ws-alert-info-bg: #16324d;
+
+  /* Alert borders: the same deviation as the light block, lifted so each border
+     reads against its own (lifted) fill — 1.98–2.26:1 here. */
+  --ws-alert-success-border: #2f6b49;
+  --ws-alert-warn-border: #7a6233;
+  --ws-alert-danger-border: #8a5340;
+  --ws-alert-info-border: #33638f;
+
+  /* The mark inside a checked control, in the dark panel ink: it sits on the
+     light --ws-hutech-text fill, where a white mark would be 2.07:1. */
+  --ws-check-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23141f31' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+  --ws-radio-mark: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23141f31'/%3e%3c/svg%3e");
+  /* The switch knob inverts with the track: the checked track is the light
+     --ws-hutech-text, so the knob is the panel ink (7.99:1). The focus knob is
+     the light brand itself on the navy unchecked track (8.84:1). */
+  --ws-switch-knob: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23141f31'/%3e%3c/svg%3e");
+  --ws-switch-knob-focus: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%236dbded'/%3e%3c/svg%3e");
+
+  /* Surfaces and text */
+  --ws-page-bg:
+    radial-gradient(1200px 640px at 10% -10%, #16406b 0%, transparent 60%),
+    radial-gradient(900px 520px at 90% -6%, #123a5e 0%, transparent 55%),
+    linear-gradient(180deg, #0f1c2e, #0a121d);
+  --ws-panel: #141f31;
+  --ws-panel-solid: #141f31;
+  --ws-tile: #18242f;
+  --ws-fg: #e8eef6;
+  --ws-fg-2: #b3c1d3;
+  --ws-muted: #8fa0b5;
+  --ws-line: #24344b;
+  --ws-chip-bg: #1c2942;
+  --ws-control: #6b7d93;
+  --ws-control-idle: #7b8ca2;
+  --ws-sidebar: #101d2e;
+
+  /* Elevation */
+  --ws-shadow-panel: 0 2px 10px #050a1247, 0 12px 34px #050a1240;
+
+  /* Bootstrap bridge — button/link text switches, backgrounds stay navy */
+  --bs-primary: var(--ws-hutech);
+  --bs-primary-rgb: 0, 82, 156;
+  --bs-link-color: var(--ws-hutech-text);
+  /* Byte triple of --ws-hutech-text (#6dbded), not #6bbded: the link colour and
+     the rgb triple must name the same blue (§11). */
+  --bs-link-color-rgb: 109, 189, 237;
+  --bs-body-color: var(--ws-fg);
+  --bs-body-bg: #0c1524;
+  --bs-emphasis-color: var(--ws-fg);
+  --bs-secondary-color: var(--ws-fg-2);
+  --bs-secondary-bg: #1c2942;
+  --bs-tertiary-color: var(--ws-muted);
+  --bs-tertiary-bg: #1c2942;
+  --bs-border-color: var(--ws-line);
+  /* Both bridge variables are declared in the dark block too: a value that
+     lives only in :root silently keeps the light colour when the theme flips. */
+  --ws-focus-ring: rgba(109, 189, 237, .25);
+  --bs-focus-ring-color: var(--ws-focus-ring);
+  --bs-form-invalid-color: var(--ws-danger-text);
+  /* Same bridge in the dark block: the invalid border is the dark danger text
+     (9.48:1 on the #0c1524 field fill) and the triples are the byte values of
+     the dark status text, so the focus halo follows the theme. */
+  --bs-form-invalid-border-color: var(--ws-danger-text);
+  --bs-danger-rgb: 252, 165, 138;
+  --bs-success-rgb: 110, 231, 168;
+  --bs-table-striped-bg: transparent;
+  --bs-table-hover-bg: #18242f;
+}

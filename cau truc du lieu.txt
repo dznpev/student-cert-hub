@@ -1,0 +1,107 @@
+﻿CẤU TRÚC DỮ LIỆU NGHIỆP VỤ DÙNG ĐỂ ĐỐI CHIẾU FRONTEND
+
+1. Cohorts: Danh mục khóa tuyển sinh (K22, K23...).
+2. Students: Hồ sơ sinh viên (MSSV, họ tên, email, lớp, liên kết tài khoản).
+3. CertificateTemplates: Mẫu chứng nhận và phiên bản mẫu.
+4. Activities: Danh mục hoạt động phong trào, ngoại khóa.
+5. ImportBatches: Lịch sử từng đợt nhập Excel (tổng dòng, thành công, lỗi, trùng).
+6. ImportRows: Trạng thái xử lý và thông báo lỗi của từng dòng Excel.
+7. ActivityParticipations: Lượt đăng ký hoặc tham gia hoạt động (Pending, Approved, Rejected).
+8. Certificates: Chứng nhận điện tử (Generating, Issued, Failed, Revoked), mã xác minh, đường dẫn PDF.
+9. AccountActivationTokens: Thông tin kích hoạt tài khoản sinh viên (mã băm và thời hạn).
+10. ApprovalLogs: Nhật ký phê duyệt, từ chối, phát hành lại hoặc thu hồi.
+11. Notifications: Thông báo kết quả duyệt, phát hành hoặc thu hồi chứng nhận.
+12. AuditLogs: Nhật ký kiểm toán hệ thống.
+
+DỮ LIỆU BỔ SUNG TRÊN FRONTEND
+
+Tổng quan
+- filters: Bộ lọc đang áp dụng cho số liệu và báo cáo, gồm khóa, hoạt động, ngày tổ chức và selectedCertificateStatus (trạng thái chứng nhận).
+- draftFilters: Bộ lọc đang chỉnh trước khi áp dụng.
+- metrics: Số liệu tổng hợp dùng cho chỉ số, biểu đồ và báo cáo Excel.
+
+Sinh viên
+- editingProfile: Trạng thái mở form sửa hồ sơ sinh viên.
+- selectedProfileStatus: Tình trạng hồ sơ đang chọn để lọc danh sách sinh viên.
+- confirmProfileStatus: Trạng thái chờ xác nhận ngừng sử dụng hoặc sử dụng lại hồ sơ sinh viên.
+- selectedAccountStatus: Tình trạng tài khoản đang chọn để lọc danh sách sinh viên.
+- accountDisabled: Trạng thái vô hiệu hóa tài khoản sinh viên mẫu trong phiên.
+
+Lượt tham gia
+- review: Lượt hoặc nhóm lượt đang chờ xác nhận duyệt hoặc từ chối.
+- selectedIds: Lưu ID lượt tham gia hoặc chứng nhận được chọn để thao tác theo lô.
+- batchResults: Kết quả xử lý của từng lượt trong một thao tác hàng loạt.
+
+Chứng nhận
+- search: Từ khóa tìm theo mã chứng nhận, MSSV hoặc họ tên.
+- selectedActivity: Hoạt động dùng để lọc kho chứng nhận.
+- selectedStatus: Trạng thái dùng để lọc kho chứng nhận.
+- issuedFrom: Mốc bắt đầu để lọc theo ngày phát hành.
+- issuedTo: Mốc kết thúc để lọc theo ngày phát hành.
+- createdAt: Thời điểm ghi nhận yêu cầu tạo chứng nhận.
+- templateName: Tên mẫu được lưu cùng chứng nhận để hiển thị.
+- processingHistory: Lịch sử xử lý, thử lại và thu hồi từng chứng nhận.
+- processing: Chứng nhận và thao tác đang chờ xác nhận.
+- downloadRequest: Lưu định dạng và danh sách chứng nhận trong yêu cầu tải đang xem.
+- downloadStatus: Lưu trạng thái chuẩn bị tải tệp mô phỏng.
+
+Mẫu chứng nhận
+- editHistory: Lưu các chỉnh sửa trong lần mở ảnh hiện tại để hoàn tác hoặc làm lại.
+- templateSearch: Từ khóa tìm tên mẫu chứng nhận.
+- templateStatusFilter: Trạng thái đang chọn để lọc danh mục mẫu chứng nhận.
+- statusTemplateId: Mẫu đang chờ xác nhận đổi trạng thái sử dụng.
+- statusError: Thông báo lỗi khi đổi trạng thái sử dụng mẫu.
+- fieldPositions: Lưu vị trí và định dạng chữ hoặc QR theo phiên bản mẫu, tách theo trang đối với PDF.
+- pdfPageNumber: Lưu số trang PDF đang mở.
+- pdfPagePreview: Lưu ảnh xem trước và chiều rộng gốc của trang PDF.
+- selectedField: Trường dữ liệu đang chọn để đặt hoặc chỉnh vị trí.
+- showSampleContent: Trạng thái bật xem nội dung minh họa trên ảnh mẫu.
+- templateFile: Tệp gốc của mẫu chứng nhận được giữ trong phiên để mở lại.
+- previousVersions: Lưu phiên bản và tệp mẫu cũ để xem lại trong phiên.
+- versionTemplateId: Mẫu đang được thêm phiên bản.
+- templateNameDraft: Tên đang nhập cho mẫu chứng nhận mới.
+- saveError: Thông báo lỗi khi lưu mẫu chứng nhận.
+- filePreview: Tệp mẫu đang mở để xem trước trong trình duyệt.
+- previewError: Thông báo khi tệp mẫu không mở được.
+
+Nhập Excel
+- selectedBatchId: Lưu ID đợt nhập đang mở chi tiết.
+- selectedRowStatus: Lưu kết quả dòng đang chọn để lọc chi tiết đợt nhập.
+- isDuplicate: Đánh dấu dòng trùng để thống kê riêng với dòng bỏ qua khác.
+- exportingErrorReport: Trạng thái đang tạo báo cáo lỗi nhập Excel.
+- errorReportError: Thông báo khi tạo báo cáo lỗi thất bại.
+
+Nhật ký hệ thống
+- actorLabel: Tên hiển thị của người thực hiện thao tác mô phỏng.
+
+Giao diện
+- theme: Chế độ sáng hoặc tối đang dùng, lưu trên trình duyệt để dùng lại lần sau.
+
+Tài khoản xem thử
+- activationRequests: Lưu mã kích hoạt thử mới nhất và hạn dùng theo ID sinh viên.
+- activationPending: Lưu trạng thái chờ kích hoạt của tài khoản sinh viên mẫu sau nhập hồ sơ mới hoặc cấp mã.
+- activationTarget: Hồ sơ đang chờ xác nhận cấp mã mới.
+- issuedActivation: Mã kích hoạt thử đang hiển thị cho quản trị viên.
+- activationError: Thông báo khi cấp mã thử không thành công.
+- passwordResetRequests: Lưu mã đặt lại mật khẩu thử, hạn dùng và tình trạng đã dùng theo sinh viên.
+- resetRequest: Yêu cầu đặt lại mật khẩu đang hiển thị trên form.
+- resetCode: Mã xác nhận đang nhập để đặt lại mật khẩu.
+- activationVerified: Đánh dấu mã mẫu đã được xác minh để mở bước đặt mật khẩu.
+- initialPassword: Mật khẩu thử đang nhập khi kích hoạt lần đầu.
+- initialPasswordConfirmation: Mật khẩu nhập lại để đối chiếu trước khi hoàn tất kích hoạt.
+- managementPasswords: Lưu mật khẩu thử khi tạo hoặc đổi theo accountId của từng tài khoản quản trị trong RAM của phiên.
+- accountSectionOpen: Chọn bộ menu Hồ sơ, Tài khoản và Đổi mật khẩu của sinh viên.
+- studentPasswords: Lưu mật khẩu thử đã đổi theo ID sinh viên trong bộ nhớ của phiên.
+- signedIn: Đánh dấu sinh viên đã đăng nhập mẫu để mở form đổi mật khẩu.
+- accountType: Loại tài khoản đang chọn trên màn hình đăng nhập.
+- managementRole: Vai trò quản trị đang chọn hoặc đang dùng trong phiên xem thử.
+- demoManagementAccounts: Định nghĩa hai vai trò và tài khoản quản trị mẫu ban đầu.
+- managementAccounts: Lưu thông tin, vai trò và trạng thái tài khoản quản trị mẫu trong phiên.
+- managementAccountId: Lưu định danh tài khoản quản trị đang đăng nhập.
+- editingAccount: Lưu trạng thái thêm hoặc tài khoản quản trị đang chỉnh sửa.
+- adminLocked: Trạng thái suy ra từ tài khoản Admin gốc để chặn lối quản trị xem thử khi bị khóa.
+- accountPage: Mục hồ sơ hoặc tài khoản đang mở.
+
+QUY ƯỚC CẬP NHẬT
+
+Chỉ ghi dữ liệu bổ sung ngoài 12 cấu trúc mặc định theo mẫu Tên: Mục đích sử dụng. Nếu mục đã có, cập nhật tại chỗ. Nếu không có biến hoặc cấu trúc mới để lưu dữ liệu khác, bỏ qua.

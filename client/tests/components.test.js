@@ -1,0 +1,1169 @@
+import { readFileSync } from 'node:fs'
+import * as React from 'react'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, expect, it } from 'vitest'
+import ManagementAccountForm from '../src/ManagementAccountForm.jsx'
+import PortalChip from '../src/components/PortalChip.jsx'
+import PortalMetricCard from '../src/components/PortalMetricCard.jsx'
+import PortalPanel from '../src/components/PortalPanel.jsx'
+import PortalTable from '../src/components/PortalTable.jsx'
+import ThemeToggleButton from '../src/components/ThemeToggleButton.jsx'
+import AppShell, { AccountPanel } from '../src/components/AppShell.jsx'
+import AppSidebar from '../src/components/AppSidebar.jsx'
+import PortalIcon from '../src/PortalIcon.jsx'
+import StudentPortal from '../src/StudentPortal.jsx'
+import { createAccountGroup } from '../src/accountNavigation.js'
+import { studentAccountSections, studentPages, studentSections } from '../src/studentNavigation.js'
+import DashboardPage from '../src/DashboardPage.jsx'
+import { summarizeDashboard, formatStudentLabel } from '../src/summarizeDashboard.js'
+import { auditOutcomes } from '../src/auditOutcomes.js'
+import { importRowStatuses } from '../src/importRowStatuses.js'
+import { activityStatuses } from '../src/activityStatuses.js'
+import { approvalStatuses } from '../src/approvalStatuses.js'
+import { certificateStatuses } from '../src/certificateStatuses.js'
+import { studentAccountStatuses } from '../src/studentAccountStatuses.js'
+import { ThemeContext } from '../src/themeContext.js'
+import { sampleActivities } from '../src/sampleActivities.js'
+import { sampleCertificates } from '../src/sampleCertificates.js'
+import { sampleCohorts } from '../src/sampleCohorts.js'
+import { sampleParticipations } from '../src/sampleParticipations.js'
+import { sampleStudents } from '../src/sampleStudents.js'
+
+// Vitest's SSR transform compiles the imported .jsx modules with the classic
+// JSX runtime, so their render functions look React up on the global scope.
+globalThis.React = React
+
+const read = (name) => readFileSync(new URL(`../src/components/${name}`, import.meta.url), 'utf-8')
+const row = createElement('tbody', null, createElement('tr', null, createElement('td', null, 'Ô')))
+
+// The `order` a selector declares in components.css, or 0 when it declares
+// none: a tile's parts appear in DOM order unless CSS reorders them.
+function cssOrder(css, name) {
+  const withOrder = new RegExp(`(?:^|\\n)[^{}]*\\.${name}[^{]*\\{[^}]*order:\\s*(-?\\d+)`).exec(css)
+  return withOrder ? Number(withOrder[1]) : 0
+}
+
+// The tone each entry of a status map carries, keyed like the map itself.
+const tones = (entries) => Object.fromEntries(entries.map(([key, entry]) => [key, entry.tone]))
+
+function renderDashboard(overrides = {}) {
+  return renderToStaticMarkup(createElement(
+    ThemeContext.Provider,
+    { value: { theme: 'light', toggleTheme() {} } },
+    createElement(DashboardPage, {
+      cohorts: sampleCohorts,
+      students: sampleStudents,
+      activities: sampleActivities,
+      participations: sampleParticipations,
+      certificates: sampleCertificates,
+      ...overrides,
+    }),
+  ))
+}
+
+describe('component dùng chung', () => {
+  it('PortalPanel có header với tiêu đề', () => {
+    expect(read('PortalPanel.jsx')).toContain('portal-panel__header')
+    expect(read('PortalPanel.jsx')).toContain('portal-panel__title')
+  })
+
+  it('PortalPageHeader có ô hành động', () => {
+    expect(read('PortalPageHeader.jsx')).toContain('portal-page-header__actions')
+  })
+
+  it('PortalChip hỗ trợ đúng 5 tone', () => {
+    const src = read('PortalChip.jsx')
+    for (const tone of ['success', 'warn', 'danger', 'info', 'mute']) {
+      expect(src).toContain(`'${tone}'`)
+    }
+  })
+
+  it('PortalTable có vùng cuộn ngang và cột thao tác dính', () => {
+    const src = read('PortalTable.jsx')
+    expect(src).toContain('admin-table-scroll')
+    expect(src).toContain('portal-table--sticky-actions')
+  })
+
+  // R141: the certificate-template editor is the one sanctioned raw-colour
+  // exception (spec §6.11), so the guard runs with every
+  // `.template-editor-scope` rule removed and then proves the sanctioned values
+  // live inside that scope and nowhere else in the file.
+  it('components.css không chứa hex thô ngoài khối ngoại lệ editor', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+    // Anchored at a line start: without it the first match begins in the header
+    // comment and swallows the first rule after it, hiding that region from
+    // both the scan and the "nowhere else" checks (R146).
+    const scopeRule = /^\.template-editor-scope[^{]*\{[^}]*\}/gm
+    const scoped = (css.match(scopeRule) ?? []).join('\n')
+    const outside = css.replace(scopeRule, '')
+    expect(outside).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
+    expect(scoped).toContain('#2f5fc4')
+    expect(scoped).toContain('#fff')
+    expect(outside).not.toContain('#2f5fc4')
+    expect(outside).not.toContain('#fff')
+  })
+
+  it('components.css không dùng rounded-4', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    expect(css).not.toContain('rounded-4')
+  })
+
+  // R150/R158: the theme fade must cover the portal surfaces that replaced the
+  // legacy `.card`, but a blanket shorthand here would replace a component's
+  // own transition — the mobile sidebar's `transform` slid not at all.
+  it('khối chuyển cảnh theme phủ bề mặt portal nhưng không đè transition riêng', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    const block = /@media \(prefers-reduced-motion: no-preference\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? ''
+    expect(block, 'thiếu khối chuyển cảnh theme').toContain('transition:')
+    for (const surface of ['.portal-panel', '.portal-topbar', '.portal-footer', '.portal-account-menu', '.portal-notifications']) {
+      expect(block, surface).toMatch(new RegExp(`${surface.replace('.', '\\.')}(?![\\w-])`))
+    }
+    for (const own of ['.portal-sidebar__panel', '.portal-metric', '.portal-nav__item',
+      '.portal-account-menu__trigger', '.portal-account-menu__item', '.portal-bell',
+      '.portal-table tbody tr', '.btn', '.fld']) {
+      expect(block, own).not.toContain(own)
+    }
+  })
+
+  it('ô chỉ số tự reset margin của <dl> và hai <dd> do Bootstrap reboot đặt vào', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    // Bootstrap's reboot gives dl a 1rem bottom margin and dd .5rem; the rules
+    // are scoped to the tile's own classes so other pages' <dl>s keep theirs.
+    for (const name of ['portal-metric', 'portal-metric__value', 'portal-metric__note']) {
+      expect(css, name).toMatch(new RegExp(`(?:^|\\n)\\s*\\.${name}\\s*\\{[^}]*margin:\\s*0`))
+    }
+  })
+
+  it('PortalChip rơi về tone mute khi tone không hợp lệ hoặc thiếu', () => {
+    const unknownTone = renderToStaticMarkup(createElement(PortalChip, { tone: 'khong-co', label: 'Thử' }))
+    expect(unknownTone).toContain('portal-chip portal-chip--mute')
+
+    const noTone = renderToStaticMarkup(createElement(PortalChip, { label: 'Thử' }))
+    expect(noTone).toContain('portal-chip portal-chip--mute')
+  })
+
+  it('PortalTable đặt aria-label và role cho vùng cuộn', () => {
+    const html = renderToStaticMarkup(createElement(PortalTable, { label: 'Danh sách sinh viên' }, row))
+    expect(html).toContain('role="region"')
+    expect(html).toContain('aria-label="Danh sách sinh viên"')
+    expect(html).toContain('tabindex="0"')
+  })
+
+  it('PortalTable chỉ thêm minWidth và sticky khi được yêu cầu', () => {
+    const plain = renderToStaticMarkup(createElement(PortalTable, { label: 'Bảng thường' }, row))
+    expect(plain).not.toContain('style=')
+    expect(plain).not.toContain('portal-table--sticky-actions')
+
+    const wide = renderToStaticMarkup(
+      createElement(PortalTable, { label: 'Bảng rộng', minWidth: '85rem', stickyActions: true }, row),
+    )
+    expect(wide).toContain('min-width:85rem')
+    expect(wide).toContain('portal-table portal-table--sticky-actions')
+  })
+
+  it('PortalMetricCard không dùng ô icon pastel', () => {
+    const src = read('PortalMetricCard.jsx')
+    expect(src).toContain('portal-metric__icon')
+    expect(src).not.toContain('bg-subtle')
+  })
+
+  it('không còn text-bg-* trong các trang dùng badge', () => {
+    for (const file of [
+      'SuperAdminAccounts.jsx', 'CertificatesPage.jsx', 'ParticipationsPage.jsx', 'ImportsPage.jsx',
+      'AuditLogsPage.jsx', 'ActivitiesPage.jsx', 'CertificateTemplatesPage.jsx', 'StudentsPage.jsx',
+    ]) {
+      expect(readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8'), file).not.toContain('text-bg-')
+    }
+  })
+
+  it('PortalTable dùng cho mọi bảng và bảng rộng có cột thao tác dính', () => {
+    const src = readFileSync(new URL('../src/CertificatesPage.jsx', import.meta.url), 'utf-8')
+    expect(src).toContain('PortalTable')
+    expect(src).toContain('stickyActions')
+  })
+
+  it('style cột thao tác dính có position sticky', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    expect(css).toMatch(/portal-table--sticky-actions[\s\S]*position:\s*sticky/)
+  })
+
+  // R86: the brief's single-page assertion above cannot notice a page that
+  // reverts to the raw wrapper or a wide table that loses (or gains) the pin.
+  it('cả tám trang còn lại dùng PortalTable và chỉ bảng có cột thao tác mới dính', () => {
+    const pageSrc = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+    for (const file of [
+      'ParticipationsPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx', 'AuditLogsPage.jsx',
+      'ActivitiesPage.jsx', 'CertificateTemplatesPage.jsx', 'CohortsPage.jsx', 'SuperAdminAccounts.jsx',
+    ]) {
+      const src = pageSrc(file)
+      expect(src, file).toContain('PortalTable')
+      // A revert keeps the (now unused) import, so the rendered legacy wrapper
+      // itself must be absent.
+      expect(src, file).not.toContain('admin-table-scroll')
+      expect(src, file).not.toContain('<table')
+    }
+
+    for (const file of ['CertificatesPage.jsx', 'ParticipationsPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx']) {
+      expect(pageSrc(file), file).toContain('stickyActions')
+    }
+    // Nhật ký hệ thống is 56rem but has no action column, so it must stay unpinned.
+    expect(pageSrc('AuditLogsPage.jsx')).not.toContain('stickyActions')
+  })
+
+  // R86/R87: assert the rules themselves instead of one regex spanning the file.
+  it('cột dính dùng nền đục, bỏ ô colSpan và hover phủ cả th lẫn td', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    const sticky = /(\.portal-table--sticky-actions[^{]*:is\(th, td\):last-child[^{]*)\{([^}]*)\}/.exec(css)
+    expect(sticky, 'thiếu quy tắc cột thao tác dính').not.toBeNull()
+    expect(sticky[1]).toContain(':not([colspan])')
+    expect(sticky[2]).toMatch(/position:\s*sticky/)
+    expect(sticky[2]).toMatch(/background-color:\s*var\(--ws-panel-solid\)/)
+
+    const hover = /(\.portal-table--sticky-actions tbody tr:hover[^{]*)\{([^}]*)\}/.exec(css)
+    expect(hover, 'thiếu quy tắc hover cột thao tác dính').not.toBeNull()
+    expect(hover[1]).toContain(':is(th, td):last-child')
+    expect(hover[2]).toMatch(/background-color:\s*var\(--ws-chip-bg\)/)
+  })
+
+  it('--ws-panel-solid có mặt ở cả hai chế độ với nền đục', () => {
+    const css = readFileSync(new URL('../src/tokens/index.css', import.meta.url), 'utf-8')
+    const light = /:root\s*\{([^}]*)\}/.exec(css)
+    const dark = /\[data-bs-theme="dark"\]\s*\{([^}]*)\}/.exec(css)
+    expect(light, 'thiếu khối :root').not.toBeNull()
+    expect(dark, 'thiếu khối tối').not.toBeNull()
+    // #fffffff5 is white at 96% alpha; its opaque composite is plain white, not cream.
+    // The hex boundary rejects an 8-digit value (an alpha byte), so a translucent
+    // #fffffff5 cannot satisfy the opaque-token requirement.
+    expect(light[1]).toMatch(/--ws-panel-solid:\s*#ffffff(?![\da-fA-F])/)
+    expect(dark[1]).toMatch(/--ws-panel-solid:\s*#141f31/)
+  })
+
+  it('mười hai vùng cuộn bảng có aria-label riêng biệt', () => {
+    const labels = [
+      'CertificatesPage.jsx', 'ParticipationsPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx',
+      'AuditLogsPage.jsx', 'ActivitiesPage.jsx', 'CertificateTemplatesPage.jsx', 'CohortsPage.jsx',
+      'SuperAdminAccounts.jsx',
+    ].flatMap((file) => {
+      const src = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+      return [...src.matchAll(/<PortalTable label="([^"]+)"/g)].map((match) => match[1])
+    })
+
+    expect(labels).toHaveLength(12)
+    expect(new Set(labels).size).toBe(12)
+  })
+
+  it('PortalMetricCard giữ cấu trúc <dl> và áp tone lên phần tử gốc', () => {
+    const html = renderToStaticMarkup(createElement(PortalMetricCard, {
+      label: 'Chờ duyệt', value: '3', note: 'Ghi chú', icon: createElement('span', null, 'i'), tone: 'warn',
+    }))
+    expect(html).toContain('class="portal-metric portal-metric--warn"')
+    expect(html).toContain('portal-metric__icon')
+    // DOM order stays label -> value -> note so <dt>/<dd> remain associated;
+    // the number is lifted above the label by the CSS `order` instead (R68).
+    expect(html).toMatch(/<dt class="portal-metric__label">Chờ duyệt<\/dt><dd class="portal-metric__value">3<\/dd><dd class="portal-metric__note">Ghi chú<\/dd>/)
+
+    // Without a tone the card falls back to the default variant and drops the
+    // optional note and icon.
+    const plain = renderToStaticMarkup(createElement(PortalMetricCard, { label: 'Tổng', value: 7 }))
+    expect(plain).toContain('class="portal-metric portal-metric--default"')
+    expect(plain).not.toContain('portal-metric__note')
+    expect(plain).not.toContain('portal-metric__icon')
+  })
+})
+
+describe('trình chỉnh sửa mẫu chứng nhận', () => {
+  const componentsCss = () => readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+  const pageSrc = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+
+  it('editor mẫu chứng nhận giữ ngoại lệ đọc được trên ảnh nền', () => {
+    const css = componentsCss()
+    expect(css).toContain('--template-outline')
+    expect(css).toContain('--template-glow')
+    expect(css).toMatch(/template-editor-scope[\s\S]*text-shadow/)
+  })
+
+  it('ngoại lệ chỉ nằm trong .template-editor-scope', () => {
+    const css = componentsCss()
+    const outside = css.replace(/\.template-editor-scope\s*\{[^}]*\}/g, '')
+    expect(outside).not.toContain('#2f5fc4')
+  })
+
+  // R141: the scope block must declare both sanctioned values verbatim and the
+  // selected field's ring must stay the spec's dashed 2px outline.
+  it('khối ngoại lệ khai báo hai biến và vẽ viền 2px dashed cho trường được chọn', () => {
+    const css = componentsCss()
+    const scope = /\.template-editor-scope\s*\{([^}]*)\}/.exec(css)
+    expect(scope, 'thiếu khối .template-editor-scope').not.toBeNull()
+    expect(scope[1]).toMatch(/--template-outline:\s*#2f5fc4\b/)
+    expect(scope[1]).toMatch(/--template-glow:\s*#fff\b/)
+    expect(css).toMatch(
+      /\.template-editor-scope \.template-field-overlay\[data-selected="true"\][\s\S]*?outline:\s*2px dashed var\(--template-outline\)/,
+    )
+  })
+
+  it('editor bọc overlay trong .template-editor-scope', () => {
+    const wrapper = /<div className="([^"]*)"\s*>\s*<img/.exec(pageSrc('CertificateTemplateImage.jsx'))
+    expect(wrapper, 'không tìm thấy phần tử gốc chứa <img> và overlay').not.toBeNull()
+    expect(wrapper[1]).toContain('template-editor-scope')
+  })
+
+  // R140: the four rules moved into the scoped block, so the unscoped legacy
+  // copies leave index.css and can no longer paint outside the editor.
+  it('bốn quy tắc editor cũ đã rời index.css', () => {
+    const css = pageSrc('index.css')
+    expect(css).not.toMatch(/^\.template-sample-value\s*\{/m)
+    expect(css).not.toMatch(/^\.template-field-overlay\s*\{/m)
+    expect(css).not.toMatch(/^\.template-field-overlay\[data-editable="true"\]\s*\{/m)
+    expect(css).not.toMatch(/^\.template-field-overlay\[data-selected="true"\]/m)
+  })
+
+  // R143: the editor's fields take the .fld look; only the native colour
+  // picker keeps its control (spec §6.11) because .fld's 32px height would
+  // squeeze the swatch.
+  it('ô chọn và ô cỡ chữ của editor dùng .fld, ô màu giữ nguyên', () => {
+    const image = pageSrc('CertificateTemplateImage.jsx')
+    const fieldSelect = /<select[^>]*id="template-field"[^>]*>/.exec(image)?.[0]
+    const fontSelect = /<select[^>]*id="template-field-font"[^>]*>/.exec(image)?.[0]
+    const fontSize = /<input[^>]*id="template-field-font-size"[\s\S]*?\/>/.exec(image)?.[0]
+    const color = /<input[^>]*id="template-field-color"[\s\S]*?\/>/.exec(image)?.[0]
+    for (const [name, tag] of [['template-field', fieldSelect], ['template-field-font', fontSelect]]) {
+      expect(tag, name).toBeTruthy()
+      expect(tag, name).toContain('fld')
+      expect(tag, name).not.toContain('form-select')
+    }
+    expect(fontSize, 'template-field-font-size').toBeTruthy()
+    expect(fontSize).toContain('fld')
+    expect(fontSize).not.toContain('form-control')
+
+    expect(color, 'template-field-color').toBeTruthy()
+    expect(color).toContain('form-control-color')
+    expect(color).not.toContain('fld')
+
+    const pageSelect = /<select[^>]*id="template-pdf-page"[^>]*>/.exec(pageSrc('CertificateTemplatePdf.jsx'))?.[0]
+    expect(pageSelect, 'template-pdf-page').toBeTruthy()
+    expect(pageSelect).toContain('fld')
+    expect(pageSelect).not.toContain('form-select')
+  })
+})
+
+describe('trang Tổng quan', () => {
+  const dashboardSrc = () => readFileSync(new URL('../src/DashboardPage.jsx', import.meta.url), 'utf-8')
+  const componentsCss = () => readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+
+  it('DashboardPage dùng lưới 4 KPI mỗi hàng', () => {
+    const css = componentsCss()
+    expect(css).toMatch(/portal-metric-grid[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/)
+  })
+
+  it('DashboardPage không còn dùng rounded-4', () => {
+    const src = dashboardSrc()
+    expect(src).not.toContain('rounded-4')
+  })
+
+  // R157: the dashboard memoises its chart inputs on `activities`/`cohorts`, so
+  // App must hand it stable identities. Sorting inline in JSX rebuilt both
+  // arrays on every App render and destroyed/recreated both canvases.
+  it('App.jsx truyền mảng đã sắp xếp qua useMemo cho trang Tổng quan', () => {
+    const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf-8')
+    expect(app).toMatch(/const sortedActivities = useMemo\(/)
+    expect(app).toMatch(/const sortedCohorts = useMemo\(/)
+    expect(app).toContain('activities={sortedActivities}')
+    expect(app).toContain('cohorts={sortedCohorts}')
+    expect(app).not.toMatch(/activities=\{\[\.\.\.activities\]\.sort/)
+    expect(app).not.toMatch(/cohorts=\{\[\.\.\.cohorts\]\.sort/)
+  })
+
+  // R157: the redraw must still be theme-driven after the input stabilisation.
+  it('biểu đồ vẫn vẽ lại khi data-bs-theme đổi', () => {
+    const src = dashboardSrc()
+    expect(src).toContain("attributeFilter: ['data-bs-theme']")
+    expect(src).toMatch(/\[type,\s*labels,\s*values,\s*tones,\s*percentages,\s*themeTick\]/)
+  })
+
+  it('DashboardPage dùng Hero, PortalPanel và ô chỉ số nội tuyến', () => {
+    const src = dashboardSrc()
+    expect(src).toContain('portal-hero')
+    expect(src).toContain('portal-metric-grid')
+    expect(src).toContain('PortalPanel')
+    // The legacy card is replaced inline for now; Task 8 imports the shared
+    // component from ./components/ instead, which this assertion still allows.
+    expect(src).not.toContain("from './PortalMetricCard.jsx'")
+  })
+
+  it('giữ đủ bảy chỉ số của trang Tổng quan', () => {
+    const src = dashboardSrc()
+    for (const label of [
+      'Sinh viên đang hoạt động',
+      'Hoạt động',
+      'Lượt tham gia',
+      'Sinh viên có lượt tham gia',
+      'Chứng nhận hiệu lực',
+      'Chứng nhận bị thu hồi',
+      'Lỗi tạo PDF',
+    ]) expect(src).toContain(label)
+  })
+
+  it('components.css mô tả hero, ô chỉ số và ba biến thể tone', () => {
+    const css = componentsCss()
+    for (const selector of [
+      '.portal-hero', '.portal-hero__date', '.portal-hero__title',
+      '.portal-hero__description', '.portal-hero__note',
+      '.portal-metric__icon', '.portal-metric__text', '.portal-metric__label',
+      '.portal-metric__value', '.portal-metric__note',
+      '.portal-metric--success', '.portal-metric--warn', '.portal-metric--danger',
+    ]) expect(css).toContain(selector)
+
+    for (const [tone, token] of [
+      ['success', '--ws-success-text'], ['warn', '--ws-warn-text'], ['danger', '--ws-accent-text'],
+    ]) {
+      expect(css).toMatch(new RegExp(`\\[data-bs-theme="dark"\\] \\.portal-metric--${tone}[^{]*\\{[^}]*${token}`))
+    }
+  })
+
+  it('DashboardPage render ra Hero, bảy ô chỉ số và hai panel biểu đồ', () => {
+    const html = renderDashboard()
+
+    // The Hero replaced the page's <h1 className="page-title"> + paragraph.
+    expect(html).not.toContain('class="page-title')
+    expect(html).toContain('class="portal-hero"')
+    expect(html).toContain('portal-hero__title">Tổng quan</h1>')
+    // The date line is populated during the render, not left empty for an
+    // effect to fill in later (R63).
+    expect(html).toMatch(/<p class="portal-hero__date">[^<]+<\/p>/)
+
+    // Seven tiles, counted by the class the shared card Task 8 introduces also
+    // renders — not by the inline markup's structure.
+    expect((html.match(/class="portal-metric(?:--[\w-]+)?(?: |")/g) ?? [])).toHaveLength(7)
+
+    // §6.4 order: the number sits above the label. Task 8's shared card may
+    // keep label-before-value in the DOM for the <dl> association and reorder
+    // visually with CSS `order`, so assert the resulting visual order rather
+    // than one particular mechanism.
+    const valueFirst = html.indexOf('portal-metric__value') < html.indexOf('portal-metric__label')
+    const css = componentsCss()
+    const valueOrder = cssOrder(css, 'portal-metric__value')
+    const labelOrder = cssOrder(css, 'portal-metric__label')
+    const visuallyFirst = valueFirst ? valueOrder <= labelOrder : valueOrder < labelOrder
+    expect(visuallyFirst).toBe(true)
+
+    // Both charts render as panels carrying their titles.
+    expect((html.match(/class="portal-panel__title"/g) ?? [])).toHaveLength(2)
+    expect(html).toContain('Tỷ lệ tham gia của sinh viên đang hoạt động theo khóa')
+    expect(html).toContain('Chứng nhận theo trạng thái')
+
+    // The legacy metric card is no longer part of the dashboard.
+    expect(html).not.toContain('portal-metric-card')
+  })
+})
+
+describe('bảng chứng nhận gần đây trên trang Tổng quan', () => {
+  const tableLabel = 'Danh sách chứng nhận gần đây'
+
+  // The certificate-status filter renders the same label as a chip, so every
+  // assertion reads the table from its scroll region's label to </table>.
+  function recentCertificatesTable(html) {
+    const start = html.indexOf(tableLabel)
+    expect(start, 'thiếu bảng chứng nhận gần đây').toBeGreaterThan(-1)
+    return html.slice(start, html.indexOf('</table>', start))
+  }
+
+  // [prefix, header row, ...body rows]: the table renders plain <tr> tags.
+  const rowsOf = (table) => table.split('<tr>').slice(2)
+
+  // The value the KPI tile renders, read from the DOM rather than recomputed.
+  function tileValue(html, label) {
+    const match = new RegExp('<dt class="portal-metric__label">' + label + '</dt>'
+      + '<dd class="portal-metric__value">([^<]+)</dd>').exec(html)
+    expect(match, 'thiếu ô chỉ số ' + label).toBeTruthy()
+    return Number(match[1].replace(/\./g, ''))
+  }
+
+  it('liệt kê chứng nhận mới nhất trước, chưa có ngày cấp xếp cuối', () => {
+    const rows = rowsOf(recentCertificatesTable(renderDashboard()))
+    const codes = rows.map((row) => /CN-MAU-\d{3}/.exec(row)?.[0])
+    expect(codes).toEqual(['CN-MAU-002', 'CN-MAU-001', 'CN-MAU-004', 'CN-MAU-003'])
+
+    // issuedAt === null (Generating, Failed) shows an em dash for Ngày cấp.
+    expect(rows[0]).toContain('26/10/2026')
+    expect(rows[1]).toContain('26/10/2026')
+    expect(rows[2]).toContain('>—<')
+    expect(rows[3]).toContain('>—<')
+  })
+
+  // Ruling F12: a date-only value and an ISO datetime for the SAME day must tie
+  // break on certificateId. The higher id owns the date-only value, so a raw
+  // string comparison would put it after the datetime string instead.
+  it('cùng một ngày, khác định dạng, vẫn phân định bằng mã chứng nhận', () => {
+    const certificates = [
+      ...sampleCertificates,
+      { certificateId: 21, certificateCode: 'CN-GIO-021', participationId: 2, issuedAt: '2026-10-26T17:00:00.000Z', status: 'Issued' },
+      { certificateId: 22, certificateCode: 'CN-GIO-022', participationId: 3, issuedAt: '2026-10-26', status: 'Issued' },
+    ]
+    const rows = rowsOf(recentCertificatesTable(renderDashboard({ certificates })))
+    const codes = rows.map((row) => /CN-[A-Z]+-\d{3}/.exec(row)?.[0])
+    expect(codes.slice(0, 4)).toEqual(['CN-GIO-022', 'CN-GIO-021', 'CN-MAU-002', 'CN-MAU-001'])
+    expect(rows[0]).toContain('26/10/2026')
+    expect(rows[1]).toContain('26/10/2026')
+  })
+
+  it('hiển thị mã, sinh viên, ngày cấp và chip trạng thái theo bảng trạng thái', () => {
+    const table = recentCertificatesTable(renderDashboard())
+    expect(table).toContain('>Mã chứng nhận<')
+    expect(table).toContain('>Sinh viên<')
+    expect(table).toContain('>Ngày cấp<')
+    expect(table).toContain('>Trạng thái<')
+    expect(table).toContain('portal-table__cell-strong')
+
+    const [revoked, issued, failed, generating] = rowsOf(table)
+    const students = (studentId) => sampleStudents.find((item) => item.studentId === studentId).fullName
+    expect(revoked).toContain('02300001')
+    expect(revoked).toContain(students(3))
+    expect(revoked).toContain('portal-chip--mute')
+    expect(issued).toContain('02400001')
+    expect(issued).toContain(students(1))
+    expect(issued).toContain('portal-chip--success')
+    expect(failed).toContain('portal-chip--danger')
+    expect(generating).toContain('portal-chip--info')
+  })
+
+  // Ruling F13: a certificate whose participation or student cannot be resolved
+  // shows an em dash. In a scoped render such a certificate is out of scope by
+  // definition (see the F1 guard), so the fallback is asserted directly.
+  it('cột Sinh viên hiển thị — khi không xác định được sinh viên', () => {
+    expect(formatStudentLabel(undefined)).toBe('—')
+    expect(formatStudentLabel(null)).toBe('—')
+    expect(formatStudentLabel({ studentCode: '02400001', fullName: 'Nguyễn Minh Anh' })).toBe('02400001 · Nguyễn Minh Anh')
+  })
+
+  // Ruling F14: the student schema allows nulls; they must not leak "null".
+  it('sinh viên có trường null hiển thị — thay vì chữ null', () => {
+    const students = [...sampleStudents, {
+      studentId: 9, studentCode: null, fullName: null, email: null,
+      className: null, cohortId: 24, userId: null, isActive: true,
+    }]
+    const participations = [...sampleParticipations, {
+      participationId: 9, activityId: 1, studentId: 9, approvalStatus: 'Approved',
+    }]
+    const certificates = [...sampleCertificates, {
+      certificateId: 9, certificateCode: 'CN-THIEU-009', participationId: 9, issuedAt: '2026-09-01', status: 'Issued',
+    }]
+    const table = recentCertificatesTable(renderDashboard({ students, participations, certificates }))
+    const row = rowsOf(table).find((item) => item.includes('CN-THIEU-009'))
+    expect(row).toContain('>— · —<')
+    expect(row).not.toContain('null')
+  })
+
+  // Rulings F1/F11: the table renders the certificates `summarizeDashboard`
+  // counted. The extra certificate has no participation, so it is outside the
+  // tiles' scope: a raw or re-derived render adds a fifth row and fails here.
+  it('bỏ chứng nhận ngoài phạm vi và số dòng Đang hiệu lực khớp ô chỉ số', () => {
+    const certificates = [
+      ...sampleCertificates,
+      { certificateId: 90, certificateCode: 'CN-NGOAI-PHAM-VI', participationId: 999, issuedAt: '2026-11-02', status: 'Issued' },
+    ]
+    const summary = summarizeDashboard({
+      cohorts: sampleCohorts,
+      students: sampleStudents,
+      activities: sampleActivities,
+      participations: sampleParticipations,
+      certificates,
+    })
+    const issuedLabel = certificateStatuses.find(({ status }) => status === 'Issued').label
+    const html = renderDashboard({ certificates })
+    const table = recentCertificatesTable(html)
+    const rows = rowsOf(table)
+
+    // Derived from the fixture: every sample certificate is in scope, so the
+    // expectation moves with the data instead of pinning a literal 4.
+    expect(summary.scopedCertificates).toHaveLength(sampleCertificates.length)
+    expect(summary.scopedCertificates.some(({ certificateId }) => certificateId === 90)).toBe(false)
+    expect(table).not.toContain('CN-NGOAI-PHAM-VI')
+    expect(rows).toHaveLength(summary.scopedCertificates.length)
+    // The table's Issued rows and the rendered Issued KPI tile are one number.
+    const issuedRows = rows.filter((row) => row.includes(issuedLabel))
+    expect(issuedRows).toHaveLength(summary.certificateCounts.Issued)
+    expect(issuedRows).toHaveLength(tileValue(html, 'Chứng nhận hiệu lực'))
+  })
+
+  it('giới hạn 10 dòng dù phạm vi có nhiều chứng nhận hơn', () => {
+    const cohorts = [{ cohortId: 1, cohortCode: 'K1', cohortName: 'Khóa 1', isActive: true }]
+    const students = [{
+      studentId: 1, studentCode: '00000001', fullName: 'Sinh viên mẫu', email: null,
+      className: null, cohortId: 1, userId: null, isActive: true,
+    }]
+    const activities = [{
+      activityId: 1, code: 'HD001', name: 'Hoạt động mẫu',
+      startDate: '2026-01-01', endDate: '2026-01-01', status: 'Closed',
+    }]
+    const participations = Array.from({ length: 12 }, (_, index) => ({
+      participationId: index + 1, activityId: 1, studentId: 1, approvalStatus: 'Approved',
+    }))
+    const certificates = Array.from({ length: 12 }, (_, index) => ({
+      certificateId: index + 1,
+      certificateCode: 'CN-' + String(index + 1).padStart(3, '0'),
+      participationId: index + 1,
+      issuedAt: '2026-01-' + String(index + 1).padStart(2, '0'),
+      status: 'Issued',
+    }))
+
+    const rows = rowsOf(recentCertificatesTable(renderDashboard({ cohorts, students, activities, participations, certificates })))
+    expect(rows).toHaveLength(10)
+    expect(rows[0]).toContain('CN-012')
+    expect(rows.at(-1)).toContain('CN-003')
+    expect(rows.join('')).not.toContain('CN-002')
+  })
+
+  it('hiển thị dòng trống colSpan khi không có chứng nhận', () => {
+    const table = recentCertificatesTable(renderDashboard({ certificates: [] }))
+    const rows = rowsOf(table)
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toContain('colSpan="4"')
+    expect(rows[0]).toContain('text-center')
+    expect(table).not.toContain('CN-MAU-')
+  })
+
+  it('nằm cuối trang, trong panel thân tràn và không có cột thao tác', () => {
+    const html = renderDashboard()
+    expect(html.indexOf('Chứng nhận theo trạng thái')).toBeLessThan(html.indexOf(tableLabel))
+    expect(html).toContain('min-width:56rem')
+    const table = recentCertificatesTable(html)
+    expect(table).not.toContain('portal-table--sticky-actions')
+    const panel = html.slice(html.lastIndexOf('<section class="portal-panel', html.indexOf(tableLabel)), html.indexOf(tableLabel))
+    expect(panel).toContain('portal-panel__body')
+    expect(panel).not.toContain('portal-panel--padded')
+  })
+})
+
+describe('trang Chứng nhận', () => {
+  const certificatesSrc = () => readFileSync(new URL('../src/CertificatesPage.jsx', import.meta.url), 'utf-8')
+  const componentsCss = () => readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+
+  it('CertificatesPage dùng PortalPanel và không còn card rounded-4', () => {
+    const src = certificatesSrc()
+    expect(src).toContain('PortalPanel')
+    expect(src).not.toContain('rounded-4')
+  })
+
+  it('bảng chứng nhận có cột thao tác dính', () => {
+    const src = certificatesSrc()
+    expect(src).toMatch(/PortalTable[\s\S]*stickyActions/)
+  })
+
+  // R92: §6.8 keeps the Hero for the two overview pages; every other page uses
+  // the surface-less PageHeader with the data-mock description.
+  it('đầu trang dùng PortalPageHeader với mô tả dữ liệu mẫu', () => {
+    const src = certificatesSrc()
+    expect(src).toContain('<PortalPageHeader')
+    expect(src).toContain('title="Chứng nhận"')
+    expect(src).toContain('Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu.')
+  })
+
+  // R94: the description takes over the header paragraph, so the sentence that
+  // explains what approving a participation does must survive in the content.
+  it('đoạn giải thích luồng duyệt vẫn còn trong nội dung trang', () => {
+    expect(certificatesSrc()).toContain('Duyệt lượt tham gia sẽ tự thêm yêu cầu chứng nhận.')
+  })
+
+  // R95: both auxiliary panels become portal-panel surfaces — and the root
+  // class must be there, or the panel loses its background, radius and clip.
+  it('panel tải và bản mẫu dùng portal-panel, không còn rounded-4', () => {
+    for (const file of ['CertificateDownloadPanel.jsx', 'CertificateSnapshotPreview.jsx']) {
+      const src = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+      expect(src, file).toMatch(/<section className="portal-panel[ "]/)
+      expect(src, file).toContain('portal-panel__header')
+      expect(src, file).toContain('portal-panel__body')
+      expect(src, file).not.toContain('rounded-4')
+    }
+  })
+
+  // R93/R100: a select keeps the browser's own arrow, so it reserves that room
+  // from the spacing scale; the revocation textarea shares the field look but
+  // not the fixed 32px height.
+  it('select chừa chỗ cho mũi tên và textarea cao tự động', () => {
+    // Selector lists are flattened first. In the grouped `.fld,\n.fld-multiline {`
+    // rule the second line begins exactly like a standalone rule, so an
+    // unflattened single-class regex binds to the shared body instead — the
+    // guard then names one rule while watching another.
+    const css = componentsCss().replace(/,\s*\n\s*/g, ', ')
+    const select = /(?:^|\n)select\.fld\s*\{([^}]*)\}/.exec(css)
+    expect(select, 'thiếu quy tắc select.fld').not.toBeNull()
+    // --ws-s9 (26px) is the step that clears the arrow; a smaller one (2px at
+    // --ws-s1) would clip it while still counting as "a token".
+    expect(select[1]).toMatch(/padding-right:\s*var\(--ws-s9\)/)
+
+    // One grouped rule carries the field look for both shapes…
+    const shared = /(?:^|\n)\.fld,\s*\.fld-multiline\s*\{([^}]*)\}/.exec(css)
+    expect(shared, 'thiếu quy tắc nhóm .fld, .fld-multiline').not.toBeNull()
+    expect(shared[1]).toMatch(/border-radius:\s*var\(--ws-r-sm\)/)
+    // R106: a height on the shared body would collapse the textarea just as a
+    // height on the standalone rule would, so the grouped body is guarded too.
+    expect(shared[1]).not.toMatch(/(?:^|;)\s*height:/)
+
+    // …and only the single-line shape keeps the fixed height.
+    const single = /(?:^|\n)\.fld\s*\{([^}]*)\}/.exec(css)
+    expect(single, 'thiếu quy tắc .fld').not.toBeNull()
+    expect(single[1]).toMatch(/height:\s*32px/)
+
+    // The standalone textarea rule, not the shared one: `display: block` only
+    // exists here, so a match on the grouped body cannot pass this guard.
+    const area = /(?:^|\n)\.fld-multiline\s*\{([^}]*)\}/.exec(css)
+    expect(area, 'thiếu quy tắc .fld-multiline').not.toBeNull()
+    expect(area[1]).toMatch(/display:\s*block/)
+    expect(area[1]).toMatch(/resize:\s*vertical/)
+    expect(area[1]).not.toMatch(/(?:^|;)\s*height:/)
+
+    // Anchored to the revocation field itself: an unanchored match would pass
+    // even if this textarea lost the class and another one kept it.
+    const textarea = /<textarea\b[\s\S]*?id="certificate-revocation-reason"[\s\S]*?\/>/.exec(certificatesSrc())
+    expect(textarea, 'không tìm thấy textarea lý do thu hồi').not.toBeNull()
+    expect(textarea[0]).toContain('fld-multiline')
+    expect(textarea[0]).not.toContain('form-control')
+  })
+})
+
+describe('bảng tone trạng thái', () => {
+  // R81: §6.6.1 fixes every status → tone pair, so the mapping is pinned here
+  // instead of resting on a careful reading of six maps.
+  it('mỗi trạng thái mang đúng tone của spec §6.6.1', () => {
+    const vocabularies = [
+      ['chứng nhận', certificateStatuses.map(({ status, tone }) => [status, { tone }]), {
+        Issued: 'success', Generating: 'info', Failed: 'danger', Revoked: 'mute',
+      }],
+      ['duyệt tham gia', Object.entries(approvalStatuses), {
+        Pending: 'warn', Approved: 'success', Rejected: 'danger',
+      }],
+      ['hoạt động', Object.entries(activityStatuses), {
+        Draft: 'mute', Open: 'success', Closed: 'mute', Archived: 'mute',
+      }],
+      ['tài khoản sinh viên', Object.entries(studentAccountStatuses), {
+        active: 'success', pending: 'warn', disabled: 'danger', unlinked: 'mute',
+      }],
+      ['dòng nhập', Object.entries(importRowStatuses), {
+        Valid: 'info', Imported: 'success', Skipped: 'mute', Duplicate: 'warn', Error: 'danger',
+      }],
+      ['kết quả kiểm toán', Object.entries(auditOutcomes), {
+        Success: 'success', Failure: 'danger', Partial: 'warn',
+      }],
+    ]
+
+    for (const [name, entries, expected] of vocabularies) {
+      expect(tones(entries), name).toEqual(expected)
+    }
+  })
+})
+
+describe('form tài khoản quản trị', () => {
+  // I3: this form was the last interactive `.card` in the app. Rendering it is
+  // the only assertion that catches a revert, because the surface is a class on
+  // the root element and nothing else in the suite touches this file.
+  const renderForm = (props) => renderToStaticMarkup(
+    createElement(ManagementAccountForm, { onSave() {}, onCancel() {}, ...props }))
+
+  it('dùng PortalPanel với titleId, không còn .card / .card-body', () => {
+    const html = renderForm({})
+    expect(html).toContain('class="portal-panel portal-panel--stacked portal-panel--padded"')
+    expect(html).toContain('aria-labelledby="management-form-title"')
+    expect(html).toContain('id="management-form-title"')
+    expect(html).not.toContain('card-body')
+    expect(html).not.toContain('class="card')
+    // The behaviour the wrapper carried over: the password fields exist only
+    // when creating, and the current account cannot change its own role.
+    expect(html).toContain('id="management-password"')
+    expect(renderForm({ account: { username: 'a', fullName: 'A', role: 'admin' }, isCurrentAccount: true }))
+      .toContain('disabled=""')
+  })
+})
+
+describe('các trang quản trị còn lại', () => {
+  const pages = ['StudentsPage', 'ActivitiesPage', 'ParticipationsPage', 'CohortsPage', 'ImportsPage', 'AuditLogsPage', 'CertificateTemplatesPage', 'SuperAdminAccounts']
+  const pageSrc = (page) => readFileSync(new URL(`../src/${page}.jsx`, import.meta.url), 'utf-8')
+
+  it('mọi trang quản trị dùng PortalPageHeader và không còn rounded-4', () => {
+    for (const page of pages) {
+      const src = pageSrc(page)
+      expect(src, page).not.toContain('rounded-4')
+      expect(src, page).toContain('PortalPageHeader')
+    }
+  })
+
+  // R119/R121: a conversion must not turn a named region into a plain container.
+  // `PortalPanel` points its <section> at the title it renders, so a `titleId`
+  // is consumed, not merely declared — and every `titleId` a page hands over is
+  // fed back through the component here to prove the reference exists.
+  it('mỗi tiêu đề panel đều đặt tên cho vùng của nó', () => {
+    const named = renderToStaticMarkup(createElement(PortalPanel, { title: 'Vùng có tên', titleId: 'vung-co-ten' }))
+    expect(named).toMatch(/<section[^>]*aria-labelledby="vung-co-ten"[^>]*>/)
+    expect(named).toMatch(/<h2[^>]*id="vung-co-ten"[^>]*>/)
+    expect(named).toContain('portal-panel__title">Vùng có tên</h2>')
+
+    const untitled = renderToStaticMarkup(createElement(PortalPanel, null, createElement('p', null, 'Nội dung')))
+    expect(untitled).not.toContain('aria-labelledby')
+
+    for (const page of pages) {
+      const src = pageSrc(page)
+      for (const [tag] of src.matchAll(/<PortalPanel\b[^>]*>/g)) {
+        if (!/\stitle=/.test(tag)) continue
+        const titleId = /\stitleId="([^"]+)"/.exec(tag)?.[1]
+        expect(titleId, `${page}: panel có title phải có titleId → ${tag}`).toBeTruthy()
+        const consumed = renderToStaticMarkup(createElement(PortalPanel, { title: 'Vùng', titleId }))
+        expect(consumed, `${page} → ${titleId}`).toContain(`aria-labelledby="${titleId}"`)
+      }
+    }
+
+    // The ids that named regions before the conversion must still name them.
+    const survived = {
+      StudentsPage: ['student-profile-title'],
+      ParticipationsPage: ['participation-results-title'],
+      ImportsPage: ['import-settings', 'student-import-preview', 'participation-import-preview', 'import-history'],
+      SuperAdminAccounts: ['accounts-list-title'],
+    }
+    for (const [page, ids] of Object.entries(survived)) {
+      const src = pageSrc(page)
+      for (const id of ids) expect(src, `${page} → ${id}`).toContain(`titleId="${id}"`)
+    }
+  })
+
+  // Every id an `aria-labelledby` / `aria-describedby` names must exist in the
+  // same file — either as a literal `id` or as a `titleId` the render check
+  // above turns into one.
+  it('vùng được đặt tên vẫn trỏ tới một phần tử có thật', () => {
+    for (const page of pages) {
+      const src = pageSrc(page)
+      const ids = new Set([...src.matchAll(/\b(?:titleId|id)="([^"]+)"/g)].map((match) => match[1]))
+      for (const [, refs] of src.matchAll(/\baria-(?:labelledby|describedby)="([^"]+)"/g)) {
+        for (const id of refs.split(/\s+/)) {
+          expect(ids.has(id), `${page} → ${id}`).toBe(true)
+        }
+      }
+    }
+  })
+})
+
+describe('cổng sinh viên và màn hình độc lập', () => {
+  const pageSrc = (file) => readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+  const componentsCss = () => readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+  const standalonePages = [
+    'StudentLogin.jsx', 'StudentAccountLink.jsx', 'StudentPasswordReset.jsx', 'CertificateVerification.jsx',
+  ]
+  // StudentPasswordReset is the reset *view* of the login card, so it renders
+  // its toggle into that card instead of owning a surface of its own.
+  const authScreens = ['StudentLogin.jsx', 'StudentAccountLink.jsx', 'CertificateVerification.jsx']
+  const studentFiles = ['StudentPortal.jsx', 'StudentOverview.jsx', 'StudentRecords.jsx', 'NotificationsPage.jsx', ...standalonePages]
+
+  it('4 màn hình độc lập có nút đổi chế độ sáng tối', () => {
+    for (const page of standalonePages) {
+      expect(pageSrc(page), page).toContain('ThemeToggleButton')
+    }
+  })
+
+  // The legacy light-blue gradient lived in src/index.css, so checking only
+  // components.css (which never held the value) could not fail. Both
+  // stylesheets are checked, and the legacy selector itself must be gone:
+  // restoring the old block fails here.
+  it('màn hình độc lập không còn gradient cũ', () => {
+    for (const file of ['index.css', 'tokens/components.css']) {
+      const css = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+      expect(css, file).not.toContain('#eef8ff')
+      expect(css, file).not.toContain('student-login-screen')
+    }
+  })
+
+  // R127: the four screens share one page-token background, one token card and
+  // the white logo chip the brand blue needs (§8.3).
+  it('màn hình độc lập dùng nền trang, card token và hộp logo trắng', () => {
+    for (const page of authScreens) {
+      const src = pageSrc(page)
+      expect(src, page).toContain('portal-auth-screen')
+      expect(src, page).toContain('portal-auth-card')
+      expect(src, page).toContain('portal-logo-chip')
+      // The legacy surface classes are gone; element ids such as
+      // `student-login-code` are field wiring and stay.
+      for (const legacy of ['student-login-screen', 'student-login-card', 'student-login-logo']) {
+        expect(src, page).not.toContain(legacy)
+      }
+      expect(src, page).not.toContain('rounded-4')
+    }
+
+    const css = componentsCss()
+    expect(css).toMatch(/\.portal-auth-screen\s*\{[^}]*background:\s*var\(--ws-page-bg\)/)
+    const card = /\.portal-auth-card\s*\{([^}]*)\}/.exec(css)
+    expect(card, 'thiếu .portal-auth-card').not.toBeNull()
+    expect(card[1]).toMatch(/max-width:\s*27rem/)
+    expect(card[1]).toMatch(/background-color:\s*var\(--ws-panel\)/)
+    expect(card[1]).toMatch(/border-radius:\s*var\(--ws-r\)/)
+    expect(card[1]).toMatch(/box-shadow:\s*var\(--ws-shadow-panel\)/)
+  })
+
+  // R128: one toggle component, driven by Task 3's useTheme() hook.
+  it('ThemeToggleButton lấy theme từ useTheme và đổi nhãn theo chế độ', () => {
+    const src = read('ThemeToggleButton.jsx')
+    expect(src).toContain('useTheme')
+    expect(src).not.toContain('ThemeContext')
+
+    const render = (theme) => renderToStaticMarkup(createElement(ThemeContext.Provider,
+      { value: { theme, toggleTheme() {} } }, createElement(ThemeToggleButton)))
+    const light = render('light')
+    expect(light).toContain('class="portal-theme-toggle')
+    expect(light).toContain('aria-label="Chuyển sang chế độ tối"')
+    expect(light).toContain('🌙')
+    const dark = render('dark')
+    expect(dark).toContain('aria-label="Chuyển sang chế độ sáng"')
+    expect(dark).toContain('☀️')
+  })
+
+  // R124: the student portal is the last consumer of the legacy shell.
+  it('cổng sinh viên dùng AppShell và bốn tệp shell cũ đã bị xoá', () => {
+    const portal = pageSrc('StudentPortal.jsx')
+    expect(portal).toContain("from './components/AppShell.jsx'")
+    for (const file of ['PortalSidebar.jsx', 'PortalTopbar.jsx', 'AccountMenu.jsx', 'PortalFooter.jsx']) {
+      expect(() => pageSrc(file), file).toThrow()
+    }
+  })
+
+  // R129: the preview-only password page used to tell the visitor to sign in
+  // with their MSSV; AppShell's shared note says "quản trị", so the student
+  // portal supplies its own wording.
+  it('lời nhắc đổi mật khẩu của sinh viên xem thử giữ nguyên câu cũ', () => {
+    expect(pageSrc('StudentPortal.jsx')).toContain('changePasswordNote="Đăng nhập bằng MSSV để đổi mật khẩu mẫu."')
+    expect(read('AppShell.jsx')).toContain('{changePasswordNote}')
+  })
+
+  // R125: a nav id that reuses an account id would open the account panel
+  // instead of the section and mark two items aria-current="page".
+  it('mục điều hướng của sinh viên không trùng id nhóm tài khoản', () => {
+    const ids = studentSections.flatMap(({ items }) => items.map(({ id }) => id))
+    expect(ids).toEqual(['overview', 'student-profile', 'participations', 'certificates'])
+    for (const accountId of ['profile', 'account', 'password']) expect(ids).not.toContain(accountId)
+    // The account group keeps its own ids (AppShell, R34).
+    expect(read('AppShell.jsx')).toContain("const ACCOUNT_PAGE_IDS = ['profile', 'account', 'password']")
+  })
+
+  // R126: the bell keeps its unread count on a HUTECH token, not text-bg-danger.
+  it('chuông thông báo giữ số chưa đọc với badge token', () => {
+    const portal = pageSrc('StudentPortal.jsx')
+    expect(portal).toContain('topbarActions')
+    expect(portal).toContain('portal-bell')
+    expect(portal).toContain("aria-label={unread ? `Thông báo, ${unread} chưa đọc` : 'Thông báo'}")
+
+    const badge = /\.portal-bell__badge\s*\{([^}]*)\}/.exec(componentsCss())
+    expect(badge, 'thiếu .portal-bell__badge').not.toBeNull()
+    expect(badge[1]).toMatch(/background-color:\s*var\(--ws-accent\)/)
+    expect(badge[1]).toMatch(/color:\s*var\(--ws-on-brand\)/)
+  })
+
+  // R130: no Bootstrap card / rounded-4 / status badge surface survives.
+  it('tệp của cổng sinh viên không còn card, rounded-4, text-bg-* hay page-title', () => {
+    for (const file of studentFiles) {
+      const src = pageSrc(file)
+      expect(src, file).not.toContain('rounded-4')
+      expect(src, file).not.toContain('text-bg-')
+      expect(src, file).not.toMatch(/\bcard-body\b/)
+      expect(src, file).not.toMatch(/(?:^|[\s"'])card(?:[\s"']|$)/)
+      expect(src, file).not.toMatch(/\bpage-title\b/)
+    }
+  })
+
+  it('tổng quan và hồ sơ sinh viên dùng PageHeader, Panel và thẻ chỉ số chung', () => {
+    const overview = pageSrc('StudentOverview.jsx')
+    expect(overview).toContain('PortalPageHeader')
+    expect(overview).toContain('PortalMetricCard')
+    // The shared component lives in components/ — the legacy local one is gone.
+    expect(overview).not.toContain("from './PortalMetricCard.jsx'")
+
+    const records = pageSrc('StudentRecords.jsx')
+    expect(records).toContain('PortalPageHeader')
+    expect(records).toContain('PortalPanel')
+    expect(records).toContain('PortalChip')
+
+    expect(pageSrc('StudentPortal.jsx')).toContain('PortalPanel')
+  })
+
+  // Fix round 1 (R131–R136) --------------------------------------------------
+
+  const renderPanel = (page, accountDetails) => renderToStaticMarkup(
+    createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme() {} } },
+      createElement(AccountPanel, {
+        page,
+        accountIdentifier: 'SV001',
+        roleLabel: 'Sinh viên',
+        accountDetails,
+        changePasswordNote: 'Đăng nhập bằng MSSV để đổi mật khẩu mẫu.',
+        onChangePassword: null,
+      })))
+
+  const renderShell = (overrides = {}, children = null) => renderToStaticMarkup(
+    createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme() {} } },
+      createElement(AppShell, {
+        sections: [{ group: null, items: [{ id: 'overview', title: 'Tổng quan' }] }],
+        activeSectionId: 'overview',
+        onSelectSection: () => {},
+        onHome: () => {},
+        roleLabel: 'Sinh viên',
+        accountIdentifier: 'SV001',
+        onSignOut: () => {},
+        context: 'Tổng quan',
+        ...overrides,
+      }, children)))
+
+  // R131: the preview-session row is the only in-product signal that the data
+  // is a sample; it must survive inside the shell's account panel.
+  it('trang tài khoản của sinh viên render Email và Phiên', () => {
+    const details = createElement(React.Fragment, null,
+      createElement('dt', null, 'Email'), createElement('dd', null, 'sv001@hutech.edu.vn'),
+      createElement('dt', null, 'Phiên'), createElement('dd', null, 'Xem thử'))
+    const html = renderPanel('account', details)
+    expect(html).toContain('<dt>Email</dt><dd>sv001@hutech.edu.vn</dd>')
+    expect(html).toContain('<dt>Phiên</dt><dd>Xem thử</dd>')
+
+    // ...and the student portal is the side that supplies the legacy lines.
+    const portal = pageSrc('StudentPortal.jsx')
+    expect(portal).toContain('accountDetails={student && (')
+    expect(portal).toContain('<dt>Phiên</dt><dd>Xem thử</dd>')
+  })
+
+  // R132/R138: the group must be the one AppShell really builds — its default
+  // admin items and its appended "Quay lại" — not a copy assembled in the test.
+  it('sidebar sinh viên render nhóm tài khoản thật của AppShell, không trùng nhãn', () => {
+    expect(studentAccountSections.map(({ title }) => title)).toEqual(['Tài khoản', 'Đổi mật khẩu'])
+    // AppShell consumes the group builder instead of defining its own.
+    expect(read('AppShell.jsx')).toContain("import { BACK_TO_SECTIONS, createAccountGroup } from '../accountNavigation.js'")
+    // R132 wiring: the portal is the side that must hand the reduced group to
+    // the shell. The group only renders after an account page opens, so no
+    // static render can reach it — a dropped prop here restores the duplicate
+    // "Hồ sơ" and every other assertion stays green.
+    expect(pageSrc('StudentPortal.jsx')).toContain('accountSections={withIcons(studentAccountSections)}')
+
+    const withIconNodes = (items) => items.map(({ iconName, ...item }) => ({
+      ...item, icon: createElement(PortalIcon, { name: iconName }),
+    }))
+    const html = renderToStaticMarkup(createElement(AppSidebar, {
+      navigationId: 'student-navigation',
+      navigationLabel: 'Điều hướng chính',
+      sections: [
+        ...studentSections.map((section) => ({ ...section, items: withIconNodes(section.items) })),
+        createAccountGroup(withIconNodes(studentAccountSections)),
+      ],
+      activeSectionId: 'overview',
+      onSelectSection: () => {},
+      onHome: () => {},
+    }))
+    const labels = [...html.matchAll(/portal-nav__label">([^<]+)</g)].map(([, label]) => label)
+    expect(labels).toEqual(['Tổng quan', 'Hồ sơ', 'Lượt tham gia', 'Chứng nhận',
+      'Tài khoản', 'Đổi mật khẩu', 'Quay lại'])
+    expect(labels.filter((label) => label === 'Hồ sơ')).toHaveLength(1)
+    expect(new Set(labels).size).toBe(labels.length)
+
+    // The admin path is the same builder with no argument: unchanged.
+    expect(createAccountGroup().items.map(({ title }) => title))
+      .toEqual(['Hồ sơ', 'Tài khoản', 'Đổi mật khẩu', 'Quay lại'])
+  })
+
+  // R134: every "Hồ sơ" in the student UI opens the detailed profile section,
+  // not the shell's generic account panel.
+  it('menu Hồ sơ và sidebar Hồ sơ của sinh viên mở cùng một trang', () => {
+    const profileNavId = studentPages.find(({ title }) => title === 'Hồ sơ')?.id
+    expect(profileNavId).toBe('student-profile')
+    expect(pageSrc('StudentPortal.jsx')).toContain(`onProfile={() => showPage('${profileNavId}')}`)
+    expect(read('AppShell.jsx')).toContain('onProfile={openProfile}')
+  })
+
+  // R135: the shell carries the admin title by default and the legacy student
+  // titles when the student portal supplies them.
+  it('topbar dùng tiêu đề shell: mặc định của quản trị, của sinh viên khi có sinh viên', () => {
+    expect(renderShell()).toContain('portal-topbar__title">Quản lý chứng nhận sinh viên')
+    expect(renderShell({ title: 'Cổng sinh viên' })).toContain('portal-topbar__title">Cổng sinh viên')
+    expect(pageSrc('StudentPortal.jsx')).toContain("title={student ? 'Cổng sinh viên' : 'Student Cert Hub'}")
+  })
+
+  // R136: the preview picker is the legacy screen: picker, "Về đăng nhập" and
+  // nothing else — no empty sidebar, no account chrome, no invented labels.
+  it('chế độ xem thử không có sidebar, menu tài khoản hay chữ Khách', () => {
+    const picker = createElement('div', null,
+      createElement('label', { htmlFor: 'notification-student' }, 'Hồ sơ xem thử'),
+      createElement('select', { id: 'notification-student' },
+        createElement('option', { value: '' }, 'Chọn sinh viên')),
+      createElement('button', { type: 'button' }, 'Về đăng nhập'))
+    const html = renderShell({
+      title: 'Student Cert Hub',
+      sections: [],
+      accountIdentifier: undefined,
+      roleLabel: undefined,
+      context: 'Chọn hồ sơ xem thử',
+    }, picker)
+
+    expect(html).toContain('portal-shell--no-sidebar')
+    expect(html).not.toMatch(/class="portal-sidebar/)
+    expect(html).not.toContain('portal-account-menu')
+    expect(html).not.toContain('Khách')
+    expect(html).toContain('portal-topbar__title">Student Cert Hub')
+    expect(html).toContain('Chọn hồ sơ xem thử')
+    expect(html).toContain('Về đăng nhập')
+
+    // The portal itself drops the preview-only identifier and sections.
+    const portal = pageSrc('StudentPortal.jsx')
+    expect(portal).toContain('sections={student ? studentSections.map(')
+    expect(portal).toContain('accountIdentifier={student?.studentCode}')
+  })
+
+  // R137: the build tolerates a free variable and oxlint does not enable
+  // no-undef, so an actual render is the only gate that catches a binding that
+  // moved out of the module (the studentPages regression). All three branches
+  // are rendered: a break in the signed-in or preview render used to ship with
+  // every gate green, because only the signed-out login path was reached.
+  it('render cổng sinh viên ở cả ba nhánh: đăng nhập, đã đăng nhập, xem thử (smoke test)', () => {
+    const noop = () => {}
+    const props = {
+      students: [],
+      cohorts: [],
+      activities: [],
+      participations: [],
+      certificates: [],
+      notifications: [],
+      studentPasswords: {},
+      onChangePassword: noop,
+      onUpdateEmail: noop,
+      onReadNotification: noop,
+      onManagementSignIn: noop,
+      onActivateDemoStudent: noop,
+      onVerifyDemoActivation: noop,
+      onRequestReset: noop,
+      onResetPassword: noop,
+    }
+    const render = (overrides = {}) => renderToStaticMarkup(
+      createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme() {} } },
+        createElement(StudentPortal, { ...props, ...overrides })))
+
+    // Signed out: the login card.
+    const signedOut = render()
+    expect(signedOut).toContain('portal-auth-card')
+    expect(signedOut).toContain('Chọn loại tài khoản để tiếp tục đăng nhập mẫu.')
+
+    // Signed in: the shell, every student section and the overview tiles —
+    // the branch the missing studentPages import used to blank.
+    const signedIn = render({
+      students: sampleStudents,
+      cohorts: sampleCohorts,
+      activities: sampleActivities,
+      participations: sampleParticipations,
+      certificates: sampleCertificates,
+      initialState: { studentId: String(sampleStudents[0].studentId), signedIn: true },
+    })
+    expect(signedIn).toContain('portal-shell')
+    expect(signedIn).toContain('portal-topbar__title">Cổng sinh viên')
+    for (const { title } of studentPages) expect(signedIn, title).toContain(title)
+    expect(signedIn).toContain('portal-metric-grid')
+    expect(signedIn).toContain('id="student-notifications"')
+
+    // Preview: the legacy picker chrome, and no sidebar.
+    const preview = render({
+      students: sampleStudents,
+      cohorts: sampleCohorts,
+      initialState: { preview: true },
+    })
+    expect(preview).toContain('portal-shell--no-sidebar')
+    expect(preview).toContain('Chọn hồ sơ xem thử')
+    expect(preview).toContain('Về đăng nhập')
+  })
+})
