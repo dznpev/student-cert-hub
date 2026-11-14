@@ -1,8 +1,7 @@
 import PortalIcon from './PortalIcon.jsx'
 import PortalMetricCard from './components/PortalMetricCard.jsx'
 import PortalPanel from './components/PortalPanel.jsx'
-import { useContext, useEffect, useRef, useState } from 'react'
-import { ThemeContext } from './themeContext.js'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArcElement, BarController, BarElement, CategoryScale, Chart,
   DoughnutController, LinearScale, Tooltip,
@@ -19,8 +18,36 @@ Chart.defaults.font.family = "'Be Vietnam Pro', system-ui, -apple-system, sans-s
 
 const metricAppearance = [
   ['students'], ['activities'], ['participations'], ['profile'],
-  ['certificates', 'success'], ['revoked', 'warn'], ['error', 'danger'],
+  ['certificates', 'success'], ['revoked'], ['error', 'danger'],
 ]
+
+// Chart colours are read from the live custom properties, so both charts follow
+// the theme instead of hard-coding a palette (spec §8.3). A tone whose base hue
+// would fall below 3:1 on the dark panel uses its brightened text variant.
+const SERIES_TOKENS = {
+  brand: ['--ws-hutech', '--ws-hutech-text'],
+  success: ['--ws-success', '--ws-success-text'],
+  info: ['--ws-hutech', '--ws-hutech-text'],
+  danger: ['--ws-accent', '--ws-accent-text'],
+  mute: ['--ws-muted', '--ws-muted'],
+}
+
+// Reads a design token at render time; the fallback only applies where there is
+// no document to compute against (server rendering and tests).
+function readToken(name, fallback = '') {
+  if (typeof window === 'undefined') return fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value || fallback
+}
+
+function isDarkTheme() {
+  return typeof document !== 'undefined' && document.documentElement.dataset.bsTheme === 'dark'
+}
+
+function seriesColor(tone) {
+  const [lightToken, darkToken] = SERIES_TOKENS[tone] ?? SERIES_TOKENS.mute
+  return readToken(isDarkTheme() ? darkToken : lightToken)
+}
 
 const numberFormat = new Intl.NumberFormat('vi-VN')
 const percentFormat = new Intl.NumberFormat('vi-VN', { style: 'percent', maximumFractionDigits: 1 })
@@ -53,16 +80,33 @@ const percentageLabels = {
   },
 }
 
-function DashboardChart({ title, icon, type, labels, values, colors, percentages = false }) {
+function DashboardChart({ title, icon, type, labels, values, tones, percentages = false }) {
   const canvasRef = useRef(null)
-  const { theme } = useContext(ThemeContext)
+  const [themeTick, setThemeTick] = useState(0)
+  // Rendered swatches must follow the theme too, not only the canvas.
+  const legendColors = tones.map(seriesColor)
+
+  // The theme lives on <html data-bs-theme>; a mutation is the only signal that
+  // the custom properties changed, so bumping the tick redraws the chart.
+  useEffect(() => {
+    const observer = new MutationObserver(() => setThemeTick((tick) => tick + 1))
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
-    const textColor = theme === 'dark' ? '#e5e9f0' : '#475569'
-    const gridColor = theme === 'dark' ? '#3b4350' : '#e3e7ef'
+    const textColor = readToken('--ws-fg-2')
+    const gridColor = readToken('--ws-line')
+    const chartColors = tones.map(seriesColor)
     const chart = new Chart(canvasRef.current, {
       type,
-      data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: chartColors.length === 1 ? chartColors[0] : chartColors,
+        }],
+      },
       plugins: percentages ? [percentageLabels] : [],
       options: {
         color: textColor,
@@ -90,7 +134,7 @@ function DashboardChart({ title, icon, type, labels, values, colors, percentages
     })
 
     return () => chart.destroy()
-  }, [type, labels, values, colors, percentages, theme])
+  }, [type, labels, values, tones, percentages, themeTick])
 
   const summary = labels.map((label, index) => {
     return label + ' ' + formatChartValue(values[index], percentages)
@@ -107,7 +151,7 @@ function DashboardChart({ title, icon, type, labels, values, colors, percentages
             <ul className="dashboard-chart-legend list-unstyled mb-0">
               {labels.map((label, index) => (
                 <li className="dashboard-chart-legend-item" key={label}>
-                  <span className="dashboard-chart-swatch" style={{ backgroundColor: colors[index] }} aria-hidden="true" />
+                  <span className="dashboard-chart-swatch" style={{ backgroundColor: legendColors[index] }} aria-hidden="true" />
                   <span>{label}</span>
                   <strong>{numberFormat.format(values[index])}</strong>
                 </li>
@@ -287,7 +331,7 @@ export default function DashboardPage({ cohorts, students, activities, participa
               type="bar"
               labels={cohortParticipation.map(({ cohortId }) => cohorts.find((item) => item.cohortId === cohortId)?.cohortCode ?? String(cohortId))}
               values={cohortParticipation.map((cohort) => cohort.studentCount === 0 ? 0 : cohort.uniqueStudents / cohort.studentCount * 100)}
-              colors="#2f5fc4"
+              tones={['brand']}
               percentages
             />
           </div>
@@ -298,7 +342,7 @@ export default function DashboardPage({ cohorts, students, activities, participa
               type="doughnut"
               labels={certificateStatuses.map(({ label }) => label)}
               values={certificateStatuses.map(({ status }) => certificateCounts[status])}
-              colors={certificateStatuses.map(({ color }) => color)}
+              tones={certificateStatuses.map(({ tone }) => tone)}
             />
           </div>
         </div>

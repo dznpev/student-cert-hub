@@ -99,7 +99,8 @@ const PALETTES = {
   ]),
 }
 
-// "name: ratio: PASS/FAIL" for every pair in the brief's table (spec §9.1).
+// "name: ratio: PASS/FAIL" for the spec §9.1 pair table plus the composed
+// surfaces the components build on top of it (R149).
 // Light/dark chip pairs use the -text variants on dark chips, because the base
 // success/warn/accent hues are too dark on #12301f / #2c2413 / #2e1a12.
 // Every pair is normal text and is held to 4.5:1 (AC-01, spec §9.2). A pair may
@@ -108,7 +109,7 @@ const PALETTES = {
 const PAIRS = [
   { mode: 'dark', fg: '--ws-fg-2', bg: '--ws-panel' },
   { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-panel' },
-  { mode: 'dark', fg: '--ws-control-idle', bg: '--ws-panel' },
+  { mode: 'dark', fg: '--ws-control-idle', bg: '--ws-panel', name: 'table header on panel' },
   { mode: 'dark', fg: '--ws-success-text', bg: '--ws-success-l' },
   { mode: 'dark', fg: '--ws-warn-text', bg: '--ws-warn-l' },
   { mode: 'dark', fg: '--ws-accent-text', bg: '--ws-accent-l' },
@@ -116,12 +117,28 @@ const PAIRS = [
   { mode: 'dark', fg: '--ws-on-brand', bg: '--ws-hutech' },
   { mode: 'light', fg: '--ws-fg-2', bg: '--ws-panel' },
   { mode: 'light', fg: '--ws-hutech', bg: '--ws-panel' },
-  { mode: 'light', fg: '--ws-control-idle', bg: '--ws-panel' },
+  { mode: 'light', fg: '--ws-control-idle', bg: '--ws-panel', name: 'table header on panel' },
   { mode: 'light', fg: '--ws-success', bg: '--ws-success-l' },
   { mode: 'light', fg: '--ws-warn', bg: '--ws-warn-l' },
   { mode: 'light', fg: '--ws-accent', bg: '--ws-accent-l' },
   { mode: 'light', fg: '--ws-muted', bg: '--ws-chip-bg' },
   { mode: 'light', fg: '--ws-on-brand', bg: '--ws-hutech' },
+  // Composed surfaces the components build on top of the token pairs above
+  // (R149): the KPI tile's resting and hover states in both themes, and the
+  // info chip. On hover the tile turns --ws-hutech-l and its label/note colour
+  // is --ws-muted (the --ws-control-idle pair measures only 4.34:1 there).
+  { mode: 'light', fg: '--ws-muted', bg: '--ws-tile', name: 'metric tile label (resting)' },
+  { mode: 'light', fg: '--ws-fg', bg: '--ws-tile', name: 'metric tile value (resting)' },
+  { mode: 'light', fg: '--ws-control-idle', bg: '--ws-tile', name: 'metric tile note (resting)' },
+  { mode: 'dark', fg: '--ws-muted', bg: '--ws-tile', name: 'metric tile label (resting)' },
+  { mode: 'dark', fg: '--ws-fg', bg: '--ws-tile', name: 'metric tile value (resting)' },
+  { mode: 'dark', fg: '--ws-control-idle', bg: '--ws-tile', name: 'metric tile note (resting)' },
+  { mode: 'light', fg: '--ws-muted', bg: '--ws-hutech-l', name: 'metric tile label/note (hover)' },
+  { mode: 'light', fg: '--ws-fg', bg: '--ws-hutech-l', name: 'metric tile value (hover)' },
+  { mode: 'dark', fg: '--ws-muted', bg: '--ws-hutech-l', name: 'metric tile label/note (hover)' },
+  { mode: 'dark', fg: '--ws-fg', bg: '--ws-hutech-l', name: 'metric tile value (hover)' },
+  { mode: 'light', fg: '--ws-hutech', bg: '--ws-hutech-l', name: 'info chip' },
+  { mode: 'dark', fg: '--ws-hutech-text', bg: '--ws-hutech-l', name: 'info chip' },
 ]
 
 const ANCHOR = '--bs-body-bg'
@@ -133,7 +150,7 @@ function toReference(value) {
   return value.startsWith('#') ? value : `var(${value})`
 }
 
-for (const { mode, fg, bg, large = false } of PAIRS) {
+for (const { mode, fg, bg, large = false, name } of PAIRS) {
   const vars = PALETTES[mode]
   const anchor = parseColor(resolveValue(`var(${ANCHOR})`, vars))
   const background = composite(parseColor(resolveValue(toReference(bg), vars)), anchor)
@@ -142,7 +159,8 @@ for (const { mode, fg, bg, large = false } of PAIRS) {
   const min = large ? LARGE_TEXT_MIN : NORMAL_TEXT_MIN
   const pass = ratio >= min
   if (!pass) failed = true
-  console.log(`${mode} ${fg} on ${bg}: ${ratio.toFixed(2)}: ${pass ? 'PASS' : 'FAIL'}`)
+  const label = name ? `${name}: ${fg} on ${bg}` : `${fg} on ${bg}`
+  console.log(`${mode} ${label}: ${ratio.toFixed(2)}: ${pass ? 'PASS' : 'FAIL'}`)
 }
 
 if (failed) process.exit(1)

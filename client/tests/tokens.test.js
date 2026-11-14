@@ -28,6 +28,19 @@ const REQUIRED_TOKENS = [
   '--ws-dur-instant', '--ws-dur-fast', '--ws-dur-normal', '--ws-dur-slow',
 ]
 
+describe('index.css', () => {
+  it('index.css không còn token cũ', () => {
+    const legacy = readFileSync(new URL('../src/index.css', import.meta.url), 'utf-8')
+    for (const token of ['--admin-ink', '--admin-accent', '--admin-border', '--admin-workspace', '--admin-surface', '--admin-hover']) {
+      expect(legacy, token).not.toContain(token)
+    }
+  })
+
+  it('index.css không còn class .admin-primary-button', () => {
+    expect(readFileSync(new URL('../src/index.css', import.meta.url), 'utf-8')).not.toContain('admin-primary-button')
+  })
+})
+
 describe('tokens/index.css', () => {
   it.each(REQUIRED_TOKENS)('khai báo %s', (token) => {
     expect(css).toContain(`${token}:`)

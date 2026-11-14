@@ -4,7 +4,7 @@
  * Every colour here is a var(--ws-*) token, with one sanctioned exception: the
  * certificate-template editor's `.template-editor-scope` block (§6.11), whose
  * overlays sit on an image the user uploads. That block is the only raw colour
- * in the project besides tokens/index.css.
+ * in this file.
  * Geometry uses the radius and spacing scales from §5.3 / §5.5, with the fixed
  * component sizes of §5.7 where the scale has no matching step.
  *
@@ -35,6 +35,13 @@
   align-items: center;
   justify-content: center;
   color: var(--ws-hutech);
+}
+
+/* Base icon box; every container below re-sizes it with a two-class rule. */
+.portal-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
 }
 
 .portal-panel__icon .portal-icon {
@@ -128,6 +135,30 @@
   border-radius: var(--ws-r-sm);
   margin-bottom: var(--ws-s7);
   padding: var(--ws-s7);
+}
+
+/* Bootstrap surfaces that are not portal panels yet -----------------------
+ * The activity form and the unreachable-section fallback in App.jsx still use
+ * Bootstrap's `.card`; these rules keep their surface on tokens now that the
+ * legacy admin palette is gone.
+ */
+
+.page-title {
+  font-family: var(--ws-font-head);
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  font-weight: 700;
+}
+
+.content-card {
+  max-width: 56rem;
+  border-color: var(--ws-line);
+  border-radius: var(--ws-r);
+}
+
+.activities-card {
+  background-color: var(--ws-panel);
+  border-color: var(--ws-line);
+  border-radius: var(--ws-r);
 }
 
 /* Page header (§6.8.1) ---------------------------------------------------- */
@@ -337,6 +368,50 @@
   padding: var(--ws-s6) var(--ws-s7) var(--ws-s7);
 }
 
+/* Chart canvas and its doughnut legend (moved out of the legacy index.css). */
+.dashboard-chart {
+  position: relative;
+  min-width: 0;
+  height: 19rem;
+}
+
+.dashboard-chart-with-legend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ws-s7);
+  align-items: center;
+}
+
+.dashboard-chart-legend {
+  display: grid;
+  gap: var(--ws-s6);
+  font-size: var(--ws-t-lead);
+}
+
+.dashboard-chart-legend-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ws-s4);
+}
+
+.dashboard-chart-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--ws-s1);
+}
+
+@media (min-width: 1200px) {
+  .dashboard-chart-with-legend {
+    grid-template-columns: minmax(0, 19rem) minmax(10rem, 1fr);
+    column-gap: var(--ws-s9);
+  }
+
+  .dashboard-chart-with-legend .dashboard-chart-legend {
+    justify-self: center;
+  }
+}
+
 /* Status chip (§6.6, palette in §5.2) ------------------------------------- */
 
 .portal-chip {
@@ -475,6 +550,75 @@
 
 .portal-table--sticky-actions tbody tr:hover :is(th, td):last-child {
   background-color: var(--ws-chip-bg);
+}
+
+/* Per-page column widths (moved out of the legacy index.css). `PortalTable`
+   owns the table shell and scroll region; these classes only describe the
+   columns of the two fixed-layout tables and the participation reason cell. */
+.cohort-status-filter {
+  max-width: 12.5rem;
+}
+
+.cohort-code-col {
+  width: 3rem;
+}
+
+.cohort-actions-col {
+  width: 4.75rem;
+  white-space: nowrap;
+}
+
+@media (min-width: 576px) {
+  .cohort-code-col {
+    width: 5rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .cohort-code-col {
+    width: 5.5rem;
+  }
+
+  .cohort-status-col {
+    width: 28%;
+  }
+
+  .cohort-actions-col {
+    width: 11.5rem;
+  }
+}
+
+.students-col-code {
+  width: 12%;
+}
+
+.students-col-name {
+  width: 22%;
+}
+
+.students-col-class {
+  width: 10%;
+}
+
+.students-col-cohort {
+  width: 16%;
+}
+
+.students-col-actions {
+  width: 7rem;
+}
+
+.students-col-account {
+  width: 14%;
+}
+
+.participation-select-col {
+  width: 2.75rem;
+}
+
+.participation-reason {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* Buttons (§6.7, §7.1) ---------------------------------------------------- */
@@ -640,6 +784,12 @@ select.fld {
   cursor: grab;
   touch-action: none;
   user-select: none;
+}
+
+/* Later and equally specific to the `grab` rule above, so the drag cursor
+   actually switches while the pointer is down (R145). */
+.template-editor-scope .template-field-overlay[data-editable="true"]:active {
+  cursor: grabbing;
 }
 
 .template-editor-scope .template-field-overlay[data-selected="true"],

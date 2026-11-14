@@ -17,7 +17,7 @@ export default function ManagementAccountForm({ account, isCurrentAccount, onSav
     setErrors(result)
   }
   return (
-    <section className="card rounded-4 mb-4" aria-labelledby="management-form-title">
+    <section className="card mb-4" aria-labelledby="management-form-title">
       <div className="card-body p-3 p-md-4">
         <h2 id="management-form-title" className="h5">{account ? 'Sửa tài khoản quản trị' : 'Thêm tài khoản quản trị'}</h2>
         <p className="small text-body-secondary">Tài khoản và mật khẩu thử chỉ giữ trong phiên này. Tải lại trang sẽ khôi phục dữ liệu mẫu.</p>

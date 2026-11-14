@@ -88,8 +88,13 @@ describe('component dùng chung', () => {
   // live inside that scope and nowhere else in the file.
   it('components.css không chứa hex thô ngoài khối ngoại lệ editor', () => {
     const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
-    const scoped = (css.match(/\.template-editor-scope[^{]*\{[^}]*\}/g) ?? []).join('\n')
-    const outside = css.replace(/\.template-editor-scope[^{]*\{[^}]*\}/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+    // Anchored at a line start: without it the first match begins in the header
+    // comment and swallows the first rule after it, hiding that region from
+    // both the scan and the "nowhere else" checks (R146).
+    const scopeRule = /^\.template-editor-scope[^{]*\{[^}]*\}/gm
+    const scoped = (css.match(scopeRule) ?? []).join('\n')
+    const outside = css.replace(scopeRule, '')
     expect(outside).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
     expect(scoped).toContain('#2f5fc4')
     expect(scoped).toContain('#fff')
