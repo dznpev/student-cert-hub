@@ -6,7 +6,7 @@ const CertificateTemplatePdf = lazy(() => import('./CertificateTemplatePdf.jsx')
 
 const previewTypes = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' }
 
-export default function CertificateTemplatesPage({ templates, onSetDefault, onAddTemplate, onAddVersion, onUpdateStatus }) {
+export default function CertificateTemplatesPage({ templates, onSetDefault, onAddTemplate, onAddVersion, onUpdateStatus, search = '', onSearchChange = () => {} }) {
   const [filePreview, setFilePreview] = useState(null)
   const [previewError, setPreviewError] = useState('')
   const [templateNameDraft, setTemplateNameDraft] = useState('')
@@ -15,7 +15,6 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
   const [versionTemplateId, setVersionTemplateId] = useState(null)
   const [statusTemplateId, setStatusTemplateId] = useState(null)
   const [statusError, setStatusError] = useState('')
-  const [templateSearch, setTemplateSearch] = useState('')
   const [templateStatusFilter, setTemplateStatusFilter] = useState('')
   const fileInput = useRef(null)
   const previewHeading = useRef(null)
@@ -24,7 +23,7 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
   const statusTemplate = templates.find(({ templateId }) => templateId === statusTemplateId)
   const canSave = filePreview?.ready && !filePreview.saved && !previewError
     && Boolean(versionTemplate || templateNameDraft.trim())
-  const query = normalizeSearch(templateSearch.trim().replace(/\s+/g, ' '))
+  const query = normalizeSearch(search.trim().replace(/\s+/g, ' '))
   const visibleTemplates = templates.filter(({ templateName, isActive, isDefault }) => {
     const matchesStatus = templateStatusFilter === ''
       || (templateStatusFilter === 'active' && isActive)
@@ -136,12 +135,6 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
       <div className="card rounded-4 mb-4">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
-            <div className="col-12 col-md-7">
-              <label className="form-label" htmlFor="template-search">Tìm tên mẫu</label>
-              <input id="template-search" type="search" className="form-control"
-                placeholder="Nhập tên mẫu chứng nhận" value={templateSearch}
-                onChange={(event) => setTemplateSearch(event.target.value)} />
-            </div>
             <div className="col-12 col-md-5">
               <label className="form-label" htmlFor="template-status-filter">Trạng thái</label>
               <select id="template-status-filter" className="form-select" value={templateStatusFilter}
@@ -155,9 +148,9 @@ export default function CertificateTemplatesPage({ templates, onSetDefault, onAd
           </div>
           <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
             <span className="small text-body-secondary" role="status">Hiển thị {visibleTemplates.length}/{templates.length} mẫu</span>
-            {(templateSearch || templateStatusFilter) && (
+            {(search || templateStatusFilter) && (
               <button type="button" className="btn btn-sm btn-outline-secondary"
-                onClick={() => { setTemplateSearch(''); setTemplateStatusFilter('') }}>Xóa bộ lọc</button>
+                onClick={() => { onSearchChange(''); setTemplateStatusFilter('') }}>Xóa bộ lọc</button>
             )}
           </div>
           <div className="admin-table-scroll" role="region" aria-label="Danh sách mẫu chứng nhận" tabIndex={0}>

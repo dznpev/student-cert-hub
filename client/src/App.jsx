@@ -31,6 +31,19 @@ import { queueCertificates, processCertificate } from './queueCertificates.js'
 import { compareCodesDescending } from './sortRecords.js'
 import { sampleAuditLogs } from './sampleAuditLogs.js'
 
+// §6.9.3: the topbar search is the current page's own search box, moved up.
+// Only the sections that had a search input keep one; the rest show no box.
+const searchPlaceholders = {
+  certificates: 'Tìm sinh viên, mã chứng nhận…',
+  students: 'Tìm sinh viên, mã chứng nhận…',
+  activities: 'Tìm mã hoặc tên hoạt động…',
+  audit: 'Tìm trong nhật ký hệ thống…',
+  templates: 'Tìm tên mẫu chứng nhận…',
+  accounts: 'Tìm tài khoản quản trị…',
+  imports: 'Tìm tên tệp đã nhập…',
+}
+const searchEnabledSections = ['certificates', 'students', 'activities', 'audit', 'templates', 'accounts', 'imports']
+
 // Nav items carry no page component, so the render logic resolves it by id.
 const pageComponents = {
   overview: DashboardPage,
@@ -88,6 +101,9 @@ export default function App() {
     || (managementAccount?.disabled)
     || (adminLocked && !managementAccount && !inSuperAdmin)
   const [activeSectionId, setActiveSectionId] = useState('overview')
+  // R58: each page used to own this state and unmount on navigation, so the
+  // section-change handlers below clear it instead of carrying a query over.
+  const [pageSearch, setPageSearch] = useState('')
   const [cohorts, setCohorts] = useState(sampleCohorts)
   const [students, setStudents] = useState(sampleStudents)
   const [studentPasswords, setStudentPasswords] = useState({})
@@ -108,6 +124,8 @@ export default function App() {
   const activeSection = findNavItem(adminSections, activeSectionId)
   const superAdminActiveSection = findNavItem(superAdminSections, superAdminSection)
   const ActivePage = pageComponents[activeSectionId]
+  const searchSectionId = inSuperAdmin && superAdminSection !== 'workspace' ? superAdminSection : activeSectionId
+  const searchPlaceholder = searchEnabledSections.includes(searchSectionId) ? searchPlaceholders[searchSectionId] : null
 
   function requestStudentPasswordReset(studentCode) {
     const student = students.find((item) => item.studentCode === studentCode)
@@ -239,6 +257,7 @@ export default function App() {
     if (!account || password !== (managementPasswords[account.accountId] ?? demoPassword)) return 'Tên đăng nhập hoặc mật khẩu mẫu không đúng.'
     if (account.disabled) return 'Tài khoản quản trị mẫu đang bị khóa.'
     setManagementAccountId(account.accountId)
+    setPageSearch('')
     setActiveSectionId('overview')
     setSuperAdminSection('accounts')
     window.location.hash = 'quan-tri-mau'
@@ -712,26 +731,31 @@ export default function App() {
       <AppShell key="super-admin" sections={superAdminSections}
         activeSectionId={superAdminSection} onSelectSection={(sectionId) => {
           if (['accounts', 'templates', 'audit'].includes(sectionId)) {
+            if (sectionId !== superAdminSection) setPageSearch('')
             setSuperAdminSection(sectionId)
             return
           }
+          setPageSearch('')
           setActiveSectionId(sectionId)
           setSuperAdminSection('workspace')
         }} roleLabel="Super Admin · Bản xem thử" context={superAdminActiveSection?.title}
         accountIdentifier={managementAccount.username} onSignOut={endManagementPreview}
-        onHome={() => setSuperAdminSection('accounts')} onChangePassword={changeManagementPassword}
-        search={null} onSearchChange={null} searchPlaceholder={null}>
+        onHome={() => { if (superAdminSection !== 'accounts') setPageSearch(''); setSuperAdminSection('accounts') }} onChangePassword={changeManagementPassword}
+        search={searchPlaceholder ? pageSearch : null} onSearchChange={searchPlaceholder ? setPageSearch : null}
+        searchPlaceholder={searchPlaceholder}>
         {superAdminSection === 'accounts' && (
           <SuperAdminAccounts students={students} managementAccounts={managementAccounts} currentAccountId={managementAccountId} onSaveManagementAccount={saveManagementAccount}
             onUpdateAdminLock={updateAdminLock} onUpdateStudentLock={updateStudentLock}
-            onIssueActivationCode={issueDemoActivationCode} />
+            onIssueActivationCode={issueDemoActivationCode}
+            search={pageSearch} onSearchChange={setPageSearch} />
         )}
         {superAdminSection === 'templates' && (
           <CertificateTemplatesPage templates={templates} onSetDefault={setDefaultCertificateTemplate}
             onAddTemplate={addCertificateTemplate} onAddVersion={addCertificateTemplateVersion}
-            onUpdateStatus={updateCertificateTemplateStatus} />
+            onUpdateStatus={updateCertificateTemplateStatus}
+            search={pageSearch} onSearchChange={setPageSearch} />
         )}
-        {superAdminSection === 'audit' && <AuditLogsPage auditLogs={auditLogs} />}
+        {superAdminSection === 'audit' && <AuditLogsPage auditLogs={auditLogs} search={pageSearch} onSearchChange={setPageSearch} />}
       </AppShell>
     )
   }
@@ -742,20 +766,36 @@ export default function App() {
       sections={inSuperAdmin ? superAdminWorkspaceSections : adminSections}
       activeSectionId={activeSectionId}
       onSelectSection={(sectionId) => {
-        if (sectionId === 'back-to-super-admin') setSuperAdminSection('accounts')
-        else setActiveSectionId(sectionId)
+        if (sectionId === 'back-to-super-admin') {
+          setPageSearch('')
+          setSuperAdminSection('accounts')
+        } else {
+          if (sectionId !== activeSectionId) setPageSearch('')
+          setActiveSectionId(sectionId)
+        }
       }}
       roleLabel={inSuperAdmin ? 'Super Admin · Khu quản trị' : 'Admin cấp chứng nhận'}
       context={activeSection?.title}
       accountIdentifier={managementAccount?.username ?? 'admin'}
       onSignOut={endManagementPreview}
-      onHome={() => { if (inSuperAdmin) setSuperAdminSection('accounts'); else setActiveSectionId('overview') }}
+      onHome={() => {
+        if (inSuperAdmin) {
+          setPageSearch('')
+          setSuperAdminSection('accounts')
+        } else {
+          if (activeSectionId !== 'overview') setPageSearch('')
+          setActiveSectionId('overview')
+        }
+      }}
       onChangePassword={managementRole && previewLocation === '#quan-tri-mau' ? changeManagementPassword : null}
-      search={null} onSearchChange={null} searchPlaceholder={null}
+      search={searchPlaceholder ? pageSearch : null} onSearchChange={searchPlaceholder ? setPageSearch : null}
+      searchPlaceholder={searchPlaceholder}
     >
       {ActivePage ? (
         <ActivePage
           students={students}
+          search={pageSearch}
+          onSearchChange={setPageSearch}
           onUpdateStudentActive={updateStudentActive}
           onUpdateStudentProfile={updateStudentProfile}
           auditLogs={auditLogs}

@@ -10,9 +10,8 @@ const statuses = {
   ...studentAccountStatuses,
 }
 
-export default function SuperAdminAccounts({ students, managementAccounts, currentAccountId, onSaveManagementAccount, onUpdateAdminLock, onUpdateStudentLock, onIssueActivationCode }) {
+export default function SuperAdminAccounts({ students, managementAccounts, currentAccountId, onSaveManagementAccount, onUpdateAdminLock, onUpdateStudentLock, onIssueActivationCode, search = '', onSearchChange: _onSearchChange = () => {} }) {
   const [editingAccount, setEditingAccount] = useState(null)
-  const [search, setSearch] = useState('')
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')
   const [confirmLock, setConfirmLock] = useState(null)
@@ -111,11 +110,6 @@ export default function SuperAdminAccounts({ students, managementAccounts, curre
       <section className="card rounded-4" aria-label="Danh sách tài khoản và hồ sơ">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
-            <div className="col-12 col-md-6">
-              <label htmlFor="account-search" className="form-label">Tìm kiếm</label>
-              <input id="account-search" type="search" className="form-control" placeholder="Tên đăng nhập, MSSV hoặc họ tên"
-                value={search} onChange={(event) => setSearch(event.target.value)} />
-            </div>
             <div className="col-12 col-sm-6 col-md-3">
               <label htmlFor="account-role" className="form-label">Vai trò</label>
               <select id="account-role" className="form-select" value={role} onChange={(event) => setRole(event.target.value)}>

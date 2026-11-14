@@ -4,8 +4,7 @@ import { createStudentComparator } from './sortRecords.js'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 import StudentProfileForm from './StudentProfileForm.jsx'
 
-export default function StudentsPage({ cohorts, students, onUpdateStudentActive, onUpdateStudentProfile }) {
-  const [search, setSearch] = useState('')
+export default function StudentsPage({ cohorts, students, onUpdateStudentActive, onUpdateStudentProfile, search = '', onSearchChange: _onSearchChange = () => {} }) {
   const [selectedStudentId, setSelectedStudentId] = useState(null)
   const [confirmProfileStatus, setConfirmProfileStatus] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)
@@ -29,7 +28,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
     setConfirmProfileStatus(false)
     setEditingProfile(false)
     requestAnimationFrame(() => {
-      const target = profileTrigger.current?.isConnected ? profileTrigger.current : document.getElementById('student-search')
+      const target = profileTrigger.current?.isConnected ? profileTrigger.current : document.querySelector('.portal-search__input')
       target?.focus()
     })
   }
@@ -111,17 +110,6 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
-            <div className="col-12 col-sm-6 col-xl-4">
-              <label className="form-label" htmlFor="student-search">Tìm kiếm</label>
-              <input
-                id="student-search"
-                type="search"
-                className="form-control"
-                placeholder="Nhập MSSV, họ tên hoặc lớp"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
             <div className="col-12 col-sm-6 col-xl-2">
               <label className="form-label" htmlFor="student-cohort">Khóa tuyển sinh</label>
               <select

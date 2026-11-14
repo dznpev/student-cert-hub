@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import CertificateDownloadPanel from './CertificateDownloadPanel.jsx'
 import CertificateSnapshotPreview from './CertificateSnapshotPreview.jsx'
 import { certificateStatuses } from './certificateStatuses.js'
@@ -12,12 +12,12 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate }) {
+export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate, search = '', onSearchChange: _onSearchChange = () => {} }) {
   const [selectedIds, setSelectedIds] = useState([])
   const [snapshotCertificateId, setSnapshotCertificateId] = useState(null)
   const snapshotCertificate = certificates.find((item) => item.certificateId === snapshotCertificateId)
   const [downloadRequest, setDownloadRequest] = useState(null)
-  const [search, setSearch] = useState('')
+  const previousSearch = useRef(search)
   const [selectedActivity, setSelectedActivity] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('')
   const [issuedFrom, setIssuedFrom] = useState('')
@@ -41,6 +41,16 @@ export default function CertificatesPage({ cohorts, activities, students, partic
     setDownloadRequest(null)
     setSnapshotCertificateId(null)
   }
+
+  // The search input moved to the topbar, so its old changeFilter side effects
+  // are applied here when the lifted value changes.
+  useEffect(() => {
+    if (previousSearch.current === search) return
+    previousSearch.current = search
+    setSelectedIds([])
+    setDownloadRequest(null)
+    setSnapshotCertificateId(null)
+  }, [search])
 
   function openProcessing(certificateId, action) {
     setDownloadRequest(null)
@@ -139,12 +149,6 @@ export default function CertificatesPage({ cohorts, activities, students, partic
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
-            <div className="col-12 col-xl-4">
-              <label className="form-label" htmlFor="certificate-search">Tìm kiếm</label>
-              <input id="certificate-search" type="search" className="form-control"
-                placeholder="Nhập mã chứng nhận, MSSV hoặc họ tên"
-                value={search} disabled={Boolean(processing)} onChange={(event) => changeFilter(setSearch, event.target.value)} />
-            </div>
             <div className="col-12 col-sm-7 col-xl-5">
               <label className="form-label" htmlFor="certificate-activity">Hoạt động</label>
               <select

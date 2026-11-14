@@ -32,7 +32,7 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function ImportsPage({ activities, cohorts, students, participations, importHistory, onImportStudents, onImportParticipations }) {
+export default function ImportsPage({ activities, cohorts, students, participations, importHistory, onImportStudents, onImportParticipations, search = '', onSearchChange: _onSearchChange = () => {} }) {
   const [selectedBatchId, setSelectedBatchId] = useState(null)
   const [selectedRowStatus, setSelectedRowStatus] = useState('')
   const selectedBatch = importHistory.find((batch) => batch.batchId === selectedBatchId)
@@ -126,9 +126,8 @@ export default function ImportsPage({ activities, cohorts, students, participati
     }
   }
 
-  const [historySearch, setHistorySearch] = useState('')
   const [historyType, setHistoryType] = useState('')
-  const fileQuery = historySearch.trim().toLocaleLowerCase('vi-VN')
+  const fileQuery = search.trim().toLocaleLowerCase('vi-VN')
   const visibleHistory = importHistory.filter(({ fileName, importType }) => {
     const matchesFile = fileName.toLocaleLowerCase('vi-VN').includes(fileQuery)
     const matchesType = historyType === '' || importType === historyType
@@ -311,17 +310,6 @@ export default function ImportsPage({ activities, cohorts, students, participati
         <div className="card-body p-3 p-md-4">
           <h2 id="import-history" className="h5 mb-3">Lịch sử nhập</h2>
           <div className="row g-3 mb-3">
-            <div className="col-12 col-sm-7 col-xl-5">
-              <label className="form-label" htmlFor="import-history-search">Tìm tên tệp</label>
-              <input
-                id="import-history-search"
-                type="search"
-                className="form-control"
-                placeholder="Nhập tên tệp"
-                value={historySearch}
-                onChange={(event) => setHistorySearch(event.target.value)}
-              />
-            </div>
             <div className="col-12 col-sm-5 col-xl-3">
               <label className="form-label" htmlFor="import-history-type">Loại dữ liệu</label>
               <select

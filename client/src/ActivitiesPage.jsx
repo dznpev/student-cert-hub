@@ -9,8 +9,7 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function ActivitiesPage({ activities, templates, onAddActivity, onUpdateActivity }) {
-  const [search, setSearch] = useState('')
+export default function ActivitiesPage({ activities, templates, onAddActivity, onUpdateActivity, search = '', onSearchChange = () => {} }) {
   const [showForm, setShowForm] = useState(false)
   const [editingActivity, setEditingActivity] = useState(null)
   const [notice, setNotice] = useState('')
@@ -44,7 +43,7 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
               onAddActivity(activity)
             }
             setShowForm(false)
-            setSearch('')
+            onSearchChange('')
             setStatus('')
             setNotice((editingActivity ? 'Đã cập nhật hoạt động ' : 'Đã thêm bản nháp ') + activity.code + '.')
           }}
@@ -55,17 +54,6 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
       <div className="card activities-card">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
-            <div className="col-12 col-sm-7 col-xl-5">
-              <label className="form-label" htmlFor="activity-search">Tìm kiếm</label>
-              <input
-                id="activity-search"
-                type="search"
-                className="form-control"
-                placeholder="Nhập mã hoặc tên hoạt động"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
             <div className="col-12 col-sm-5 col-xl-3">
               <label className="form-label" htmlFor="activity-status">Trạng thái</label>
               <select

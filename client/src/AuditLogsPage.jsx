@@ -31,8 +31,7 @@ function toAuditRow(entry) {
   }
 }
 
-export default function AuditLogsPage({ auditLogs }) {
-  const [search, setSearch] = useState('')
+export default function AuditLogsPage({ auditLogs, search = '', onSearchChange = () => {} }) {
   const [selectedOutcome, setSelectedOutcome] = useState('')
   const query = normalizeSearch(search.trim().replace(/\s+/g, ' '))
   const visibleAuditRows = auditLogs.map(toAuditRow).filter(({ actorLabel, action, entityLabel, outcome, reason }) => {
@@ -49,17 +48,6 @@ export default function AuditLogsPage({ auditLogs }) {
       <div className="card rounded-4">
         <div className="card-body p-3 p-md-4">
           <div className="row g-3 mb-3">
-            <div className="col-12 col-sm-7 col-xl-5">
-              <label className="form-label" htmlFor="audit-search">Tìm kiếm</label>
-              <input
-                id="audit-search"
-                type="search"
-                className="form-control"
-                placeholder="Nhập MSSV, họ tên, hành động hoặc nội dung nhật ký"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
             <div className="col-12 col-sm-5 col-xl-3">
               <label className="form-label" htmlFor="audit-outcome">Kết quả</label>
               <select
@@ -78,7 +66,7 @@ export default function AuditLogsPage({ auditLogs }) {
           <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
             <span className="small text-body-secondary" role="status">Hiển thị {visibleAuditRows.length}/{auditLogs.length} nhật ký</span>
             {(search || selectedOutcome) && (
-              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => { setSearch(''); setSelectedOutcome('') }}>Xóa bộ lọc</button>
+              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => { onSearchChange(''); setSelectedOutcome('') }}>Xóa bộ lọc</button>
             )}
           </div>
           <div className="admin-table-scroll" role="region" aria-label="Danh sách nhật ký hệ thống" tabIndex={0}>

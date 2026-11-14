@@ -134,6 +134,19 @@ describe('navigationSections — nhóm điều hướng', () => {
   })
 })
 
+describe('App — tìm kiếm dùng chung ở topbar', () => {
+  it('App.jsx giữ state tìm kiếm dùng chung', () => {
+    const src = read('App.jsx')
+    expect(src).toMatch(/const \[pageSearch, setPageSearch\] = useState\(''\)/)
+  })
+
+  it('7 trang nhận search qua props, không tự khai báo useState search', () => {
+    for (const file of ['CertificatesPage.jsx','StudentsPage.jsx','ActivitiesPage.jsx','AuditLogsPage.jsx','SuperAdminAccounts.jsx']) {
+      expect(read(file)).not.toMatch(/const \[search, setSearch\] = useState\(''\)/)
+    }
+  })
+})
+
 describe('AppShell — topbar context', () => {
   const renderShell = () => renderToStaticMarkup(
     createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme: () => {} } },
