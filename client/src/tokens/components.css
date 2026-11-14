@@ -1529,20 +1529,6 @@ select.fld {
   font-weight: 400;
 }
 
-.portal-footer__link {
-  color: var(--ws-hutech);
-  text-decoration: none;
-}
-
-.portal-footer__link:hover {
-  text-decoration: underline;
-}
-
-.portal-footer__link:focus-visible {
-  outline: 2px solid var(--ws-hutech);
-  outline-offset: 2px;
-}
-
 /* Account menu (§6.2 topbar account block) -------------------------------- */
 
 .portal-account-menu__wrap {
@@ -1698,16 +1684,11 @@ select.fld {
 
 [data-bs-theme="dark"] .portal-account-menu__trigger:focus-visible,
 [data-bs-theme="dark"] .portal-sidebar__logo-button:focus-visible,
-[data-bs-theme="dark"] .portal-sidebar__toggle:focus-visible,
-[data-bs-theme="dark"] .portal-footer__link:focus-visible {
+[data-bs-theme="dark"] .portal-sidebar__toggle:focus-visible {
   outline-color: var(--ws-hutech-text);
 }
 
 [data-bs-theme="dark"] .portal-account-menu__item:hover {
-  color: var(--ws-hutech-text);
-}
-
-[data-bs-theme="dark"] .portal-footer__link {
   color: var(--ws-hutech-text);
 }
 

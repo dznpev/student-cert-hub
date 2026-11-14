@@ -13,6 +13,7 @@ import {
   searchPlaceholderFor,
 } from '../src/navigationSections.js'
 import PortalIcon from '../src/PortalIcon.jsx'
+import PortalFooter from '../src/components/PortalFooter.jsx'
 import { studentAccountSections, studentPages } from '../src/studentNavigation.js'
 import { ThemeContext } from '../src/themeContext.js'
 
@@ -98,6 +99,18 @@ describe('shell mới — hành vi render', () => {
     expect(html).toContain('portal-nav__badge">2')
     // The zero-count badge must not render at all.
     expect((html.match(/portal-nav__badge/g) || []).length).toBe(1)
+  })
+
+  it('footer chỉ hiện copyright và version, không còn link tra cứu chứng nhận', () => {
+    const html = renderToStaticMarkup(createElement(PortalFooter))
+    expect(html).toContain('© 2012–2026 HUTECH University. All rights reserved')
+    expect(html).toContain('| Version 1.1.0')
+    // The public lookup link belongs to the signed-out student screens, not to
+    // the shell footer.
+    expect(html).not.toContain('Tra cứu chứng nhận')
+    expect(html).not.toContain('tra-cuu')
+    // The rule for the removed link must not linger as dead CSS.
+    expect(read('tokens/components.css')).not.toContain('portal-footer__link')
   })
 })
 
