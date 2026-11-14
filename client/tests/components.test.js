@@ -154,7 +154,12 @@ describe('component dùng chung', () => {
       'ParticipationsPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx', 'AuditLogsPage.jsx',
       'ActivitiesPage.jsx', 'CertificateTemplatesPage.jsx', 'CohortsPage.jsx', 'SuperAdminAccounts.jsx',
     ]) {
-      expect(pageSrc(file), file).toContain('PortalTable')
+      const src = pageSrc(file)
+      expect(src, file).toContain('PortalTable')
+      // A revert keeps the (now unused) import, so the rendered legacy wrapper
+      // itself must be absent.
+      expect(src, file).not.toContain('admin-table-scroll')
+      expect(src, file).not.toContain('<table')
     }
 
     for (const file of ['CertificatesPage.jsx', 'ParticipationsPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx']) {
@@ -186,7 +191,9 @@ describe('component dùng chung', () => {
     expect(light, 'thiếu khối :root').not.toBeNull()
     expect(dark, 'thiếu khối tối').not.toBeNull()
     // #fffffff5 is white at 96% alpha; its opaque composite is plain white, not cream.
-    expect(light[1]).toMatch(/--ws-panel-solid:\s*#ffffff/)
+    // The hex boundary rejects an 8-digit value (an alpha byte), so a translucent
+    // #fffffff5 cannot satisfy the opaque-token requirement.
+    expect(light[1]).toMatch(/--ws-panel-solid:\s*#ffffff(?![\da-fA-F])/)
     expect(dark[1]).toMatch(/--ws-panel-solid:\s*#141f31/)
   })
 
