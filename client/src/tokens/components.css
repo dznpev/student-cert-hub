@@ -1514,7 +1514,10 @@ select.fld {
   gap: var(--ws-s2) var(--ws-s7);
   padding: var(--ws-s6) var(--ws-s9);
   color: var(--ws-fg-2);
-  background-color: var(--ws-panel);
+  /* The footer is chrome, not content: it sits on the page canvas rather than
+     on the panel surface. Painting it --ws-panel made it a second white band
+     indistinguishable from a content panel. */
+  background-color: transparent;
   border-top: 1px solid var(--ws-line);
   font-size: var(--ws-t-sub);
 }

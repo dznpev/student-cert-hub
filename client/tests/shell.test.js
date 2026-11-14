@@ -112,6 +112,11 @@ describe('shell mới — hành vi render', () => {
     expect(html).not.toContain('tra-cuu')
     // The rule for the removed link must not linger as dead CSS.
     expect(read('tokens/components.css')).not.toContain('portal-footer__link')
+    // The footer is chrome: it sits on the page canvas, not on the panel
+    // surface. Painting it --ws-panel made it a second white band.
+    expect(read('tokens/components.css')).toMatch(
+      /\.portal-footer\s*\{[^}]*background-color:\s*transparent/,
+    )
   })
 })
 

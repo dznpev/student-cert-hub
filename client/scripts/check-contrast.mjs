@@ -181,6 +181,14 @@ const PAIRS = [
   { mode: 'light', fg: '--ws-danger-text', bg: '--ws-page-bg', name: 'text-danger on page' },
   { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-panel', name: 'text-danger on panel' },
   { mode: 'dark', fg: '--ws-danger-text', bg: '--ws-page-bg', name: 'text-danger on page' },
+  // The footer sits on the page canvas (its background is transparent), so its
+  // copyright and version text are graded against the page - and the gate
+  // derives the gradient's worst stop, so the pair is measured where the text
+  // is least legible, not where it is easiest.
+  { mode: 'light', fg: '--ws-fg', bg: '--ws-page-bg', name: 'footer copyright on page' },
+  { mode: 'light', fg: '--ws-fg-2', bg: '--ws-page-bg', name: 'footer version on page' },
+  { mode: 'dark', fg: '--ws-fg', bg: '--ws-page-bg', name: 'footer copyright on page' },
+  { mode: 'dark', fg: '--ws-fg-2', bg: '--ws-page-bg', name: 'footer version on page' },
   // `.invalid-feedback` paints from --bs-form-invalid-color (W2), and it sits
   // beside a field on a panel and directly on the page.
   { mode: 'light', fg: '--bs-form-invalid-color', bg: '--ws-panel', name: 'invalid-feedback on panel' },
