@@ -107,6 +107,16 @@ describe('component dùng chung', () => {
     expect(css).not.toContain('rounded-4')
   })
 
+  // R150: a blanket transition shorthand would replace a component's own
+  // transition — the mobile sidebar's `transform` slid not at all — so the
+  // theme fade may only name Bootstrap chrome, never a `.portal-*` surface.
+  it('khối chuyển cảnh theme không đè lên transition của component', () => {
+    const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+    const block = /@media \(prefers-reduced-motion: no-preference\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? ''
+    expect(block, 'thiếu khối chuyển cảnh theme').toContain('transition:')
+    expect(block).not.toContain('.portal-')
+  })
+
   it('ô chỉ số tự reset margin của <dl> và hai <dd> do Bootstrap reboot đặt vào', () => {
     const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
     // Bootstrap's reboot gives dl a 1rem bottom margin and dd .5rem; the rules

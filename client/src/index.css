@@ -1,14 +1,8 @@
 @import './tokens/index.css';
 @import './tokens/components.css';
 
-/*
- * Only the rules the token and component sheets cannot express live here.
- * Both imports stay at the top so the token CSS loads after Bootstrap exactly
- * once: main.jsx imports this file directly after bootstrap.min.css.
- */
-
-/* "Thêm phiên bản" — an outlined action on the certificate-template table,
-   painted from the brand tokens instead of its own teal pair. */
+/* "Thêm phiên bản" on the certificate-template table: an outlined action
+   painted from the brand tokens instead of a bespoke pair. */
 .template-version-button {
   --bs-btn-color: var(--ws-hutech);
   --bs-btn-border-color: var(--ws-hutech);
@@ -25,26 +19,6 @@
 [data-bs-theme="dark"] .template-version-button {
   --bs-btn-color: var(--ws-hutech-text);
   --bs-btn-border-color: var(--ws-hutech-text);
-  --bs-btn-hover-color: var(--ws-on-brand);
-  --bs-btn-hover-bg: var(--ws-hutech);
-  --bs-btn-hover-border-color: var(--ws-hutech);
-  --bs-btn-active-color: var(--ws-on-brand);
-  --bs-btn-active-bg: var(--ws-hutech-d);
-  --bs-btn-active-border-color: var(--ws-hutech-d);
   --bs-btn-disabled-color: var(--ws-hutech-text);
   --bs-btn-disabled-border-color: var(--ws-hutech-text);
-}
-
-/*
- * Theme-change fade for surfaces that are not components of their own;
- * components carry their transitions in tokens/components.css.
- */
-@media (prefers-reduced-motion: no-preference) {
-  :is(body, .card, .form-control, .form-select, .text-body-secondary,
-    .table > :not(caption) > * > *, .portal-shell, .portal-panel, .portal-topbar,
-    .portal-sidebar__panel, .portal-main, .portal-footer, .portal-account-menu,
-    .portal-notifications) {
-    transition: background-color var(--ws-dur-slow) ease, color var(--ws-dur-slow) ease,
-      border-color var(--ws-dur-slow) ease, box-shadow var(--ws-dur-slow) ease;
-  }
 }

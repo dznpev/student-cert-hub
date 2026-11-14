@@ -1,7 +1,7 @@
 import PortalIcon from './PortalIcon.jsx'
 import PortalMetricCard from './components/PortalMetricCard.jsx'
 import PortalPanel from './components/PortalPanel.jsx'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArcElement, BarController, BarElement, CategoryScale, Chart,
   DoughnutController, LinearScale, Tooltip,
@@ -20,6 +20,12 @@ const metricAppearance = [
   ['students'], ['activities'], ['participations'], ['profile'],
   ['certificates', 'success'], ['revoked'], ['error', 'danger'],
 ]
+
+// Chart inputs are stable module constants, not inline literals: the drawing
+// effect compares them by identity, so a parent render must not rebuild them.
+const BRAND_TONES = ['brand']
+const CERTIFICATE_LABELS = certificateStatuses.map(({ label }) => label)
+const CERTIFICATE_TONES = certificateStatuses.map(({ tone }) => tone)
 
 // Chart colours are read from the live custom properties, so both charts follow
 // the theme instead of hard-coding a palette (spec §8.3). A tone whose base hue
@@ -183,9 +189,28 @@ export default function DashboardPage({ cohorts, students, activities, participa
   // midnight must show the current day when the component mounts again.
   // The lazy state initialiser keeps the impure Date() call out of render.
   const [todayLabel] = useState(() => todayFormat.format(new Date()))
-  const { studentCount, activityCount, participationCount, uniqueStudents, certificateCounts, cohortParticipation } = summarizeDashboard({
-    cohorts, students, activities, participations, certificates, ...filters,
-  })
+  // Memoised so a keystroke elsewhere on the page does not hand the charts new
+  // arrays and make them destroy and recreate their canvases (R154).
+  const { studentCount, activityCount, participationCount, uniqueStudents, certificateCounts, cohortParticipation } = useMemo(
+    () => summarizeDashboard({
+      cohorts, students, activities, participations, certificates,
+      selectedCohort, selectedActivity, fromDate, toDate, selectedCertificateStatus,
+    }),
+    [cohorts, students, activities, participations, certificates,
+      selectedCohort, selectedActivity, fromDate, toDate, selectedCertificateStatus],
+  )
+
+  const participationChart = useMemo(() => ({
+    labels: cohortParticipation.map(({ cohortId }) => cohorts.find((item) => item.cohortId === cohortId)?.cohortCode ?? String(cohortId)),
+    values: cohortParticipation.map((cohort) => cohort.studentCount === 0 ? 0 : cohort.uniqueStudents / cohort.studentCount * 100),
+    tones: BRAND_TONES,
+  }), [cohortParticipation, cohorts])
+
+  const certificateChart = useMemo(() => ({
+    labels: CERTIFICATE_LABELS,
+    values: certificateStatuses.map(({ status }) => certificateCounts[status]),
+    tones: CERTIFICATE_TONES,
+  }), [certificateCounts])
 
   function updateFilter(field, value) {
     setDraftFilters((current) => ({ ...current, [field]: value }))
@@ -329,9 +354,9 @@ export default function DashboardPage({ cohorts, students, activities, participa
               title="Tỷ lệ tham gia của sinh viên đang hoạt động theo khóa"
               icon="participations"
               type="bar"
-              labels={cohortParticipation.map(({ cohortId }) => cohorts.find((item) => item.cohortId === cohortId)?.cohortCode ?? String(cohortId))}
-              values={cohortParticipation.map((cohort) => cohort.studentCount === 0 ? 0 : cohort.uniqueStudents / cohort.studentCount * 100)}
-              tones={['brand']}
+              labels={participationChart.labels}
+              values={participationChart.values}
+              tones={participationChart.tones}
               percentages
             />
           </div>
@@ -340,9 +365,9 @@ export default function DashboardPage({ cohorts, students, activities, participa
               title="Chứng nhận theo trạng thái"
               icon="certificates"
               type="doughnut"
-              labels={certificateStatuses.map(({ label }) => label)}
-              values={certificateStatuses.map(({ status }) => certificateCounts[status])}
-              tones={certificateStatuses.map(({ tone }) => tone)}
+              labels={certificateChart.labels}
+              values={certificateChart.values}
+              tones={certificateChart.tones}
             />
           </div>
         </div>

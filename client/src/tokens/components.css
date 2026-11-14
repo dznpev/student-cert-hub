@@ -398,7 +398,7 @@
 .dashboard-chart-swatch {
   width: 12px;
   height: 12px;
-  border-radius: var(--ws-s1);
+  border-radius: var(--ws-r-tick);
 }
 
 @media (min-width: 1200px) {
@@ -975,6 +975,18 @@ select.fld {
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+  }
+}
+
+/* Theme-change fade for the Bootstrap chrome the token bridge recolours.
+   Component surfaces carry their own transitions and are deliberately not
+   listed: this shorthand would otherwise replace theirs — the mobile
+   sidebar's `transform` in particular (R150). */
+@media (prefers-reduced-motion: no-preference) {
+  :is(body, .card, .form-control, .form-select, .text-body-secondary,
+    .table > :not(caption) > * > *) {
+    transition: background-color var(--ws-dur-slow) ease, color var(--ws-dur-slow) ease,
+      border-color var(--ws-dur-slow) ease, box-shadow var(--ws-dur-slow) ease;
   }
 }
 

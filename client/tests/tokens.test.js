@@ -39,6 +39,27 @@ describe('index.css', () => {
   it('index.css không còn class .admin-primary-button', () => {
     expect(readFileSync(new URL('../src/index.css', import.meta.url), 'utf-8')).not.toContain('admin-primary-button')
   })
+
+  // R153: the two imports plus main.jsx's import order are the whole cascade
+  // contract. Absence assertions alone would stay green if it were deleted.
+  it('index.css nạp hai lớp token và giữ dưới 30 dòng', () => {
+    const lines = readFileSync(new URL('../src/index.css', import.meta.url), 'utf-8').trimEnd().split(/\r?\n/)
+    expect(lines.slice(0, 2)).toEqual([
+      "@import './tokens/index.css';",
+      "@import './tokens/components.css';",
+    ])
+    expect(lines.length).toBeLessThan(30)
+  })
+
+  it('main.jsx nạp index.css ngay sau Bootstrap và không nạp lại lớp token', () => {
+    const main = readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf-8')
+    const bootstrap = main.indexOf("'bootstrap/dist/css/bootstrap.min.css'")
+    // `-1` must fail the order assertion too, so check presence first.
+    expect(bootstrap, 'bootstrap.min.css').toBeGreaterThan(-1)
+    expect(main.indexOf("'./index.css'"), './index.css').toBeGreaterThan(bootstrap)
+    expect(main).not.toContain('./tokens/index.css')
+    expect(main).not.toContain('./tokens/components.css')
+  })
 })
 
 describe('tokens/index.css', () => {
