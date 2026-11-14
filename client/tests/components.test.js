@@ -366,7 +366,11 @@ describe('trang Chứng nhận', () => {
   // from the spacing scale; the revocation textarea shares the field look but
   // not the fixed 32px height.
   it('select chừa chỗ cho mũi tên và textarea cao tự động', () => {
-    const css = componentsCss()
+    // Selector lists are flattened first. In the grouped `.fld,\n.fld-multiline {`
+    // rule the second line begins exactly like a standalone rule, so an
+    // unflattened single-class regex binds to the shared body instead — the
+    // guard then names one rule while watching another.
+    const css = componentsCss().replace(/,\s*\n\s*/g, ', ')
     const select = /(?:^|\n)select\.fld\s*\{([^}]*)\}/.exec(css)
     expect(select, 'thiếu quy tắc select.fld').not.toBeNull()
     // --ws-s9 (26px) is the step that clears the arrow; a smaller one (2px at
@@ -374,7 +378,7 @@ describe('trang Chứng nhận', () => {
     expect(select[1]).toMatch(/padding-right:\s*var\(--ws-s9\)/)
 
     // One grouped rule carries the field look for both shapes…
-    const shared = /(?:^|\n)\.fld,\s*\n\.fld-multiline\s*\{([^}]*)\}/.exec(css)
+    const shared = /(?:^|\n)\.fld,\s*\.fld-multiline\s*\{([^}]*)\}/.exec(css)
     expect(shared, 'thiếu quy tắc nhóm .fld, .fld-multiline').not.toBeNull()
     expect(shared[1]).toMatch(/border-radius:\s*var\(--ws-r-sm\)/)
 
@@ -383,8 +387,12 @@ describe('trang Chứng nhận', () => {
     expect(single, 'thiếu quy tắc .fld').not.toBeNull()
     expect(single[1]).toMatch(/height:\s*32px/)
 
+    // The standalone textarea rule, not the shared one: `display: block` only
+    // exists here, so a match on the grouped body cannot pass this guard.
     const area = /(?:^|\n)\.fld-multiline\s*\{([^}]*)\}/.exec(css)
     expect(area, 'thiếu quy tắc .fld-multiline').not.toBeNull()
+    expect(area[1]).toMatch(/display:\s*block/)
+    expect(area[1]).toMatch(/resize:\s*vertical/)
     expect(area[1]).not.toMatch(/(?:^|;)\s*height:/)
 
     // Anchored to the revocation field itself: an unanchored match would pass
