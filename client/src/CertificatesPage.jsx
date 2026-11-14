@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import CertificateDownloadPanel from './CertificateDownloadPanel.jsx'
 import CertificateSnapshotPreview from './CertificateSnapshotPreview.jsx'
 import PortalChip from './components/PortalChip.jsx'
+import PortalPageHeader from './components/PortalPageHeader.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import PortalTable from './components/PortalTable.jsx'
 import { certificateStatuses } from './certificateStatuses.js'
 import { createParticipationComparator } from './sortRecords.js'
@@ -105,20 +107,26 @@ export default function CertificatesPage({ cohorts, activities, students, partic
 
   return (
     <>
-      <h1 className="page-title mb-2">Chứng nhận</h1>
-      <p className="text-body-secondary mb-2">Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu.</p>
+      <PortalPageHeader
+        title="Chứng nhận"
+        description="Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu."
+      />
+      {/* The header description took over the old header paragraph: this note
+          still tells the admin what approving a participation does. */}
       <p className="text-body-secondary mb-4">Duyệt lượt tham gia sẽ tự thêm yêu cầu chứng nhận. Các nút xử lý bên dưới mô phỏng kết quả tạo PDF; chưa có tệp PDF thật để tải.</p>
 
       {processing && (
-        <form className="card rounded-4 mb-4" onSubmit={submitProcessing} aria-labelledby="certificate-process-title" noValidate>
-          <div className="card-body p-3 p-md-4">
-            <h2 id="certificate-process-title" className="h5">{processing.action === 'revoke' ? 'Thu hồi chứng nhận' : processing.action === 'retry' ? 'Thử lại chứng nhận' : 'Xử lý chứng nhận mô phỏng'}</h2>
+        <form className="portal-panel mb-4" onSubmit={submitProcessing} aria-labelledby="certificate-process-title" noValidate>
+          <header className="portal-panel__header">
+            <h2 id="certificate-process-title" className="portal-panel__title">{processing.action === 'revoke' ? 'Thu hồi chứng nhận' : processing.action === 'retry' ? 'Thử lại chứng nhận' : 'Xử lý chứng nhận mô phỏng'}</h2>
+          </header>
+          <div className="portal-panel__body p-3 p-md-4">
             <p className="text-break">{processingCertificate?.certificateCode}</p>
             {processing.action === 'revoke' ? (
               <div className="mb-3">
                 <p>Chứng nhận sẽ chuyển sang Đã thu hồi. Mã, ngày phát hành, liên kết và lịch sử vẫn được giữ. Thao tác đang áp dụng trên dữ liệu frontend mô phỏng.</p>
                 <label className="form-label" htmlFor="certificate-revocation-reason">Lý do thu hồi (bắt buộc)</label>
-                <textarea id="certificate-revocation-reason" className={'form-control' + (error ? ' is-invalid' : '')}
+                <textarea id="certificate-revocation-reason" className={'fld-multiline' + (error ? ' is-invalid' : '')}
                   rows={3} maxLength={500} required autoFocus value={reason}
                   onChange={(event) => { setReason(event.target.value); setError('') }}
                   aria-invalid={Boolean(error)} aria-describedby="certificate-reason-help certificate-process-error" />
@@ -129,7 +137,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
             ) : (
               <div className="mb-3">
                 <label className="form-label" htmlFor="certificate-outcome">Kết quả mô phỏng</label>
-                <select id="certificate-outcome" className="form-select" value={outcome} onChange={(event) => setOutcome(event.target.value)} autoFocus>
+                <select id="certificate-outcome" className="fld w-100" value={outcome} onChange={(event) => setOutcome(event.target.value)} autoFocus>
                   <option value="success">Tạo thành công</option>
                   <option value="failure">Lỗi tạo hoặc ghi tệp PDF</option>
                 </select>
@@ -148,14 +156,14 @@ export default function CertificatesPage({ cohorts, activities, students, partic
       {snapshotCertificate && <CertificateSnapshotPreview key={snapshotCertificate.certificateId}
         certificate={snapshotCertificate} onClose={() => setSnapshotCertificateId(null)} />}
 
-      <div className="card rounded-4">
-        <div className="card-body p-3 p-md-4">
+      <PortalPanel className="mb-4">
+        <div className="p-3 p-md-4">
           <div className="row g-3 mb-3">
             <div className="col-12 col-sm-7 col-xl-5">
               <label className="form-label" htmlFor="certificate-activity">Hoạt động</label>
               <select
                 id="certificate-activity"
-                className="form-select"
+                className="fld w-100"
                 value={selectedActivity}
                 disabled={Boolean(processing)}
                 onChange={(event) => changeFilter(setSelectedActivity, event.target.value)}
@@ -170,7 +178,7 @@ export default function CertificatesPage({ cohorts, activities, students, partic
               <label className="form-label" htmlFor="certificate-status">Trạng thái chứng nhận</label>
               <select
                 id="certificate-status"
-                className="form-select"
+                className="fld w-100"
                 value={selectedStatus}
                 disabled={Boolean(processing)}
                 onChange={(event) => changeFilter(setSelectedStatus, event.target.value)}
@@ -187,13 +195,13 @@ export default function CertificatesPage({ cohorts, activities, students, partic
             <div className="row g-3">
               <div className="col-12 col-sm-6 col-xl-3">
                 <label className="form-label" htmlFor="certificate-issued-from">Từ ngày</label>
-                <input id="certificate-issued-from" type="date" className="form-control"
+                <input id="certificate-issued-from" type="date" className="fld w-100"
                   value={issuedFrom} onChange={(event) => changeFilter(setIssuedFrom, event.target.value)} />
               </div>
               <div className="col-12 col-sm-6 col-xl-3">
                 <label className="form-label" htmlFor="certificate-issued-to">Đến ngày</label>
                 <input id="certificate-issued-to" type="date"
-                  className={'form-control' + (invalidIssuedRange ? ' is-invalid' : '')}
+                  className={'fld w-100' + (invalidIssuedRange ? ' is-invalid' : '')}
                   aria-invalid={invalidIssuedRange}
                   aria-describedby={invalidIssuedRange ? 'certificate-issued-range-error' : undefined}
                   value={issuedTo} onChange={(event) => changeFilter(setIssuedTo, event.target.value)} />
@@ -213,103 +221,107 @@ export default function CertificatesPage({ cohorts, activities, students, partic
               onClick={() => { setSelectedIds([]); setDownloadRequest(null) }}>Bỏ chọn</button>
           </div>
           <p className="small text-body-secondary">Chỉ chọn chứng nhận đang hiệu lực. Đổi bộ lọc sẽ bỏ chọn. Tải PDF/ZIP hiện là giao diện thử, chưa có tệp và quyền tải từ API.</p>
-          {downloadRequest && <CertificateDownloadPanel key={downloadRequest.format + ':' + downloadRequest.certificateIds.join(',')}
-            request={downloadRequest} certificates={certificates} onClose={() => setDownloadRequest(null)} />}
-          <PortalTable label="Danh sách chứng nhận" minWidth="85rem" stickyActions>
-              <caption className="visually-hidden">Danh sách chứng nhận mẫu</caption>
-              <thead>
-                <tr>
-                  <th scope="col"><input type="checkbox" className="form-check-input" aria-label="Chọn tất cả chứng nhận hiệu lực đang hiển thị"
-                    checked={allSelected} disabled={Boolean(processing) || selectableIds.length === 0}
-                    ref={(element) => { if (element) element.indeterminate = selectedVisibleIds.length > 0 && !allSelected }}
-                    onChange={(event) => { setSelectedIds(event.target.checked ? selectableIds : []); setDownloadRequest(null) }} /></th>
-                  <th scope="col">Mã chứng nhận</th>
-                  <th scope="col">MSSV</th>
-                  <th scope="col">Họ và tên</th>
-                  <th scope="col">Hoạt động</th>
-                  <th scope="col">Ngày phát hành</th>
-                  <th scope="col">Trạng thái</th>
-                  <th scope="col">Mẫu chứng nhận</th>
-                  <th scope="col">Chi tiết PDF</th>
-                  <th scope="col">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleCertificates.map(({ certificate, participation, student }) => {
-                  const { certificateId, certificateCode, issuedAt, status, templateName, templateVersion, lastError, processingHistory = [], revokedAt, revocationReason, revokedByLabel } = certificate
-                  const activity = activities.find((item) => item.activityId === participation?.activityId)
-                  const statusInfo = certificateStatuses.find((item) => item.status === status)
-
-                  return (
-                    <tr key={certificateCode}>
-                      <td><input type="checkbox" className="form-check-input" aria-label={'Chọn chứng nhận ' + certificateCode}
-                        checked={selectedVisibleIds.includes(certificateId)} disabled={Boolean(processing) || status !== 'Issued'}
-                        onChange={(event) => {
-                          setSelectedIds((current) => event.target.checked ? [...current, certificateId] : current.filter((id) => id !== certificateId))
-                          setDownloadRequest(null)
-                        }} /></td>
-                      <th scope="row">{certificateCode}</th>
-                      <td>{student?.studentCode ?? '—'}</td>
-                      <td>{student?.fullName ?? 'Chưa xác định'}</td>
-                      <td>{activity?.name ?? 'Chưa xác định'}</td>
-                      <td>{issuedAt ? dateFormatter.format(new Date(issuedAt)) : '—'}</td>
-                      <td><PortalChip tone={statusInfo.tone} label={statusInfo.label} /></td>
-                      <td>{templateName ? `${templateName} · v${templateVersion}` : 'Chưa có thông tin mẫu'}
-                        <button type="button" className="btn btn-sm btn-outline-secondary d-block mt-2" disabled={Boolean(processing)}
-                          aria-label={'Xem bản mẫu ' + certificateCode} onClick={() => setSnapshotCertificateId(certificateId)}>Xem bản mẫu</button>
-                      </td>
-                      <td>{status === 'Generating'
-                        ? 'Đã ghi nhận yêu cầu, chờ xử lý mô phỏng.'
-                        : status === 'Failed' ? lastError || 'Dữ liệu lỗi mẫu, chưa có chi tiết lỗi.' : 'Dữ liệu chứng nhận mẫu, chưa có tệp PDF thật.'}
-                        {status === 'Revoked' && (
-                          <div className="mt-2" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-                            <div><strong>Người thu hồi:</strong> {revokedByLabel || 'Chưa có thông tin'}</div>
-                            <div><strong>Lý do thu hồi:</strong> {revocationReason || 'Chưa có thông tin trong dữ liệu mẫu.'}</div>
-                            <div><strong>Thời điểm:</strong> {revokedAt ? new Date(revokedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}</div>
-                          </div>
-                        )}
-                        {processingHistory.length > 0 && (
-                          <details className="mt-2">
-                            <summary>Lịch sử xử lý ({processingHistory.length})</summary>
-                            <ol className="ps-3 mb-0 small">
-                              {processingHistory.map((entry, index) => (
-                                <li key={index}>
-                                  {new Date(entry.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} · {entry.action === 'Revoked' ? 'Thu hồi' : entry.action === 'Retry' ? 'Thử lại' : 'Xử lý'} · {entry.message}
-                                  {entry.actorLabel && <div>Người xử lý: {entry.actorLabel}</div>}
-                                  {entry.previousError && <div>Lỗi trước đó: {entry.previousError}</div>}
-                                </li>
-                              ))}
-                            </ol>
-                          </details>
-                        )}
-                      </td>
-                      <td>
-                        <button type="button" className="btn btn-sm btn-outline-primary mb-2" disabled={Boolean(processing) || status !== 'Issued'}
-                          aria-label={'Tải PDF ' + certificateCode} onClick={() => setDownloadRequest({ format: 'pdf', certificateIds: [certificateId] })}>Tải PDF</button>
-                        <div>
-                        {status === 'Generating' ? (
-                          <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'generate')}>Xử lý mô phỏng</button>
-                        ) : status === 'Failed' ? (
-                          <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'retry')}>Thử lại</button>
-                        ) : status === 'Issued' ? (
-                          <button type="button" className="btn btn-sm btn-outline-danger" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'revoke')}>Thu hồi</button>
-                        ) : <span className="text-body-secondary">—</span>}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-                {visibleCertificates.length === 0 && (
-                  <tr>
-                    <td colSpan={10} className="text-center text-body-secondary">
-                      {invalidIssuedRange ? 'Hãy sửa khoảng ngày phát hành để xem kết quả.' : 'Không tìm thấy chứng nhận phù hợp.'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-          </PortalTable>
         </div>
-      </div>
+      </PortalPanel>
+      {downloadRequest && <CertificateDownloadPanel key={downloadRequest.format + ':' + downloadRequest.certificateIds.join(',')}
+        request={downloadRequest} certificates={certificates} onClose={() => setDownloadRequest(null)} />}
+      <PortalPanel>
+        <PortalTable label="Danh sách chứng nhận" minWidth="85rem" stickyActions>
+          <caption className="visually-hidden">Danh sách chứng nhận mẫu</caption>
+          <thead>
+            <tr>
+              <th scope="col"><input type="checkbox" className="form-check-input" aria-label="Chọn tất cả chứng nhận hiệu lực đang hiển thị"
+                checked={allSelected} disabled={Boolean(processing) || selectableIds.length === 0}
+                ref={(element) => { if (element) element.indeterminate = selectedVisibleIds.length > 0 && !allSelected }}
+                onChange={(event) => { setSelectedIds(event.target.checked ? selectableIds : []); setDownloadRequest(null) }} /></th>
+              <th scope="col">Mã chứng nhận</th>
+              <th scope="col">MSSV</th>
+              <th scope="col">Họ và tên</th>
+              <th scope="col">Hoạt động</th>
+              <th scope="col">Ngày phát hành</th>
+              <th scope="col">Trạng thái</th>
+              <th scope="col">Mẫu chứng nhận</th>
+              <th scope="col">Chi tiết PDF</th>
+              <th scope="col">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleCertificates.map(({ certificate, participation, student }) => {
+              const { certificateId, certificateCode, issuedAt, status, templateName, templateVersion, lastError, processingHistory = [], revokedAt, revocationReason, revokedByLabel } = certificate
+              const activity = activities.find((item) => item.activityId === participation?.activityId)
+              const statusInfo = certificateStatuses.find((item) => item.status === status)
+
+              return (
+                <tr key={certificateCode}>
+                  <td><input type="checkbox" className="form-check-input" aria-label={'Chọn chứng nhận ' + certificateCode}
+                    checked={selectedVisibleIds.includes(certificateId)} disabled={Boolean(processing) || status !== 'Issued'}
+                    onChange={(event) => {
+                      setSelectedIds((current) => event.target.checked ? [...current, certificateId] : current.filter((id) => id !== certificateId))
+                      setDownloadRequest(null)
+                    }} /></td>
+                  <th scope="row">{certificateCode}</th>
+                  <td>{student?.studentCode ?? '—'}</td>
+                  <td>{student?.fullName ?? 'Chưa xác định'}</td>
+                  <td>{activity?.name ?? 'Chưa xác định'}</td>
+                  <td>{issuedAt ? dateFormatter.format(new Date(issuedAt)) : '—'}</td>
+                  <td><PortalChip tone={statusInfo.tone} label={statusInfo.label} /></td>
+                  <td>{templateName ? `${templateName} · v${templateVersion}` : 'Chưa có thông tin mẫu'}
+                    <div className="mt-2">
+                      <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(processing)}
+                        aria-label={'Xem bản mẫu ' + certificateCode} onClick={() => setSnapshotCertificateId(certificateId)}>Xem bản mẫu</button>
+                    </div>
+                  </td>
+                  <td>{status === 'Generating'
+                    ? 'Đã ghi nhận yêu cầu, chờ xử lý mô phỏng.'
+                    : status === 'Failed' ? lastError || 'Dữ liệu lỗi mẫu, chưa có chi tiết lỗi.' : 'Dữ liệu chứng nhận mẫu, chưa có tệp PDF thật.'}
+                    {status === 'Revoked' && (
+                      <div className="mt-2" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                        <div><strong>Người thu hồi:</strong> {revokedByLabel || 'Chưa có thông tin'}</div>
+                        <div><strong>Lý do thu hồi:</strong> {revocationReason || 'Chưa có thông tin trong dữ liệu mẫu.'}</div>
+                        <div><strong>Thời điểm:</strong> {revokedAt ? new Date(revokedAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : '—'}</div>
+                      </div>
+                    )}
+                    {processingHistory.length > 0 && (
+                      <details className="mt-2">
+                        <summary>Lịch sử xử lý ({processingHistory.length})</summary>
+                        <ol className="ps-3 mb-0 small">
+                          {processingHistory.map((entry, index) => (
+                            <li key={index}>
+                              {new Date(entry.timestamp).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })} · {entry.action === 'Revoked' ? 'Thu hồi' : entry.action === 'Retry' ? 'Thử lại' : 'Xử lý'} · {entry.message}
+                              {entry.actorLabel && <div>Người xử lý: {entry.actorLabel}</div>}
+                              {entry.previousError && <div>Lỗi trước đó: {entry.previousError}</div>}
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
+                  </td>
+                  <td>
+                    <button type="button" className="btn btn-sm btn-outline-primary mb-2" disabled={Boolean(processing) || status !== 'Issued'}
+                      aria-label={'Tải PDF ' + certificateCode} onClick={() => setDownloadRequest({ format: 'pdf', certificateIds: [certificateId] })}>Tải PDF</button>
+                    <div>
+                    {status === 'Generating' ? (
+                      <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'generate')}>Xử lý mô phỏng</button>
+                    ) : status === 'Failed' ? (
+                      <button type="button" className="btn btn-sm btn-outline-primary" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'retry')}>Thử lại</button>
+                    ) : status === 'Issued' ? (
+                      <button type="button" className="btn btn-sm btn-outline-danger" disabled={Boolean(processing)} onClick={() => openProcessing(certificateId, 'revoke')}>Thu hồi</button>
+                    ) : <span className="text-body-secondary">—</span>}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+            {visibleCertificates.length === 0 && (
+              <tr>
+                <td colSpan={10} className="text-center text-body-secondary">
+                  {invalidIssuedRange ? 'Hãy sửa khoảng ngày phát hành để xem kết quả.' : 'Không tìm thấy chứng nhận phù hợp.'}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </PortalTable>
+      </PortalPanel>
     </>
   )
 }

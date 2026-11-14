@@ -551,6 +551,58 @@
   border-color: var(--ws-accent);
 }
 
+/* A <select> keeps the browser's own dropdown arrow, which paints inside the
+   field's inline-end padding: `.fld`'s symmetric `0 var(--ws-s4)` would clip
+   it, so a select reserves the arrow's room from the spacing scale instead.
+   `appearance` is deliberately untouched — that is what keeps the arrow. */
+select.fld {
+  padding-right: var(--ws-s9);
+}
+
+/* Multi-line twin of `.fld`: a textarea must NOT take `.fld` itself, because
+   its fixed 32px height would collapse the field. Same border, radius, font
+   and states, but the height follows `rows` and the user's resize. */
+.fld-multiline {
+  display: block;
+  width: 100%;
+  padding: var(--ws-s3) var(--ws-s4);
+  color: var(--ws-fg);
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  font-family: var(--ws-font-body);
+  font-size: var(--ws-t-chip);
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color var(--ws-dur-fast) ease, background-color var(--ws-dur-fast) ease;
+}
+
+.fld-multiline::placeholder {
+  color: var(--ws-muted);
+  opacity: 1;
+}
+
+.fld-multiline:hover {
+  border-color: var(--ws-hutech-border);
+}
+
+.fld-multiline:focus-visible {
+  border-color: var(--ws-hutech);
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
+}
+
+.fld-multiline:disabled {
+  color: var(--ws-control-idle);
+  background-color: var(--ws-chip-bg);
+  cursor: not-allowed;
+}
+
+.fld-multiline.is-invalid,
+.fld-multiline[aria-invalid="true"] {
+  border-color: var(--ws-accent);
+}
+
 /* Empty state (§12.2) ----------------------------------------------------- */
 
 .portal-empty-state {
@@ -697,6 +749,16 @@
 
 [data-bs-theme="dark"] .fld.is-invalid,
 [data-bs-theme="dark"] .fld[aria-invalid="true"] {
+  border-color: var(--ws-accent-text);
+}
+
+[data-bs-theme="dark"] .fld-multiline:focus-visible {
+  border-color: var(--ws-hutech-text);
+  outline-color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .fld-multiline.is-invalid,
+[data-bs-theme="dark"] .fld-multiline[aria-invalid="true"] {
   border-color: var(--ws-accent-text);
 }
 

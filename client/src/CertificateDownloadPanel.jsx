@@ -13,14 +13,16 @@ export default function CertificateDownloadPanel({ request, certificates, onClos
   }, [downloadStatus, outcome])
 
   return (
-    <section className="card rounded-4 my-3" aria-labelledby="certificate-download-title">
-      <div className="card-body p-3 p-md-4">
-        <h2 id="certificate-download-title" className="h5">{request.format === 'zip' ? 'Tải ZIP theo lô' : 'Tải PDF chứng nhận'}</h2>
+    <section className="portal-panel my-3" aria-labelledby="certificate-download-title">
+      <header className="portal-panel__header">
+        <h2 id="certificate-download-title" className="portal-panel__title">{request.format === 'zip' ? 'Tải ZIP theo lô' : 'Tải PDF chứng nhận'}</h2>
+      </header>
+      <div className="portal-panel__body p-3 p-md-4">
         <p className="small text-body-secondary">Bản xem thử giao diện. Chưa kết nối API cấp tệp và kiểm tra quyền tải; thao tác này chưa tải tệp thật.</p>
         <p className="text-break">{records.length} chứng nhận · {records.map((item) => item?.certificateCode ?? 'Không còn dữ liệu').join(', ')}</p>
         {unavailable ? <p className="alert alert-warning" role="alert">Có chứng nhận không còn hiệu lực. Hãy đóng bảng tải và chọn lại chứng nhận.</p> : <>
           <label htmlFor="download-demo-outcome" className="form-label">Kết quả chuẩn bị thử</label>
-          <select id="download-demo-outcome" className="form-select mb-3" value={outcome} disabled={downloadStatus === 'preparing'}
+          <select id="download-demo-outcome" className="fld w-100 mb-3" value={outcome} disabled={downloadStatus === 'preparing'}
             onChange={(event) => { setOutcome(event.target.value); setDownloadStatus('idle') }}>
             <option value="success">Sẵn sàng (mô phỏng)</option>
             <option value="failure">Lỗi chuẩn bị tệp (mô phỏng)</option>

@@ -320,6 +320,67 @@ describe('trang Tổng quan', () => {
   })
 })
 
+describe('trang Chứng nhận', () => {
+  const certificatesSrc = () => readFileSync(new URL('../src/CertificatesPage.jsx', import.meta.url), 'utf-8')
+  const componentsCss = () => readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+
+  it('CertificatesPage dùng PortalPanel và không còn card rounded-4', () => {
+    const src = certificatesSrc()
+    expect(src).toContain('PortalPanel')
+    expect(src).not.toContain('rounded-4')
+  })
+
+  it('bảng chứng nhận có cột thao tác dính', () => {
+    const src = certificatesSrc()
+    expect(src).toMatch(/PortalTable[\s\S]*stickyActions/)
+  })
+
+  // R92: §6.8 keeps the Hero for the two overview pages; every other page uses
+  // the surface-less PageHeader with the data-mock description.
+  it('đầu trang dùng PortalPageHeader với mô tả dữ liệu mẫu', () => {
+    const src = certificatesSrc()
+    expect(src).toContain('<PortalPageHeader')
+    expect(src).toContain('title="Chứng nhận"')
+    expect(src).toContain('Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu.')
+  })
+
+  // R94: the description takes over the header paragraph, so the sentence that
+  // explains what approving a participation does must survive in the content.
+  it('đoạn giải thích luồng duyệt vẫn còn trong nội dung trang', () => {
+    expect(certificatesSrc()).toContain('Duyệt lượt tham gia sẽ tự thêm yêu cầu chứng nhận.')
+  })
+
+  // R95: both auxiliary panels become portal-panel surfaces.
+  it('panel tải và bản mẫu dùng portal-panel, không còn rounded-4', () => {
+    for (const file of ['CertificateDownloadPanel.jsx', 'CertificateSnapshotPreview.jsx']) {
+      const src = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+      expect(src, file).toContain('portal-panel__header')
+      expect(src, file).toContain('portal-panel__body')
+      expect(src, file).not.toContain('rounded-4')
+    }
+  })
+
+  // R93: a select keeps the browser's own arrow, so it reserves that room from
+  // the spacing scale; the revocation textarea gets the field look without the
+  // fixed 32px height that would collapse it.
+  it('select chừa chỗ cho mũi tên và textarea cao tự động', () => {
+    const css = componentsCss()
+    const select = /(?:^|\n)select\.fld\s*\{([^}]*)\}/.exec(css)
+    expect(select, 'thiếu quy tắc select.fld').not.toBeNull()
+    expect(select[1]).toMatch(/padding-right:\s*var\(--ws-s\d+\)/)
+
+    const area = /(?:^|\n)\.fld-multiline\s*\{([^}]*)\}/.exec(css)
+    expect(area, 'thiếu quy tắc .fld-multiline').not.toBeNull()
+    expect(area[1]).not.toMatch(/(?:^|;)\s*height:/)
+    expect(area[1]).toMatch(/border-radius:\s*var\(--ws-r-sm\)/)
+
+    const textarea = /<textarea[\s\S]*?\/>/.exec(certificatesSrc())
+    expect(textarea, 'không tìm thấy textarea lý do thu hồi').not.toBeNull()
+    expect(textarea[0]).toContain('fld-multiline')
+    expect(textarea[0]).not.toContain('form-control')
+  })
+})
+
 describe('bảng tone trạng thái', () => {
   // R81: §6.6.1 fixes every status → tone pair, so the mapping is pinned here
   // instead of resting on a careful reading of six maps.
