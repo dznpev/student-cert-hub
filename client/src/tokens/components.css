@@ -801,6 +801,19 @@ select.fld {
   background: var(--ws-page-bg);
 }
 
+/* R136: a shell without navigation (the preview picker) has no sidebar column,
+   so the topbar, content and footer span the single available column instead of
+   leaving a 238px gap where the sidebar used to be. */
+.portal-shell--no-sidebar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.portal-shell--no-sidebar .portal-topbar,
+.portal-shell--no-sidebar .portal-main,
+.portal-shell--no-sidebar .portal-footer {
+  grid-column: 1;
+}
+
 .portal-sidebar {
   display: flex;
   flex-direction: column;

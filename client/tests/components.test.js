@@ -8,6 +8,9 @@ import PortalMetricCard from '../src/components/PortalMetricCard.jsx'
 import PortalPanel from '../src/components/PortalPanel.jsx'
 import PortalTable from '../src/components/PortalTable.jsx'
 import ThemeToggleButton from '../src/components/ThemeToggleButton.jsx'
+import AppShell, { AccountPanel } from '../src/components/AppShell.jsx'
+import AppSidebar from '../src/components/AppSidebar.jsx'
+import { studentAccountSections, studentPages, studentSections } from '../src/studentNavigation.js'
 import DashboardPage from '../src/DashboardPage.jsx'
 import { auditOutcomes } from '../src/auditOutcomes.js'
 import { importRowStatuses } from '../src/importRowStatuses.js'
@@ -589,7 +592,7 @@ describe('cổng sinh viên và màn hình độc lập', () => {
   // R125: a nav id that reuses an account id would open the account panel
   // instead of the section and mark two items aria-current="page".
   it('mục điều hướng của sinh viên không trùng id nhóm tài khoản', () => {
-    const ids = [...pageSrc('StudentPortal.jsx').matchAll(/\{\s*id:\s*'([^']+)',\s*title:/g)].map(([, id]) => id)
+    const ids = studentSections.flatMap(({ items }) => items.map(({ id }) => id))
     expect(ids).toEqual(['overview', 'student-profile', 'participations', 'certificates'])
     for (const accountId of ['profile', 'account', 'password']) expect(ids).not.toContain(accountId)
     // The account group keeps its own ids (AppShell, R34).
@@ -634,5 +637,121 @@ describe('cổng sinh viên và màn hình độc lập', () => {
     expect(records).toContain('PortalChip')
 
     expect(pageSrc('StudentPortal.jsx')).toContain('PortalPanel')
+  })
+
+  // Fix round 1 (R131–R136) --------------------------------------------------
+
+  const renderPanel = (page, accountDetails) => renderToStaticMarkup(
+    createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme() {} } },
+      createElement(AccountPanel, {
+        page,
+        accountIdentifier: 'SV001',
+        roleLabel: 'Sinh viên',
+        accountDetails,
+        changePasswordNote: 'Đăng nhập bằng MSSV để đổi mật khẩu mẫu.',
+        onChangePassword: null,
+      })))
+
+  const renderShell = (overrides = {}, children = null) => renderToStaticMarkup(
+    createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme() {} } },
+      createElement(AppShell, {
+        sections: [{ group: null, items: [{ id: 'overview', title: 'Tổng quan' }] }],
+        activeSectionId: 'overview',
+        onSelectSection: () => {},
+        onHome: () => {},
+        roleLabel: 'Sinh viên',
+        accountIdentifier: 'SV001',
+        onSignOut: () => {},
+        context: 'Tổng quan',
+        ...overrides,
+      }, children)))
+
+  // R131: the preview-session row is the only in-product signal that the data
+  // is a sample; it must survive inside the shell's account panel.
+  it('trang tài khoản của sinh viên render Email và Phiên', () => {
+    const details = createElement(React.Fragment, null,
+      createElement('dt', null, 'Email'), createElement('dd', null, 'sv001@hutech.edu.vn'),
+      createElement('dt', null, 'Phiên'), createElement('dd', null, 'Xem thử'))
+    const html = renderPanel('account', details)
+    expect(html).toContain('<dt>Email</dt><dd>sv001@hutech.edu.vn</dd>')
+    expect(html).toContain('<dt>Phiên</dt><dd>Xem thử</dd>')
+
+    // ...and the student portal is the side that supplies the legacy lines.
+    const portal = pageSrc('StudentPortal.jsx')
+    expect(portal).toContain('accountDetails={student && (')
+    expect(portal).toContain('<dt>Phiên</dt><dd>Xem thử</dd>')
+  })
+
+  // R132: with "Hồ sơ" already in the student navigation, the account group
+  // publishes only the pages that have no section of their own.
+  it('sidebar sinh viên không trùng nhãn và nhóm tài khoản chỉ có Tài khoản, Đổi mật khẩu', () => {
+    expect(studentAccountSections.map(({ title }) => title)).toEqual(['Tài khoản', 'Đổi mật khẩu'])
+    // The admin shell keeps the full group (R132 defaults).
+    expect(read('AppShell.jsx')).toContain('function createAccountGroup(items = DEFAULT_ACCOUNT_ITEMS())')
+
+    const accountGroup = {
+      group: 'Tài khoản',
+      items: [...studentAccountSections, { id: 'back-to-sections', title: 'Quay lại' }],
+    }
+    const html = renderToStaticMarkup(createElement(AppSidebar, {
+      navigationId: 'student-navigation',
+      navigationLabel: 'Điều hướng chính',
+      sections: [...studentSections, accountGroup],
+      activeSectionId: 'overview',
+      onSelectSection: () => {},
+      onHome: () => {},
+    }))
+    const labels = [...html.matchAll(/portal-nav__label">([^<]+)</g)].map(([, label]) => label)
+    expect(labels).toEqual(['Tổng quan', 'Hồ sơ', 'Lượt tham gia', 'Chứng nhận',
+      'Tài khoản', 'Đổi mật khẩu', 'Quay lại'])
+    expect(labels.filter((label) => label === 'Hồ sơ')).toHaveLength(1)
+    expect(new Set(labels).size).toBe(labels.length)
+  })
+
+  // R134: every "Hồ sơ" in the student UI opens the detailed profile section,
+  // not the shell's generic account panel.
+  it('menu Hồ sơ và sidebar Hồ sơ của sinh viên mở cùng một trang', () => {
+    const profileNavId = studentPages.find(({ title }) => title === 'Hồ sơ')?.id
+    expect(profileNavId).toBe('student-profile')
+    expect(pageSrc('StudentPortal.jsx')).toContain(`onProfile={() => showPage('${profileNavId}')}`)
+    expect(read('AppShell.jsx')).toContain('onProfile={openProfile}')
+  })
+
+  // R135: the shell carries the admin title by default and the legacy student
+  // titles when the student portal supplies them.
+  it('topbar dùng tiêu đề shell: mặc định của quản trị, của sinh viên khi có sinh viên', () => {
+    expect(renderShell()).toContain('portal-topbar__title">Quản lý chứng nhận sinh viên')
+    expect(renderShell({ title: 'Cổng sinh viên' })).toContain('portal-topbar__title">Cổng sinh viên')
+    expect(pageSrc('StudentPortal.jsx')).toContain("title={student ? 'Cổng sinh viên' : 'Student Cert Hub'}")
+  })
+
+  // R136: the preview picker is the legacy screen: picker, "Về đăng nhập" and
+  // nothing else — no empty sidebar, no account chrome, no invented labels.
+  it('chế độ xem thử không có sidebar, menu tài khoản hay chữ Khách', () => {
+    const picker = createElement('div', null,
+      createElement('label', { htmlFor: 'notification-student' }, 'Hồ sơ xem thử'),
+      createElement('select', { id: 'notification-student' },
+        createElement('option', { value: '' }, 'Chọn sinh viên')),
+      createElement('button', { type: 'button' }, 'Về đăng nhập'))
+    const html = renderShell({
+      title: 'Student Cert Hub',
+      sections: [],
+      accountIdentifier: undefined,
+      roleLabel: undefined,
+      context: 'Chọn hồ sơ xem thử',
+    }, picker)
+
+    expect(html).toContain('portal-shell--no-sidebar')
+    expect(html).not.toMatch(/class="portal-sidebar/)
+    expect(html).not.toContain('portal-account-menu')
+    expect(html).not.toContain('Khách')
+    expect(html).toContain('portal-topbar__title">Student Cert Hub')
+    expect(html).toContain('Chọn hồ sơ xem thử')
+    expect(html).toContain('Về đăng nhập')
+
+    // The portal itself drops the preview-only identifier and sections.
+    const portal = pageSrc('StudentPortal.jsx')
+    expect(portal).toContain('sections={student ? studentSections.map(')
+    expect(portal).toContain('accountIdentifier={student?.studentCode}')
   })
 })

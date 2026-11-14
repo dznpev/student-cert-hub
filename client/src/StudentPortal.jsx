@@ -8,18 +8,9 @@ import StudentLogin from './StudentLogin.jsx'
 import StudentOverview from './StudentOverview.jsx'
 import StudentProfileForm from './StudentProfileForm.jsx'
 import StudentRecords from './StudentRecords.jsx'
+import { studentAccountSections, studentSections } from './studentNavigation.js'
 
-// §6.9.1: the student shell has one ungrouped list of four sections. The ids
-// must not reuse AppShell's account ids ('profile', 'account', 'password'):
-// selecting one of those opens the account panel instead of the section and
-// marks two nav items aria-current="page" (R125).
-const studentPages = [
-  { id: 'overview', title: 'Tổng quan', icon: <PortalIcon name="overview" /> },
-  { id: 'student-profile', title: 'Hồ sơ', icon: <PortalIcon name="profile" /> },
-  { id: 'participations', title: 'Lượt tham gia', icon: <PortalIcon name="participations" /> },
-  { id: 'certificates', title: 'Chứng nhận', icon: <PortalIcon name="certificates" /> },
-]
-const studentSections = [{ group: null, items: studentPages }]
+const withIcons = (items) => items.map(({ iconName, ...item }) => ({ ...item, icon: <PortalIcon name={iconName} /> }))
 
 export default function StudentPortal({ students, cohorts, activities, participations, certificates, notifications,
   studentPasswords, onChangePassword, onUpdateEmail, onReadNotification, onManagementSignIn, onActivateDemoStudent, onVerifyDemoActivation, onRequestReset, onResetPassword, adminPreviewAvailable }) {
@@ -89,13 +80,22 @@ export default function StudentPortal({ students, cohorts, activities, participa
 
   return (
     <AppShell
-      sections={student ? studentSections : []}
+      title={student ? 'Cổng sinh viên' : 'Student Cert Hub'}
+      sections={student ? studentSections.map((section) => ({ ...section, items: withIcons(section.items) })) : []}
+      accountSections={withIcons(studentAccountSections)}
+      accountDetails={student && (
+        <>
+          <dt>Email</dt><dd>{student.email || 'Chưa có'}</dd>
+          <dt>Phiên</dt><dd>Xem thử</dd>
+        </>
+      )}
+      onProfile={() => showPage('student-profile')}
       activeSectionId={student ? page : undefined}
       onSelectSection={showPage}
       onHome={goHome}
-      roleLabel={student ? 'Sinh viên' : 'Khách xem thử'}
+      roleLabel="Sinh viên"
       context={student ? activePage?.title : 'Chọn hồ sơ xem thử'}
-      accountIdentifier={student?.studentCode ?? 'Khách'}
+      accountIdentifier={student?.studentCode}
       onSignOut={signOut}
       onChangePassword={student && signedIn
         ? (currentPassword, newPassword) => onChangePassword(student.studentId, currentPassword, newPassword)
