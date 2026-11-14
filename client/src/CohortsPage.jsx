@@ -79,7 +79,7 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
   return (
     <>
       <PortalPageHeader title="Khóa tuyển sinh" actions={!isBusy && (
-        <button type="button" className="btn btn-primary admin-primary-button ms-auto" onClick={() => openForm()}>
+        <button type="button" className="btn btn-primary ms-auto" onClick={() => openForm()}>
           Thêm khóa tuyển sinh
         </button>
       )} />
@@ -122,7 +122,7 @@ export default function CohortsPage({ cohorts, onAddCohort, onUpdateCohort }) {
               </div>
             </div>
             <div className="d-flex flex-wrap gap-2">
-              <button type="submit" className="btn btn-primary admin-primary-button">Lưu khóa</button>
+              <button type="submit" className="btn btn-primary">Lưu khóa</button>
               <button type="button" className="btn btn-outline-secondary" onClick={() => setDraft(null)}>Hủy</button>
             </div>
           </form>

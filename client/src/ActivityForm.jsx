@@ -119,7 +119,7 @@ export default function ActivityForm({ activities, templates, initialActivity = 
           </div>
         </div>
         <div className="d-flex flex-wrap gap-2">
-          <button type="submit" className="btn btn-primary admin-primary-button">{initialActivity ? 'Lưu thay đổi' : 'Lưu bản nháp'}</button>
+          <button type="submit" className="btn btn-primary">{initialActivity ? 'Lưu thay đổi' : 'Lưu bản nháp'}</button>
           <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>Hủy</button>
         </div>
       </div>

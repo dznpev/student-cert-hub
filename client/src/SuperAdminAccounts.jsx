@@ -128,7 +128,7 @@ export default function SuperAdminAccounts({ students, managementAccounts, curre
             </div>
           </div>
       </PortalPanel>
-      <PortalPanel title="Danh sách tài khoản và hồ sơ">
+      <PortalPanel title="Danh sách tài khoản và hồ sơ" titleId="accounts-list-title">
           <PortalTable label="Bảng tài khoản và hồ sơ">
               <thead><tr>
                 <th scope="col">Tên đăng nhập / MSSV</th>

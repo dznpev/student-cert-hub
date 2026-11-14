@@ -176,7 +176,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
             <p className="small text-body-secondary">Cột bắt buộc: MSSV. Họ tên sẽ được đối chiếu từ danh sách Sinh viên theo MSSV.</p>
           )}
           {fileError && <p className="alert alert-danger" role="alert">{fileError}</p>}
-          <button type="button" className="btn btn-primary admin-primary-button" disabled={busy} onClick={readFile}>
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={readFile}>
             {reading ? 'Đang đọc tệp…' : 'Xem trước tệp'}
           </button>
       </PortalPanel>
@@ -218,7 +218,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                   {!preview.confirmed && (
                     <button
                       type="button"
-                      className="btn btn-primary admin-primary-button"
+                      className="btn btn-primary"
                       disabled={busy || counts.validRows === 0}
                       onClick={() => setPreview(onImportStudents(preview))}
                     >
@@ -271,7 +271,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
                   {!preview.confirmed && (
                     <button
                       type="button"
-                      className="btn btn-primary admin-primary-button"
+                      className="btn btn-primary"
                       disabled={busy || counts.validRows === 0}
                       onClick={() => setPreview(onImportParticipations(preview))}
                     >
@@ -308,7 +308,7 @@ export default function ImportsPage({ activities, cohorts, students, participati
             </div>
           </div>
           {selectedBatch && (
-            <section className="border rounded-3 p-3 mb-4" aria-labelledby="import-batch-detail-title">
+            <section className="portal-inset" aria-labelledby="import-batch-detail-title">
               <h3 id="import-batch-detail-title" className="h5 text-break">Chi tiết đợt #{selectedBatch.batchId} · {selectedBatch.fileName}</h3>
               <p className="small text-body-secondary">{importTypes[selectedBatch.importType]} · {dateFormatter.format(new Date(selectedBatch.importedAt))}{selectedBatch.activityName ? ' · ' + selectedBatch.activityName : ''}</p>
               <p>{selectedBatch.totalRows} dòng · {selectedBatch.successRows} thành công · {selectedBatch.duplicateRows} trùng · {selectedBatch.skippedRows} bỏ qua · {selectedBatch.errorRows} lỗi.</p>

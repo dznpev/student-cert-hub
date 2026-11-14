@@ -28,7 +28,7 @@ export default function ActivitiesPage({ activities, templates, onAddActivity, o
   return (
     <>
       <PortalPageHeader title="Hoạt động" actions={
-        <button type="button" className="btn btn-primary admin-primary-button" disabled={showForm} onClick={() => { setEditingActivity(null); setShowForm(true); setNotice('') }}>
+        <button type="button" className="btn btn-primary" disabled={showForm} onClick={() => { setEditingActivity(null); setShowForm(true); setNotice('') }}>
           Thêm hoạt động
         </button>
       } />

@@ -445,22 +445,53 @@ describe('các trang quản trị còn lại', () => {
 
   it('mọi trang quản trị dùng PortalPageHeader và không còn rounded-4', () => {
     for (const page of pages) {
-      const src = readFileSync(new URL(`../src/${page}.jsx`, import.meta.url), 'utf-8')
+      const src = pageSrc(page)
       expect(src, page).not.toContain('rounded-4')
       expect(src, page).toContain('PortalPageHeader')
     }
   })
 
-  // R109: converting a region must not lose its name. PortalPanel renders the id
-  // on its title element, so the id an `aria-labelledby` used to point at still
-  // exists — and every id these pages still reference resolves in the same file.
-  // `titleId` is collected alongside literal `id` because the render check above
-  // proves it lands on the <h2> as a real id.
-  it('vùng được đặt tên vẫn trỏ tới một phần tử có thật', () => {
-    const html = renderToStaticMarkup(createElement(PortalPanel, { title: 'Vùng có tên', titleId: 'vung-co-ten' }))
-    expect(html).toMatch(/<h2[^>]*id="vung-co-ten"[^>]*>/)
-    expect(html).toContain('portal-panel__title">Vùng có tên</h2>')
+  // R119/R121: a conversion must not turn a named region into a plain container.
+  // `PortalPanel` points its <section> at the title it renders, so a `titleId`
+  // is consumed, not merely declared — and every `titleId` a page hands over is
+  // fed back through the component here to prove the reference exists.
+  it('mỗi tiêu đề panel đều đặt tên cho vùng của nó', () => {
+    const named = renderToStaticMarkup(createElement(PortalPanel, { title: 'Vùng có tên', titleId: 'vung-co-ten' }))
+    expect(named).toMatch(/<section[^>]*aria-labelledby="vung-co-ten"[^>]*>/)
+    expect(named).toMatch(/<h2[^>]*id="vung-co-ten"[^>]*>/)
+    expect(named).toContain('portal-panel__title">Vùng có tên</h2>')
 
+    const untitled = renderToStaticMarkup(createElement(PortalPanel, null, createElement('p', null, 'Nội dung')))
+    expect(untitled).not.toContain('aria-labelledby')
+
+    for (const page of pages) {
+      const src = pageSrc(page)
+      for (const [tag] of src.matchAll(/<PortalPanel\b[^>]*>/g)) {
+        if (!/\stitle=/.test(tag)) continue
+        const titleId = /\stitleId="([^"]+)"/.exec(tag)?.[1]
+        expect(titleId, `${page}: panel có title phải có titleId → ${tag}`).toBeTruthy()
+        const consumed = renderToStaticMarkup(createElement(PortalPanel, { title: 'Vùng', titleId }))
+        expect(consumed, `${page} → ${titleId}`).toContain(`aria-labelledby="${titleId}"`)
+      }
+    }
+
+    // The ids that named regions before the conversion must still name them.
+    const survived = {
+      StudentsPage: ['student-profile-title'],
+      ParticipationsPage: ['participation-results-title'],
+      ImportsPage: ['import-settings', 'student-import-preview', 'participation-import-preview', 'import-history'],
+      SuperAdminAccounts: ['accounts-list-title'],
+    }
+    for (const [page, ids] of Object.entries(survived)) {
+      const src = pageSrc(page)
+      for (const id of ids) expect(src, `${page} → ${id}`).toContain(`titleId="${id}"`)
+    }
+  })
+
+  // Every id an `aria-labelledby` / `aria-describedby` names must exist in the
+  // same file — either as a literal `id` or as a `titleId` the render check
+  // above turns into one.
+  it('vùng được đặt tên vẫn trỏ tới một phần tử có thật', () => {
     for (const page of pages) {
       const src = pageSrc(page)
       const ids = new Set([...src.matchAll(/\b(?:titleId|id)="([^"]+)"/g)].map((match) => match[1]))

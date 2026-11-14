@@ -56,7 +56,7 @@ export default function StudentsPage({ cohorts, students, onUpdateStudentActive,
           Quay lại danh sách
         </button>
         <PortalPageHeader title="Hồ sơ sinh viên" description="Dữ liệu mẫu" />
-        <PortalPanel className="portal-panel--padded" title={'Hồ sơ ' + selectedStudent.fullName}>
+        <PortalPanel className="portal-panel--padded" titleId="student-profile-title" title={'Hồ sơ ' + selectedStudent.fullName}>
             {editingProfile ? (
               <StudentProfileForm student={selectedStudent} cohorts={cohorts} onCancel={() => setEditingProfile(false)}
                 onSave={(values) => {

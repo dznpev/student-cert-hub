@@ -117,6 +117,17 @@
   margin-bottom: var(--ws-s7);
 }
 
+/* A bordered block nested inside a padded panel body — a record detail, not a
+   panel of its own. Border colour and radius come from the token scales, and
+   the inset from the spacing scale, so it cannot drift onto Bootstrap's
+   off-scale `rounded-3` / `p-3` utilities. */
+.portal-inset {
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-sm);
+  margin-bottom: var(--ws-s7);
+  padding: var(--ws-s7);
+}
+
 /* Page header (§6.8.1) ---------------------------------------------------- */
 
 .portal-page-header {
