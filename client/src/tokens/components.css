@@ -547,8 +547,11 @@
  */
 
 .portal-shell {
+  /* Declared once: grid column, overlay width and panel geometry all derive
+     from this custom property (R36). */
+  --portal-sidebar-w: 238px;
   display: grid;
-  grid-template-columns: 238px minmax(0, 1fr);
+  grid-template-columns: var(--portal-sidebar-w) minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
   min-height: 100vh;
   background: var(--ws-page-bg);
@@ -560,6 +563,15 @@
   grid-row: 1 / span 3;
   grid-column: 1;
   min-width: 0;
+}
+
+/* The visible sidebar surface. It is the element that slides on mobile, so the
+   fixed "Menu" trigger (a sibling below) keeps a viewport containing block. */
+.portal-sidebar__panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   background-color: var(--ws-sidebar);
   border-right: 1px solid var(--ws-line);
   transition: transform var(--ws-dur-normal) ease;
@@ -627,6 +639,12 @@
    its own only trigger (R31). It is revealed by the <992px media query. */
 .portal-sidebar__toggle {
   display: none;
+}
+
+.portal-sidebar__logo-button:focus-visible,
+.portal-sidebar__toggle:focus-visible {
+  outline: 2px solid var(--ws-hutech);
+  outline-offset: 2px;
 }
 
 .portal-nav {
@@ -826,17 +844,42 @@
   margin-left: auto;
 }
 
-.portal-topbar__note {
-  margin: 0;
-  color: var(--ws-fg-2);
-  font-size: var(--ws-t-chip);
-}
-
 .portal-main {
   grid-row: 2;
   grid-column: 2;
   min-width: 0;
   padding: var(--ws-s8) var(--ws-s9);
+}
+
+/* Account pages rendered inside <main> (R33) ------------------------------ */
+
+.portal-account-page {
+  padding: var(--ws-s6) var(--ws-s7) var(--ws-s7);
+}
+
+.portal-account-page__list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--ws-s3) var(--ws-s7);
+  margin: 0;
+}
+
+.portal-account-page__list dt {
+  color: var(--ws-muted);
+  font-size: var(--ws-t-chip);
+  font-weight: 600;
+}
+
+.portal-account-page__list dd {
+  margin: 0;
+  color: var(--ws-fg);
+  font-size: var(--ws-t-card);
+}
+
+.portal-account-page__note {
+  margin: var(--ws-s4) 0 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-chip);
 }
 
 .portal-footer {
@@ -1066,26 +1109,34 @@
     inset-block: 0;
     inset-inline-start: 0;
     z-index: 40;
-    width: 238px;
-    border-right: 1px solid var(--ws-line);
+    width: var(--portal-sidebar-w);
+    /* Transparent and click-through; only the panel/toggle take pointers. */
+    pointer-events: none;
+  }
+
+  /* The panel carries the slide transform. The fixed Menu trigger is its
+     sibling, so its containing block is the viewport and it stays put
+     regardless of how the panel animates (R37). */
+  .portal-sidebar__panel {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
     /* Off-canvas: keep the links out of the tab order until the overlay opens. */
     transform: translateX(-100%);
     visibility: hidden;
   }
 
-  .portal-sidebar--open {
+  .portal-sidebar--open .portal-sidebar__panel {
     transform: translateX(0);
     visibility: visible;
     box-shadow: var(--ws-shadow-panel);
+    pointer-events: auto;
   }
 
   .portal-sidebar__brand {
     padding-inline-start: calc(var(--ws-s10) + var(--ws-s7));
   }
 
-  /* Fixed trigger with a compensating transform: the sidebar is a transformed
-     containing block, so translating the button by the panel width keeps it on
-     screen at the viewport's left edge both open and closed (R31). */
   .portal-sidebar__toggle {
     position: fixed;
     top: var(--ws-s6);
@@ -1105,11 +1156,7 @@
     font-weight: 600;
     visibility: visible;
     cursor: pointer;
-    transition: transform var(--ws-dur-normal) ease;
-  }
-
-  .portal-sidebar:not(.portal-sidebar--open) .portal-sidebar__toggle {
-    transform: translateX(238px);
+    pointer-events: auto;
   }
 
   .portal-topbar,
@@ -1133,15 +1180,9 @@
     display: none;
   }
 
-  /* Only the magnifier remains on the narrowest screens (§6.2). */
+  /* Below 576px the search collapses entirely: keeping only a non-interactive
+     magnifier chip would leave a dead control (R40). */
   .portal-topbar__search {
-    flex: none;
-    justify-content: center;
-    width: 34px;
-    padding: 0;
-  }
-
-  .portal-search__input {
     display: none;
   }
 

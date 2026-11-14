@@ -1,15 +1,30 @@
+import { useEffect, useRef } from 'react'
 import { useTheme } from '../themeContext.js'
 
 export default function AccountMenu({ identifier, open, onToggle, onProfile, onAccount, onSignOut }) {
   const { theme, toggleTheme } = useTheme()
+  const wrapRef = useRef(null)
+  const triggerRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const closeOnOutsidePointer = (event) => {
+      if (wrapRef.current?.contains(event.target)) return
+      onToggle()
+    }
+    document.addEventListener('pointerdown', closeOnOutsidePointer)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointer)
+  }, [open, onToggle])
+
+  const handleKeyDown = (event) => {
+    if (event.key !== 'Escape' || !open) return
+    onToggle()
+    triggerRef.current?.focus()
+  }
 
   return (
-    <div className="portal-account-menu__wrap"
-      onKeyDown={(event) => {
-        if (event.key !== 'Escape' || !open) return
-        onToggle()
-      }}>
-      <button type="button" className="portal-account-menu__trigger"
+    <div ref={wrapRef} className="portal-account-menu__wrap" onKeyDown={handleKeyDown}>
+      <button ref={triggerRef} type="button" className="portal-account-menu__trigger"
         onClick={onToggle} aria-expanded={open} aria-controls="portal-account-menu"
         aria-label={'Menu tài khoản ' + identifier}>
         <span className="portal-account-menu__avatar" aria-hidden="true">

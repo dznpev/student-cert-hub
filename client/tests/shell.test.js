@@ -1,7 +1,49 @@
 import { readFileSync } from 'node:fs'
+import * as React from 'react'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
+import AccountMenu from '../src/components/AccountMenu.jsx'
+import AppSidebar from '../src/components/AppSidebar.jsx'
+import { ThemeContext } from '../src/themeContext.js'
 
 const read = (p) => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf-8')
+
+// Vitest's SSR transform compiles the imported .jsx modules with the classic
+// JSX runtime, so their render functions look React up on the global scope.
+globalThis.React = React
+
+const renderAccountMenu = (theme) => renderToStaticMarkup(
+  createElement(ThemeContext.Provider, { value: { theme, toggleTheme: () => {} } },
+    createElement(AccountMenu, {
+      identifier: 'admin',
+      open: false,
+      onToggle: () => {},
+      onProfile: () => {},
+      onAccount: () => {},
+      onSignOut: () => {},
+    })),
+)
+
+const renderSidebar = () => renderToStaticMarkup(
+  createElement(AppSidebar, {
+    navigationId: 'portal-navigation',
+    navigationLabel: 'Điều hướng chính',
+    sections: [
+      {
+        group: 'Nghiệp vụ',
+        items: [
+          { id: 'overview', title: 'Tổng quan' },
+          { id: 'participations', title: 'Lượt tham gia', badge: 2 },
+          { id: 'certificates', title: 'Chứng nhận', badge: 0 },
+        ],
+      },
+    ],
+    activeSectionId: 'overview',
+    onSelectSection: () => {},
+    onHome: () => {},
+  }),
+)
 
 describe('shell mới', () => {
   it('sidebar hỗ trợ nhóm mục', () => {
@@ -26,5 +68,26 @@ describe('shell mới', () => {
 
   it('sidebar rộng 238px', () => {
     expect(read('tokens/components.css')).toContain('238px')
+  })
+})
+
+describe('shell mới — hành vi render', () => {
+  it('AccountMenu có mục tài khoản và nhãn đổi chế độ theo theme', () => {
+    const light = renderAccountMenu('light')
+    for (const label of ['Hồ sơ', 'Tài khoản', 'Đăng xuất']) expect(light).toContain(label)
+    expect(light).toContain('aria-label="Chuyển sang chế độ tối"')
+
+    const dark = renderAccountMenu('dark')
+    expect(dark).toContain('aria-label="Chuyển sang chế độ sáng"')
+    expect(dark).not.toContain('aria-label="Chuyển sang chế độ tối"')
+  })
+
+  it('AppSidebar render nhãn nhóm, aria-current và badge theo số lượng', () => {
+    const html = renderSidebar()
+    expect(html).toContain('portal-nav__group-label">Nghiệp vụ')
+    expect(html).toMatch(/portal-nav__item portal-nav__item--active" aria-current="page"/)
+    expect(html).toContain('portal-nav__badge">2')
+    // The zero-count badge must not render at all.
+    expect((html.match(/portal-nav__badge/g) || []).length).toBe(1)
   })
 })
