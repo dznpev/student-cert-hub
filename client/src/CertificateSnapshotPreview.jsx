@@ -24,11 +24,11 @@ export default function CertificateSnapshotPreview({ certificate, onClose }) {
   }, [file])
 
   return (
-    <section className="portal-panel mb-4" aria-labelledby="certificate-snapshot-title">
+    <section className="portal-panel portal-panel--stacked portal-panel--padded" aria-labelledby="certificate-snapshot-title">
       <header className="portal-panel__header">
         <h2 id="certificate-snapshot-title" className="portal-panel__title">Bản mẫu đã chốt</h2>
       </header>
-      <div className="portal-panel__body p-3 p-md-4">
+      <div className="portal-panel__body">
         <p className="text-break">{certificate.certificateCode} · {certificate.templateName ?? 'Chưa có tên mẫu'} · v{certificate.templateVersion ?? '—'}</p>
         <p className="small text-body-secondary">Tệp và vị trí chữ/QR được giữ cùng yêu cầu chứng nhận trong phiên này. Nội dung xem thử dùng dữ liệu minh họa.</p>
         {!file ? <p className="alert alert-info">Chưa có tệp mẫu được lưu cho chứng nhận này.</p>

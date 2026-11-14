@@ -99,6 +99,24 @@
   padding: 0 0 var(--ws-s2);
 }
 
+/* Panels whose body holds forms or prose instead of a flush table: the bare
+   body above is edge-to-edge, so a padded panel re-adds the inset from the
+   spacing scale (§5.5) rather than Bootstrap's off-scale utilities. */
+.portal-panel--padded > .portal-panel__body {
+  padding: var(--ws-s7);
+}
+
+@media (min-width: 768px) {
+  .portal-panel--padded > .portal-panel__body {
+    padding: var(--ws-s9);
+  }
+}
+
+/* Panels stacked on one page share one vertical gap from the same scale. */
+.portal-panel--stacked {
+  margin-bottom: var(--ws-s7);
+}
+
 /* Page header (§6.8.1) ---------------------------------------------------- */
 
 .portal-page-header {
@@ -512,42 +530,61 @@
 
 /* Filter field (§6.7, states in §7.2) ------------------------------------- */
 
-.fld {
-  height: 32px;
-  padding: 0 var(--ws-s4);
+/* One rule set for both field shapes, so the revocation textarea can never
+   drift from the inputs beside it. `.fld` is the single-line field;
+   `.fld-multiline` is its textarea twin, which cannot simply take `.fld`
+   because the fixed height of §5.7 would collapse it. Only the shape-specific
+   declarations below stay separate. */
+.fld,
+.fld-multiline {
   color: var(--ws-fg);
   background-color: var(--ws-panel);
   border: 1px solid var(--ws-line);
   border-radius: var(--ws-r-sm);
   font-family: var(--ws-font-body);
   font-size: var(--ws-t-chip);
-  line-height: 1.4;
   transition: border-color var(--ws-dur-fast) ease, background-color var(--ws-dur-fast) ease;
 }
 
-.fld::placeholder {
+/* The 32px field height of §5.7 belongs to the single-line shape only. */
+.fld {
+  height: 32px;
+  padding: 0 var(--ws-s4);
+  line-height: 1.4;
+}
+
+/* A textarea's height follows `rows` and the user's resize instead. */
+.fld-multiline {
+  display: block;
+  width: 100%;
+  padding: var(--ws-s3) var(--ws-s4);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.fld::placeholder,
+.fld-multiline::placeholder {
   color: var(--ws-muted);
   opacity: 1;
 }
 
-.fld:hover {
+:is(.fld, .fld-multiline):hover {
   border-color: var(--ws-hutech-border);
 }
 
-.fld:focus-visible {
+:is(.fld, .fld-multiline):focus-visible {
   border-color: var(--ws-hutech);
   outline: 2px solid var(--ws-hutech);
   outline-offset: 2px;
 }
 
-.fld:disabled {
+:is(.fld, .fld-multiline):disabled {
   color: var(--ws-control-idle);
   background-color: var(--ws-chip-bg);
   cursor: not-allowed;
 }
 
-.fld.is-invalid,
-.fld[aria-invalid="true"] {
+:is(.fld, .fld-multiline):is(.is-invalid, [aria-invalid="true"]) {
   border-color: var(--ws-accent);
 }
 
@@ -557,50 +594,6 @@
    `appearance` is deliberately untouched — that is what keeps the arrow. */
 select.fld {
   padding-right: var(--ws-s9);
-}
-
-/* Multi-line twin of `.fld`: a textarea must NOT take `.fld` itself, because
-   its fixed 32px height would collapse the field. Same border, radius, font
-   and states, but the height follows `rows` and the user's resize. */
-.fld-multiline {
-  display: block;
-  width: 100%;
-  padding: var(--ws-s3) var(--ws-s4);
-  color: var(--ws-fg);
-  background-color: var(--ws-panel);
-  border: 1px solid var(--ws-line);
-  border-radius: var(--ws-r-sm);
-  font-family: var(--ws-font-body);
-  font-size: var(--ws-t-chip);
-  line-height: 1.5;
-  resize: vertical;
-  transition: border-color var(--ws-dur-fast) ease, background-color var(--ws-dur-fast) ease;
-}
-
-.fld-multiline::placeholder {
-  color: var(--ws-muted);
-  opacity: 1;
-}
-
-.fld-multiline:hover {
-  border-color: var(--ws-hutech-border);
-}
-
-.fld-multiline:focus-visible {
-  border-color: var(--ws-hutech);
-  outline: 2px solid var(--ws-hutech);
-  outline-offset: 2px;
-}
-
-.fld-multiline:disabled {
-  color: var(--ws-control-idle);
-  background-color: var(--ws-chip-bg);
-  cursor: not-allowed;
-}
-
-.fld-multiline.is-invalid,
-.fld-multiline[aria-invalid="true"] {
-  border-color: var(--ws-accent);
 }
 
 /* Empty state (§12.2) ----------------------------------------------------- */
@@ -742,23 +735,12 @@ select.fld {
   --bs-btn-disabled-border-color: var(--ws-hutech-text);
 }
 
-[data-bs-theme="dark"] .fld:focus-visible {
+[data-bs-theme="dark"] :is(.fld, .fld-multiline):focus-visible {
   border-color: var(--ws-hutech-text);
   outline-color: var(--ws-hutech-text);
 }
 
-[data-bs-theme="dark"] .fld.is-invalid,
-[data-bs-theme="dark"] .fld[aria-invalid="true"] {
-  border-color: var(--ws-accent-text);
-}
-
-[data-bs-theme="dark"] .fld-multiline:focus-visible {
-  border-color: var(--ws-hutech-text);
-  outline-color: var(--ws-hutech-text);
-}
-
-[data-bs-theme="dark"] .fld-multiline.is-invalid,
-[data-bs-theme="dark"] .fld-multiline[aria-invalid="true"] {
+[data-bs-theme="dark"] :is(.fld, .fld-multiline):is(.is-invalid, [aria-invalid="true"]) {
   border-color: var(--ws-accent-text);
 }
 

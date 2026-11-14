@@ -350,31 +350,46 @@ describe('trang Chứng nhận', () => {
     expect(certificatesSrc()).toContain('Duyệt lượt tham gia sẽ tự thêm yêu cầu chứng nhận.')
   })
 
-  // R95: both auxiliary panels become portal-panel surfaces.
+  // R95: both auxiliary panels become portal-panel surfaces — and the root
+  // class must be there, or the panel loses its background, radius and clip.
   it('panel tải và bản mẫu dùng portal-panel, không còn rounded-4', () => {
     for (const file of ['CertificateDownloadPanel.jsx', 'CertificateSnapshotPreview.jsx']) {
       const src = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf-8')
+      expect(src, file).toMatch(/<section className="portal-panel[ "]/)
       expect(src, file).toContain('portal-panel__header')
       expect(src, file).toContain('portal-panel__body')
       expect(src, file).not.toContain('rounded-4')
     }
   })
 
-  // R93: a select keeps the browser's own arrow, so it reserves that room from
-  // the spacing scale; the revocation textarea gets the field look without the
-  // fixed 32px height that would collapse it.
+  // R93/R100: a select keeps the browser's own arrow, so it reserves that room
+  // from the spacing scale; the revocation textarea shares the field look but
+  // not the fixed 32px height.
   it('select chừa chỗ cho mũi tên và textarea cao tự động', () => {
     const css = componentsCss()
     const select = /(?:^|\n)select\.fld\s*\{([^}]*)\}/.exec(css)
     expect(select, 'thiếu quy tắc select.fld').not.toBeNull()
-    expect(select[1]).toMatch(/padding-right:\s*var\(--ws-s\d+\)/)
+    // --ws-s9 (26px) is the step that clears the arrow; a smaller one (2px at
+    // --ws-s1) would clip it while still counting as "a token".
+    expect(select[1]).toMatch(/padding-right:\s*var\(--ws-s9\)/)
+
+    // One grouped rule carries the field look for both shapes…
+    const shared = /(?:^|\n)\.fld,\s*\n\.fld-multiline\s*\{([^}]*)\}/.exec(css)
+    expect(shared, 'thiếu quy tắc nhóm .fld, .fld-multiline').not.toBeNull()
+    expect(shared[1]).toMatch(/border-radius:\s*var\(--ws-r-sm\)/)
+
+    // …and only the single-line shape keeps the fixed height.
+    const single = /(?:^|\n)\.fld\s*\{([^}]*)\}/.exec(css)
+    expect(single, 'thiếu quy tắc .fld').not.toBeNull()
+    expect(single[1]).toMatch(/height:\s*32px/)
 
     const area = /(?:^|\n)\.fld-multiline\s*\{([^}]*)\}/.exec(css)
     expect(area, 'thiếu quy tắc .fld-multiline').not.toBeNull()
     expect(area[1]).not.toMatch(/(?:^|;)\s*height:/)
-    expect(area[1]).toMatch(/border-radius:\s*var\(--ws-r-sm\)/)
 
-    const textarea = /<textarea[\s\S]*?\/>/.exec(certificatesSrc())
+    // Anchored to the revocation field itself: an unanchored match would pass
+    // even if this textarea lost the class and another one kept it.
+    const textarea = /<textarea\b[\s\S]*?id="certificate-revocation-reason"[\s\S]*?\/>/.exec(certificatesSrc())
     expect(textarea, 'không tìm thấy textarea lý do thu hồi').not.toBeNull()
     expect(textarea[0]).toContain('fld-multiline')
     expect(textarea[0]).not.toContain('form-control')

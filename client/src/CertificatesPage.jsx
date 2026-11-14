@@ -111,16 +111,14 @@ export default function CertificatesPage({ cohorts, activities, students, partic
         title="Chứng nhận"
         description="Dữ liệu mẫu · Thay đổi chỉ lưu trong phiên hiện tại, tải lại trang sẽ khôi phục dữ liệu mẫu."
       />
-      {/* The header description took over the old header paragraph: this note
-          still tells the admin what approving a participation does. */}
       <p className="text-body-secondary mb-4">Duyệt lượt tham gia sẽ tự thêm yêu cầu chứng nhận. Các nút xử lý bên dưới mô phỏng kết quả tạo PDF; chưa có tệp PDF thật để tải.</p>
 
       {processing && (
-        <form className="portal-panel mb-4" onSubmit={submitProcessing} aria-labelledby="certificate-process-title" noValidate>
+        <form className="portal-panel portal-panel--stacked portal-panel--padded" onSubmit={submitProcessing} aria-labelledby="certificate-process-title" noValidate>
           <header className="portal-panel__header">
             <h2 id="certificate-process-title" className="portal-panel__title">{processing.action === 'revoke' ? 'Thu hồi chứng nhận' : processing.action === 'retry' ? 'Thử lại chứng nhận' : 'Xử lý chứng nhận mô phỏng'}</h2>
           </header>
-          <div className="portal-panel__body p-3 p-md-4">
+          <div className="portal-panel__body">
             <p className="text-break">{processingCertificate?.certificateCode}</p>
             {processing.action === 'revoke' ? (
               <div className="mb-3">
@@ -156,72 +154,70 @@ export default function CertificatesPage({ cohorts, activities, students, partic
       {snapshotCertificate && <CertificateSnapshotPreview key={snapshotCertificate.certificateId}
         certificate={snapshotCertificate} onClose={() => setSnapshotCertificateId(null)} />}
 
-      <PortalPanel className="mb-4">
-        <div className="p-3 p-md-4">
-          <div className="row g-3 mb-3">
-            <div className="col-12 col-sm-7 col-xl-5">
-              <label className="form-label" htmlFor="certificate-activity">Hoạt động</label>
-              <select
-                id="certificate-activity"
-                className="fld w-100"
-                value={selectedActivity}
-                disabled={Boolean(processing)}
-                onChange={(event) => changeFilter(setSelectedActivity, event.target.value)}
-              >
-                <option value="">Tất cả hoạt động</option>
-                {activities.map(({ activityId, code, name }) => (
-                  <option key={activityId} value={activityId}>{code} · {name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-12 col-sm-5 col-xl-3">
-              <label className="form-label" htmlFor="certificate-status">Trạng thái chứng nhận</label>
-              <select
-                id="certificate-status"
-                className="fld w-100"
-                value={selectedStatus}
-                disabled={Boolean(processing)}
-                onChange={(event) => changeFilter(setSelectedStatus, event.target.value)}
-              >
-                <option value="">Tất cả trạng thái</option>
-                {certificateStatuses.map(({ status, label }) => (
-                  <option key={status} value={status}>{label}</option>
-                ))}
-              </select>
-            </div>
+      <PortalPanel className="portal-panel--stacked portal-panel--padded">
+        <div className="row g-3 mb-3">
+          <div className="col-12 col-sm-7 col-xl-5">
+            <label className="form-label" htmlFor="certificate-activity">Hoạt động</label>
+            <select
+              id="certificate-activity"
+              className="fld w-100"
+              value={selectedActivity}
+              disabled={Boolean(processing)}
+              onChange={(event) => changeFilter(setSelectedActivity, event.target.value)}
+            >
+              <option value="">Tất cả hoạt động</option>
+              {activities.map(({ activityId, code, name }) => (
+                <option key={activityId} value={activityId}>{code} · {name}</option>
+              ))}
+            </select>
           </div>
-          <fieldset className="mb-3" disabled={Boolean(processing)}>
-            <legend className="form-label">Ngày phát hành</legend>
-            <div className="row g-3">
-              <div className="col-12 col-sm-6 col-xl-3">
-                <label className="form-label" htmlFor="certificate-issued-from">Từ ngày</label>
-                <input id="certificate-issued-from" type="date" className="fld w-100"
-                  value={issuedFrom} onChange={(event) => changeFilter(setIssuedFrom, event.target.value)} />
-              </div>
-              <div className="col-12 col-sm-6 col-xl-3">
-                <label className="form-label" htmlFor="certificate-issued-to">Đến ngày</label>
-                <input id="certificate-issued-to" type="date"
-                  className={'fld w-100' + (invalidIssuedRange ? ' is-invalid' : '')}
-                  aria-invalid={invalidIssuedRange}
-                  aria-describedby={invalidIssuedRange ? 'certificate-issued-range-error' : undefined}
-                  value={issuedTo} onChange={(event) => changeFilter(setIssuedTo, event.target.value)} />
-                {invalidIssuedRange && (
-                  <div id="certificate-issued-range-error" className="invalid-feedback" role="alert">
-                    Đến ngày phải bằng hoặc sau Từ ngày.
-                  </div>
-                )}
-              </div>
-            </div>
-          </fieldset>
-          <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
-            <span className="small" role="status">Đã chọn {selectedVisibleIds.length} chứng nhận hiệu lực trong danh sách đang lọc.</span>
-            <button type="button" className="btn btn-outline-primary" disabled={Boolean(processing) || selectedVisibleIds.length === 0}
-              onClick={() => setDownloadRequest({ format: 'zip', certificateIds: selectedVisibleIds })}>Tải ZIP đã chọn</button>
-            <button type="button" className="btn btn-outline-secondary" disabled={Boolean(processing) || selectedIds.length === 0}
-              onClick={() => { setSelectedIds([]); setDownloadRequest(null) }}>Bỏ chọn</button>
+          <div className="col-12 col-sm-5 col-xl-3">
+            <label className="form-label" htmlFor="certificate-status">Trạng thái chứng nhận</label>
+            <select
+              id="certificate-status"
+              className="fld w-100"
+              value={selectedStatus}
+              disabled={Boolean(processing)}
+              onChange={(event) => changeFilter(setSelectedStatus, event.target.value)}
+            >
+              <option value="">Tất cả trạng thái</option>
+              {certificateStatuses.map(({ status, label }) => (
+                <option key={status} value={status}>{label}</option>
+              ))}
+            </select>
           </div>
-          <p className="small text-body-secondary">Chỉ chọn chứng nhận đang hiệu lực. Đổi bộ lọc sẽ bỏ chọn. Tải PDF/ZIP hiện là giao diện thử, chưa có tệp và quyền tải từ API.</p>
         </div>
+        <fieldset className="mb-3" disabled={Boolean(processing)}>
+          <legend className="form-label">Ngày phát hành</legend>
+          <div className="row g-3">
+            <div className="col-12 col-sm-6 col-xl-3">
+              <label className="form-label" htmlFor="certificate-issued-from">Từ ngày</label>
+              <input id="certificate-issued-from" type="date" className="fld w-100"
+                value={issuedFrom} onChange={(event) => changeFilter(setIssuedFrom, event.target.value)} />
+            </div>
+            <div className="col-12 col-sm-6 col-xl-3">
+              <label className="form-label" htmlFor="certificate-issued-to">Đến ngày</label>
+              <input id="certificate-issued-to" type="date"
+                className={'fld w-100' + (invalidIssuedRange ? ' is-invalid' : '')}
+                aria-invalid={invalidIssuedRange}
+                aria-describedby={invalidIssuedRange ? 'certificate-issued-range-error' : undefined}
+                value={issuedTo} onChange={(event) => changeFilter(setIssuedTo, event.target.value)} />
+              {invalidIssuedRange && (
+                <div id="certificate-issued-range-error" className="invalid-feedback" role="alert">
+                  Đến ngày phải bằng hoặc sau Từ ngày.
+                </div>
+              )}
+            </div>
+          </div>
+        </fieldset>
+        <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+          <span className="small" role="status">Đã chọn {selectedVisibleIds.length} chứng nhận hiệu lực trong danh sách đang lọc.</span>
+          <button type="button" className="btn btn-outline-primary" disabled={Boolean(processing) || selectedVisibleIds.length === 0}
+            onClick={() => setDownloadRequest({ format: 'zip', certificateIds: selectedVisibleIds })}>Tải ZIP đã chọn</button>
+          <button type="button" className="btn btn-outline-secondary" disabled={Boolean(processing) || selectedIds.length === 0}
+            onClick={() => { setSelectedIds([]); setDownloadRequest(null) }}>Bỏ chọn</button>
+        </div>
+        <p className="small text-body-secondary">Chỉ chọn chứng nhận đang hiệu lực. Đổi bộ lọc sẽ bỏ chọn. Tải PDF/ZIP hiện là giao diện thử, chưa có tệp và quyền tải từ API.</p>
       </PortalPanel>
       {downloadRequest && <CertificateDownloadPanel key={downloadRequest.format + ':' + downloadRequest.certificateIds.join(',')}
         request={downloadRequest} certificates={certificates} onClose={() => setDownloadRequest(null)} />}
