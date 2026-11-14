@@ -10,6 +10,23 @@ const systemGroup = {
   items: [{ id: 'audit', title: 'Nhật ký hệ thống', icon: icon('audit') }],
 }
 
+// §6.9.3 / R57: only pages that had their own search input show the topbar box.
+// This map is the single source of truth for both the placeholder text and
+// whether a section gets a search box at all.
+const searchPlaceholders = {
+  certificates: 'Tìm sinh viên, mã chứng nhận…',
+  students: 'Tìm sinh viên, mã chứng nhận…',
+  activities: 'Tìm mã hoặc tên hoạt động…',
+  audit: 'Tìm trong nhật ký hệ thống…',
+  templates: 'Tìm tên mẫu chứng nhận…',
+  accounts: 'Tìm tài khoản quản trị…',
+  imports: 'Tìm tên tệp đã nhập…',
+}
+
+export function searchPlaceholderFor(sectionId) {
+  return Object.hasOwn(searchPlaceholders, sectionId) ? searchPlaceholders[sectionId] : null
+}
+
 function createBusinessItems(pendingCount) {
   return [
     { id: 'overview', title: 'Tổng quan', icon: icon('overview') },

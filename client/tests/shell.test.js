@@ -10,6 +10,7 @@ import {
   createAdminSections,
   createSuperAdminSections,
   createSuperAdminWorkspaceSections,
+  searchPlaceholderFor,
 } from '../src/navigationSections.js'
 import PortalIcon from '../src/PortalIcon.jsx'
 import { ThemeContext } from '../src/themeContext.js'
@@ -140,15 +141,51 @@ describe('App — tìm kiếm dùng chung ở topbar', () => {
     expect(src).toMatch(/const \[pageSearch, setPageSearch\] = useState\(''\)/)
   })
 
-  it('7 trang nhận search qua props, không tự khai báo useState search', () => {
-    for (const file of ['CertificatesPage.jsx','StudentsPage.jsx','ActivitiesPage.jsx','AuditLogsPage.jsx','SuperAdminAccounts.jsx']) {
-      expect(read(file)).not.toMatch(/const \[search, setSearch\] = useState\(''\)/)
+  it('cả 7 trang nhận search qua props, không tự khai báo state tìm kiếm', () => {
+    const pages = [
+      'CertificatesPage.jsx',
+      'StudentsPage.jsx',
+      'ActivitiesPage.jsx',
+      'AuditLogsPage.jsx',
+      'SuperAdminAccounts.jsx',
+      'CertificateTemplatesPage.jsx',
+      'ImportsPage.jsx',
+    ]
+    for (const file of pages) {
+      const src = read(file)
+      expect(src, file).toMatch(/search = ''/)
+      expect(src, file).not.toMatch(/templateSearch|historySearch/)
+      expect(src, file).not.toMatch(/const \[search, setSearch\] = useState\(''\)/)
+    }
+  })
+
+  it('4 trang chỉ đọc search không khai báo onSearchChange', () => {
+    for (const file of ['CertificatesPage.jsx', 'StudentsPage.jsx', 'ImportsPage.jsx', 'SuperAdminAccounts.jsx']) {
+      expect(read(file), file).not.toContain('onSearchChange')
+    }
+  })
+})
+
+describe('navigationSections — placeholder tìm kiếm (R57)', () => {
+  it('trả placeholder chính xác cho 7 mục có ô tìm kiếm', () => {
+    expect(searchPlaceholderFor('certificates')).toBe('Tìm sinh viên, mã chứng nhận…')
+    expect(searchPlaceholderFor('students')).toBe('Tìm sinh viên, mã chứng nhận…')
+    expect(searchPlaceholderFor('activities')).toBe('Tìm mã hoặc tên hoạt động…')
+    expect(searchPlaceholderFor('audit')).toBe('Tìm trong nhật ký hệ thống…')
+    expect(searchPlaceholderFor('templates')).toBe('Tìm tên mẫu chứng nhận…')
+    expect(searchPlaceholderFor('accounts')).toBe('Tìm tài khoản quản trị…')
+    expect(searchPlaceholderFor('imports')).toBe('Tìm tên tệp đã nhập…')
+  })
+
+  it('trả null cho các mục không có ô tìm kiếm', () => {
+    for (const sectionId of ['overview', 'cohorts', 'participations', 'workspace', 'back-to-super-admin', 'missing']) {
+      expect(searchPlaceholderFor(sectionId), sectionId).toBeNull()
     }
   })
 })
 
 describe('AppShell — topbar context', () => {
-  const renderShell = () => renderToStaticMarkup(
+  const renderShell = (overrides = {}) => renderToStaticMarkup(
     createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme: () => {} } },
       createElement(AppShell, {
         sections: [
@@ -162,6 +199,7 @@ describe('AppShell — topbar context', () => {
         onSignOut: () => {},
         onHome: () => {},
         context: 'Tổng quan',
+        ...overrides,
       })),
   )
 
@@ -171,5 +209,25 @@ describe('AppShell — topbar context', () => {
     expect(html).toContain('portal-topbar__actions"><span class="portal-topbar__role">Admin cấp chứng nhận</span>')
     // The role label is not used as the context when a section title is supplied.
     expect(html).not.toContain('portal-topbar__context">Admin cấp chứng nhận')
+  })
+
+  it('không render ô tìm kiếm khi search là null', () => {
+    const html = renderShell({ search: null, onSearchChange: null, searchPlaceholder: null })
+    expect(html).not.toContain('portal-search__input')
+  })
+
+  it('render đúng một ô tìm kiếm khi có search', () => {
+    const html = renderShell({
+      search: 'Nguyễn',
+      onSearchChange: () => {},
+      searchPlaceholder: 'Tìm sinh viên, mã chứng nhận…',
+    })
+    expect((html.match(/portal-search__input/g) || []).length).toBe(1)
+    expect(html).toContain('value="Nguyễn"')
+    expect(html).toContain('placeholder="Tìm sinh viên, mã chứng nhận…"')
+  })
+
+  it('ẩn ô tìm kiếm khi đang mở trang tài khoản', () => {
+    expect(read('components/AppShell.jsx')).toContain('search={accountPage ? null : search}')
   })
 })

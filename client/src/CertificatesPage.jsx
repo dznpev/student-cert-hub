@@ -12,7 +12,7 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate, search = '', onSearchChange: _onSearchChange = () => {} }) {
+export default function CertificatesPage({ cohorts, activities, students, participations, certificates, onProcessCertificate, search = '' }) {
   const [selectedIds, setSelectedIds] = useState([])
   const [snapshotCertificateId, setSnapshotCertificateId] = useState(null)
   const snapshotCertificate = certificates.find((item) => item.certificateId === snapshotCertificateId)

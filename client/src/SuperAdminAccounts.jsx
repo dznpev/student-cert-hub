@@ -10,7 +10,7 @@ const statuses = {
   ...studentAccountStatuses,
 }
 
-export default function SuperAdminAccounts({ students, managementAccounts, currentAccountId, onSaveManagementAccount, onUpdateAdminLock, onUpdateStudentLock, onIssueActivationCode, search = '', onSearchChange: _onSearchChange = () => {} }) {
+export default function SuperAdminAccounts({ students, managementAccounts, currentAccountId, onSaveManagementAccount, onUpdateAdminLock, onUpdateStudentLock, onIssueActivationCode, search = '' }) {
   const [editingAccount, setEditingAccount] = useState(null)
   const [role, setRole] = useState('')
   const [status, setStatus] = useState('')

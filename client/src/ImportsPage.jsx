@@ -32,7 +32,7 @@ const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
   timeZone: 'UTC',
 })
 
-export default function ImportsPage({ activities, cohorts, students, participations, importHistory, onImportStudents, onImportParticipations, search = '', onSearchChange: _onSearchChange = () => {} }) {
+export default function ImportsPage({ activities, cohorts, students, participations, importHistory, onImportStudents, onImportParticipations, search = '' }) {
   const [selectedBatchId, setSelectedBatchId] = useState(null)
   const [selectedRowStatus, setSelectedRowStatus] = useState('')
   const selectedBatch = importHistory.find((batch) => batch.batchId === selectedBatchId)

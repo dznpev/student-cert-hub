@@ -4,7 +4,7 @@ import { createStudentComparator } from './sortRecords.js'
 import { getStudentAccountStatus, studentAccountStatuses } from './studentAccountStatuses.js'
 import StudentProfileForm from './StudentProfileForm.jsx'
 
-export default function StudentsPage({ cohorts, students, onUpdateStudentActive, onUpdateStudentProfile, search = '', onSearchChange: _onSearchChange = () => {} }) {
+export default function StudentsPage({ cohorts, students, onUpdateStudentActive, onUpdateStudentProfile, search = '' }) {
   const [selectedStudentId, setSelectedStudentId] = useState(null)
   const [confirmProfileStatus, setConfirmProfileStatus] = useState(false)
   const [editingProfile, setEditingProfile] = useState(false)

@@ -11,7 +11,7 @@ import DashboardPage from './DashboardPage.jsx'
 import ImportsPage from './ImportsPage.jsx'
 import StudentPortal from './StudentPortal.jsx'
 import AppShell from './components/AppShell.jsx'
-import { createAdminSections, createSuperAdminSections, createSuperAdminWorkspaceSections } from './navigationSections.js'
+import { createAdminSections, createSuperAdminSections, createSuperAdminWorkspaceSections, searchPlaceholderFor } from './navigationSections.js'
 import { demoManagementAccounts } from './demoManagementAccounts.js'
 import { demoPassword } from './demoPassword.js'
 import { demoStudentActivation } from './demoStudentActivation.js'
@@ -30,19 +30,6 @@ import { sampleCertificateTemplates } from './sampleCertificateTemplates.js'
 import { queueCertificates, processCertificate } from './queueCertificates.js'
 import { compareCodesDescending } from './sortRecords.js'
 import { sampleAuditLogs } from './sampleAuditLogs.js'
-
-// §6.9.3: the topbar search is the current page's own search box, moved up.
-// Only the sections that had a search input keep one; the rest show no box.
-const searchPlaceholders = {
-  certificates: 'Tìm sinh viên, mã chứng nhận…',
-  students: 'Tìm sinh viên, mã chứng nhận…',
-  activities: 'Tìm mã hoặc tên hoạt động…',
-  audit: 'Tìm trong nhật ký hệ thống…',
-  templates: 'Tìm tên mẫu chứng nhận…',
-  accounts: 'Tìm tài khoản quản trị…',
-  imports: 'Tìm tên tệp đã nhập…',
-}
-const searchEnabledSections = ['certificates', 'students', 'activities', 'audit', 'templates', 'accounts', 'imports']
 
 // Nav items carry no page component, so the render logic resolves it by id.
 const pageComponents = {
@@ -124,8 +111,41 @@ export default function App() {
   const activeSection = findNavItem(adminSections, activeSectionId)
   const superAdminActiveSection = findNavItem(superAdminSections, superAdminSection)
   const ActivePage = pageComponents[activeSectionId]
-  const searchSectionId = inSuperAdmin && superAdminSection !== 'workspace' ? superAdminSection : activeSectionId
-  const searchPlaceholder = searchEnabledSections.includes(searchSectionId) ? searchPlaceholders[searchSectionId] : null
+  const inSuperAdminShell = inSuperAdmin && superAdminSection !== 'workspace'
+  const searchSectionId = inSuperAdminShell ? superAdminSection : activeSectionId
+  const searchPlaceholder = searchPlaceholderFor(searchSectionId)
+
+  // R58/R77: every section change goes through these handlers, which own the
+  // single pageSearch reset for the super-admin shell and the workspace shell.
+  function goToSection(sectionId) {
+    const targetsSuperAdminPage = ['accounts', 'templates', 'audit'].includes(sectionId)
+    if (inSuperAdminShell && targetsSuperAdminPage && sectionId === superAdminSection) return
+    if (!inSuperAdminShell && sectionId !== 'back-to-super-admin' && sectionId === activeSectionId) return
+    setPageSearch('')
+    if (inSuperAdminShell && targetsSuperAdminPage) {
+      setSuperAdminSection(sectionId)
+      return
+    }
+    if (sectionId === 'back-to-super-admin') {
+      setSuperAdminSection('accounts')
+      return
+    }
+    if (inSuperAdminShell) {
+      setActiveSectionId(sectionId)
+      setSuperAdminSection('workspace')
+      return
+    }
+    setActiveSectionId(sectionId)
+  }
+
+  function goHome() {
+    const superAdminHome = inSuperAdminShell || inSuperAdmin
+    const homeIsCurrent = superAdminHome ? superAdminSection === 'accounts' : activeSectionId === 'overview'
+    if (homeIsCurrent) return
+    setPageSearch('')
+    if (superAdminHome) setSuperAdminSection('accounts')
+    else setActiveSectionId('overview')
+  }
 
   function requestStudentPasswordReset(studentCode) {
     const student = students.find((item) => item.studentCode === studentCode)
@@ -257,14 +277,14 @@ export default function App() {
     if (!account || password !== (managementPasswords[account.accountId] ?? demoPassword)) return 'Tên đăng nhập hoặc mật khẩu mẫu không đúng.'
     if (account.disabled) return 'Tài khoản quản trị mẫu đang bị khóa.'
     setManagementAccountId(account.accountId)
-    setPageSearch('')
-    setActiveSectionId('overview')
+    goHome()
     setSuperAdminSection('accounts')
     window.location.hash = 'quan-tri-mau'
     return ''
   }
 
   function endManagementPreview() {
+    setPageSearch('')
     setManagementAccountId('')
     window.location.hash = 'sinh-vien'
   }
@@ -726,21 +746,12 @@ export default function App() {
     )
   }
 
-  if (inSuperAdmin && superAdminSection !== 'workspace') {
+  if (inSuperAdminShell) {
     return (
       <AppShell key="super-admin" sections={superAdminSections}
-        activeSectionId={superAdminSection} onSelectSection={(sectionId) => {
-          if (['accounts', 'templates', 'audit'].includes(sectionId)) {
-            if (sectionId !== superAdminSection) setPageSearch('')
-            setSuperAdminSection(sectionId)
-            return
-          }
-          setPageSearch('')
-          setActiveSectionId(sectionId)
-          setSuperAdminSection('workspace')
-        }} roleLabel="Super Admin · Bản xem thử" context={superAdminActiveSection?.title}
+        activeSectionId={superAdminSection} onSelectSection={goToSection} roleLabel="Super Admin · Bản xem thử" context={superAdminActiveSection?.title}
         accountIdentifier={managementAccount.username} onSignOut={endManagementPreview}
-        onHome={() => { if (superAdminSection !== 'accounts') setPageSearch(''); setSuperAdminSection('accounts') }} onChangePassword={changeManagementPassword}
+        onHome={goHome} onChangePassword={changeManagementPassword}
         search={searchPlaceholder ? pageSearch : null} onSearchChange={searchPlaceholder ? setPageSearch : null}
         searchPlaceholder={searchPlaceholder}>
         {superAdminSection === 'accounts' && (
@@ -765,28 +776,12 @@ export default function App() {
       key={inSuperAdmin ? 'super-admin' : 'admin'}
       sections={inSuperAdmin ? superAdminWorkspaceSections : adminSections}
       activeSectionId={activeSectionId}
-      onSelectSection={(sectionId) => {
-        if (sectionId === 'back-to-super-admin') {
-          setPageSearch('')
-          setSuperAdminSection('accounts')
-        } else {
-          if (sectionId !== activeSectionId) setPageSearch('')
-          setActiveSectionId(sectionId)
-        }
-      }}
+      onSelectSection={goToSection}
       roleLabel={inSuperAdmin ? 'Super Admin · Khu quản trị' : 'Admin cấp chứng nhận'}
       context={activeSection?.title}
       accountIdentifier={managementAccount?.username ?? 'admin'}
       onSignOut={endManagementPreview}
-      onHome={() => {
-        if (inSuperAdmin) {
-          setPageSearch('')
-          setSuperAdminSection('accounts')
-        } else {
-          if (activeSectionId !== 'overview') setPageSearch('')
-          setActiveSectionId('overview')
-        }
-      }}
+      onHome={goHome}
       onChangePassword={managementRole && previewLocation === '#quan-tri-mau' ? changeManagementPassword : null}
       search={searchPlaceholder ? pageSearch : null} onSearchChange={searchPlaceholder ? setPageSearch : null}
       searchPlaceholder={searchPlaceholder}

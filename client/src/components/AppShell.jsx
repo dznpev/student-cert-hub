@@ -87,9 +87,9 @@ export default function AppShell({
       <AppTopbar
         title="Quản lý chứng nhận sinh viên"
         context={accountPage ? ACCOUNT_TITLES[accountPage] : (context || roleLabel)}
-        search={search}
-        onSearchChange={onSearchChange}
-        searchPlaceholder={searchPlaceholder}
+        search={accountPage ? null : search}
+        onSearchChange={accountPage ? null : onSearchChange}
+        searchPlaceholder={accountPage ? null : searchPlaceholder}
       >
         <span className="portal-topbar__role">{roleLabel}</span>
         <AccountMenu
