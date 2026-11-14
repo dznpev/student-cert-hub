@@ -73,3 +73,58 @@ describe('component dùng chung', () => {
     expect(wide).toContain('portal-table portal-table--sticky-actions')
   })
 })
+
+describe('trang Tổng quan', () => {
+  const dashboardSrc = () => readFileSync(new URL('../src/DashboardPage.jsx', import.meta.url), 'utf-8')
+  const componentsCss = () => readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
+
+  it('DashboardPage dùng lưới 4 KPI mỗi hàng', () => {
+    const css = componentsCss()
+    expect(css).toMatch(/portal-metric-grid[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/)
+  })
+
+  it('DashboardPage không còn dùng rounded-4', () => {
+    const src = dashboardSrc()
+    expect(src).not.toContain('rounded-4')
+  })
+
+  it('DashboardPage dùng Hero, PortalPanel và ô chỉ số nội tuyến', () => {
+    const src = dashboardSrc()
+    expect(src).toContain('portal-hero')
+    expect(src).toContain('portal-metric-grid')
+    expect(src).toContain('PortalPanel')
+    // The legacy card is replaced inline for now; Task 8 imports the shared
+    // component from ./components/ instead, which this assertion still allows.
+    expect(src).not.toContain("from './PortalMetricCard.jsx'")
+  })
+
+  it('giữ đủ bảy chỉ số của trang Tổng quan', () => {
+    const src = dashboardSrc()
+    for (const label of [
+      'Sinh viên đang hoạt động',
+      'Hoạt động',
+      'Lượt tham gia',
+      'Sinh viên có lượt tham gia',
+      'Chứng nhận hiệu lực',
+      'Chứng nhận bị thu hồi',
+      'Lỗi tạo PDF',
+    ]) expect(src).toContain(label)
+  })
+
+  it('components.css mô tả hero, ô chỉ số và ba biến thể tone', () => {
+    const css = componentsCss()
+    for (const selector of [
+      '.portal-hero', '.portal-hero__date', '.portal-hero__title',
+      '.portal-hero__description', '.portal-hero__note',
+      '.portal-metric__icon', '.portal-metric__text', '.portal-metric__label',
+      '.portal-metric__value', '.portal-metric__note',
+      '.portal-metric--success', '.portal-metric--warn', '.portal-metric--danger',
+    ]) expect(css).toContain(selector)
+
+    for (const [tone, token] of [
+      ['success', '--ws-success-text'], ['warn', '--ws-warn-text'], ['danger', '--ws-accent-text'],
+    ]) {
+      expect(css).toMatch(new RegExp(`\\[data-bs-theme="dark"\\] \\.portal-metric--${tone}[^{]*\\{[^}]*${token}`))
+    }
+  })
+})

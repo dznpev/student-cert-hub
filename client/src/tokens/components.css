@@ -140,6 +140,146 @@
   margin-left: auto;
 }
 
+/* Dashboard (§6.4 KPI tiles, §6.8 hero) ----------------------------------
+ * The hero is the greeting panel used only on the two overview pages; every
+ * other page uses the surface-less `.portal-page-header` above. Tile icons are
+ * painted in the brand colour directly — never inside a pastel box (§11).
+ */
+
+.portal-hero {
+  margin-bottom: var(--ws-s7);
+  padding: var(--ws-s7) var(--ws-s8);
+  background-color: var(--ws-panel);
+  border-radius: var(--ws-r);
+  box-shadow: var(--ws-shadow-panel);
+}
+
+.portal-hero__date {
+  margin: 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-sub);
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.portal-hero__title {
+  margin: var(--ws-s1) 0 0;
+  color: var(--ws-hutech);
+  font-family: var(--ws-font-head);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.25px;
+}
+
+.portal-hero__description {
+  margin: var(--ws-s2) 0 0;
+  color: var(--ws-fg-2);
+  font-size: var(--ws-t-card);
+  line-height: 1.5;
+}
+
+.portal-hero__note {
+  display: inline-block;
+  margin: var(--ws-s3) 0 0;
+  padding: var(--ws-s1) var(--ws-s4);
+  color: var(--ws-hutech);
+  background-color: var(--ws-hutech-l);
+  border: 1px solid var(--ws-hutech-border);
+  border-radius: var(--ws-r-pill);
+  font-size: var(--ws-t-chip);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Four tiles per row (§6.4): the seven dashboard metrics flow 4 + 3. */
+.portal-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ws-s4);
+  padding: var(--ws-s5) var(--ws-s6);
+  margin-bottom: var(--ws-s7);
+}
+
+.portal-metric {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ws-s3);
+  min-width: 0;
+  padding: var(--ws-s6) var(--ws-s7);
+  background-color: var(--ws-tile);
+  border: 1px solid var(--ws-line);
+  border-radius: var(--ws-r-card);
+  transition: background-color var(--ws-dur-fast) ease, border-color var(--ws-dur-fast) ease;
+}
+
+.portal-metric:hover {
+  background-color: var(--ws-hutech-l);
+  border-color: var(--ws-hutech-border);
+}
+
+.portal-metric__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--ws-hutech);
+}
+
+.portal-metric__icon .portal-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.portal-metric__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ws-s1);
+  min-width: 0;
+}
+
+.portal-metric__label {
+  color: var(--ws-muted);
+  font-size: var(--ws-t-chip);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* 21px / 800 is the large-metric size fixed by §5.4 (not a scale step). */
+.portal-metric__value {
+  color: var(--ws-fg);
+  font-family: var(--ws-font-head);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.portal-metric__note {
+  color: var(--ws-control-idle);
+  font-size: var(--ws-t-rail);
+  line-height: 1.4;
+}
+
+/* Business tone applied to icon + number (§6.4). */
+.portal-metric--success :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-success);
+}
+
+.portal-metric--warn :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-warn);
+}
+
+.portal-metric--danger :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-accent);
+}
+
+/* Chart panel body: the shared panel body is flush (0 0 4px, §6.3), so the
+   chart's own padding lives here on the spacing scale. */
+.dashboard-panel__body {
+  padding: var(--ws-s6) var(--ws-s7) var(--ws-s7);
+}
+
 /* Status chip (§6.6, palette in §5.2) ------------------------------------- */
 
 .portal-chip {
@@ -452,6 +592,29 @@
 
 [data-bs-theme="dark"] .portal-panel__icon {
   color: var(--ws-hutech-text);
+}
+
+/* Hero and tile surfaces: blue TEXT on dark uses --ws-hutech-text (§5.1). */
+[data-bs-theme="dark"] .portal-hero__title,
+[data-bs-theme="dark"] .portal-hero__note {
+  color: var(--ws-hutech-text);
+}
+
+[data-bs-theme="dark"] .portal-metric__icon {
+  color: var(--ws-hutech-text);
+}
+
+/* Tone text needs the brightened variants on a dark tile (§5.2). */
+[data-bs-theme="dark"] .portal-metric--success :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-success-text);
+}
+
+[data-bs-theme="dark"] .portal-metric--warn :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-warn-text);
+}
+
+[data-bs-theme="dark"] .portal-metric--danger :is(.portal-metric__icon, .portal-metric__value) {
+  color: var(--ws-accent-text);
 }
 
 [data-bs-theme="dark"] .portal-panel__actions .btn-icon:focus-visible {
@@ -1175,6 +1338,11 @@
   .portal-topbar {
     padding-inline-start: calc(var(--ws-s10) + var(--ws-s7));
   }
+
+  /* Four tiles per row is too tight under the narrow shell (§13.4). */
+  .portal-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 575.98px) {
@@ -1199,6 +1367,11 @@
 
   .portal-main {
     padding: var(--ws-s7) var(--ws-s5);
+  }
+
+  .portal-metric-grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--ws-s5) var(--ws-s4);
   }
 
   .portal-footer {

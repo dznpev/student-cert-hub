@@ -1,4 +1,5 @@
-import PortalMetricCard from './PortalMetricCard.jsx'
+import PortalIcon from './PortalIcon.jsx'
+import PortalPanel from './components/PortalPanel.jsx'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { ThemeContext } from './themeContext.js'
 import {
@@ -17,11 +18,14 @@ Chart.defaults.font.family = "'Be Vietnam Pro', system-ui, -apple-system, sans-s
 
 const metricAppearance = [
   ['students'], ['activities'], ['participations'], ['profile'],
-  ['certificates', 'success'], ['revoked', 'warning'], ['error', 'danger'],
+  ['certificates', 'success'], ['revoked', 'warn'], ['error', 'danger'],
 ]
 
 const numberFormat = new Intl.NumberFormat('vi-VN')
 const percentFormat = new Intl.NumberFormat('vi-VN', { style: 'percent', maximumFractionDigits: 1 })
+const todayLabel = new Intl.DateTimeFormat('vi-VN', {
+  weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh',
+}).format(new Date())
 const emptyFilters = { selectedCohort: '', selectedActivity: '', fromDate: '', toDate: '', selectedCertificateStatus: '' }
 const formatDate = (value) => value.split('-').reverse().join('/')
 
@@ -48,7 +52,7 @@ const percentageLabels = {
   },
 }
 
-function DashboardChart({ title, type, labels, values, colors, percentages = false }) {
+function DashboardChart({ title, icon, type, labels, values, colors, percentages = false }) {
   const canvasRef = useRef(null)
   const { theme } = useContext(ThemeContext)
 
@@ -92,9 +96,8 @@ function DashboardChart({ title, type, labels, values, colors, percentages = fal
   }).join(', ')
 
   return (
-    <section className="card dashboard-card h-100">
-      <div className="card-body p-3 p-md-4">
-        <h2 className="h5 mb-3">{title}</h2>
+    <PortalPanel title={title} icon={<PortalIcon name={icon} />} className="h-100">
+      <div className="dashboard-panel__body">
         <div className={type === 'doughnut' ? 'dashboard-chart-with-legend' : undefined}>
           <div className="dashboard-chart">
             <canvas ref={canvasRef} role="img" aria-label={title + '. ' + summary} />
@@ -113,7 +116,7 @@ function DashboardChart({ title, type, labels, values, colors, percentages = fal
         </div>
         {type === 'doughnut' && values.every((value) => value === 0) && <p className="small text-body-secondary mt-3 mb-0">Chưa có chứng nhận trong phạm vi đã chọn.</p>}
       </div>
-    </section>
+    </PortalPanel>
   )
 }
 
@@ -186,10 +189,14 @@ export default function DashboardPage({ cohorts, students, activities, participa
 
   return (
     <>
-      <h1 className="page-title mb-2">Tổng quan</h1>
-      <p className="text-body-secondary mb-3">
-        Dữ liệu frontend trong phiên hiện tại · {dateSummary} · {activity ? `${activity.code} · ${activity.name}` : 'Tất cả hoạt động'} · {cohort ? cohort.cohortCode : 'Tất cả khóa'} · {statusLabel}
-      </p>
+      <header className="portal-hero">
+        <p className="portal-hero__date">{todayLabel}</p>
+        <h1 className="portal-hero__title">Tổng quan</h1>
+        <p className="portal-hero__description">
+          {dateSummary} · {activity ? `${activity.code} · ${activity.name}` : 'Tất cả hoạt động'} · {cohort ? cohort.cohortCode : 'Tất cả khóa'} · {statusLabel}
+        </p>
+        <p className="portal-hero__note">Dữ liệu frontend trong phiên hiện tại</p>
+      </header>
 
       <form className="mb-4" onSubmit={applyFilters} aria-label="Bộ lọc tổng quan">
       <fieldset disabled={exporting}>
@@ -248,13 +255,20 @@ export default function DashboardPage({ cohorts, students, activities, participa
       <p className="small text-body-secondary mb-4">Tổng sinh viên đang hoạt động chỉ lọc theo khóa. Số lượt tham gia và chứng nhận vẫn tính cả lịch sử. Khi chọn trạng thái chứng nhận, chỉ tính lượt có chứng nhận đang ở trạng thái đó.</p>
       {activityCount === 0 && <p className="alert alert-info" role="status">Không có hoạt động phù hợp trong phạm vi đã áp dụng.</p>}
 
-      <div className="row g-3 mb-4">
-        {metrics.map(([label, value, note], index) => (
-          <div className={index < 4 ? 'col-12 col-sm-6 col-xl-3' : 'col-12 col-sm-6 col-xl-4'} key={label}>
-            <PortalMetricCard label={label} value={numberFormat.format(value)} note={note}
-              icon={metricAppearance[index][0]} tone={metricAppearance[index][1]} />
-          </div>
-        ))}
+      <div className="portal-metric-grid">
+        {metrics.map(([label, value, note], index) => {
+          const [icon, tone] = metricAppearance[index]
+          return (
+            <div className={'portal-metric' + (tone ? ' portal-metric--' + tone : '')} key={label}>
+              <span className="portal-metric__icon" aria-hidden="true"><PortalIcon name={icon} /></span>
+              <div className="portal-metric__text">
+                <span className="portal-metric__label">{label}</span>
+                <span className="portal-metric__value">{numberFormat.format(value)}</span>
+                {note && <span className="portal-metric__note">{note}</span>}
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {cohortParticipation.length === 0 ? (
@@ -264,6 +278,7 @@ export default function DashboardPage({ cohorts, students, activities, participa
           <div className="col-12 col-xl-7">
             <DashboardChart
               title="Tỷ lệ tham gia của sinh viên đang hoạt động theo khóa"
+              icon="participations"
               type="bar"
               labels={cohortParticipation.map(({ cohortId }) => cohorts.find((item) => item.cohortId === cohortId)?.cohortCode ?? String(cohortId))}
               values={cohortParticipation.map((cohort) => cohort.studentCount === 0 ? 0 : cohort.uniqueStudents / cohort.studentCount * 100)}
@@ -274,6 +289,7 @@ export default function DashboardPage({ cohorts, students, activities, participa
           <div className="col-12 col-xl-5">
             <DashboardChart
               title="Chứng nhận theo trạng thái"
+              icon="certificates"
               type="doughnut"
               labels={certificateStatuses.map(({ label }) => label)}
               values={certificateStatuses.map(({ status }) => certificateCounts[status])}
