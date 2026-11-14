@@ -4,31 +4,11 @@ import AppSidebar from './AppSidebar.jsx'
 import AppTopbar from './AppTopbar.jsx'
 import PortalFooter from './PortalFooter.jsx'
 import PortalPanel from './PortalPanel.jsx'
-import PortalIcon from '../PortalIcon.jsx'
 import PasswordChangeForm from '../PasswordChangeForm.jsx'
+import { BACK_TO_SECTIONS, createAccountGroup } from '../accountNavigation.js'
 
-const BACK_TO_SECTIONS = 'back-to-sections'
 const ACCOUNT_PAGE_IDS = ['profile', 'account', 'password']
 const ACCOUNT_TITLES = { profile: 'Hồ sơ', account: 'Tài khoản', password: 'Đổi mật khẩu' }
-const DEFAULT_ACCOUNT_ITEMS = () => [
-  { id: 'profile', title: 'Hồ sơ', icon: <PortalIcon name="profile" /> },
-  { id: 'account', title: 'Tài khoản', icon: <PortalIcon name="account" /> },
-  { id: 'password', title: 'Đổi mật khẩu', icon: <PortalIcon name="password" /> },
-]
-
-// §6.9.1: the account sub-navigation lives in its own sidebar group instead of
-// replacing the whole navigation, so the user keeps a way back to every section.
-// R132: a portal whose own navigation already has "Hồ sơ" can drop the account
-// group's copy of it, so two visible items never share a label.
-function createAccountGroup(items = DEFAULT_ACCOUNT_ITEMS()) {
-  return {
-    group: 'Tài khoản',
-    items: [
-      ...items,
-      { id: BACK_TO_SECTIONS, title: 'Quay lại', icon: <PortalIcon name="back-to-super-admin" /> },
-    ],
-  }
-}
 
 // R131: the account panel is exported so its markup can be rendered on its own
 // in tests; the shell still decides when it appears (only once the account menu

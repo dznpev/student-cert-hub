@@ -8,7 +8,7 @@ import StudentLogin from './StudentLogin.jsx'
 import StudentOverview from './StudentOverview.jsx'
 import StudentProfileForm from './StudentProfileForm.jsx'
 import StudentRecords from './StudentRecords.jsx'
-import { studentAccountSections, studentSections } from './studentNavigation.js'
+import { studentAccountSections, studentPages, studentSections } from './studentNavigation.js'
 
 const withIcons = (items) => items.map(({ iconName, ...item }) => ({ ...item, icon: <PortalIcon name={iconName} /> }))
 

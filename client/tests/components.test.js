@@ -10,6 +10,9 @@ import PortalTable from '../src/components/PortalTable.jsx'
 import ThemeToggleButton from '../src/components/ThemeToggleButton.jsx'
 import AppShell, { AccountPanel } from '../src/components/AppShell.jsx'
 import AppSidebar from '../src/components/AppSidebar.jsx'
+import PortalIcon from '../src/PortalIcon.jsx'
+import StudentPortal from '../src/StudentPortal.jsx'
+import { createAccountGroup } from '../src/accountNavigation.js'
 import { studentAccountSections, studentPages, studentSections } from '../src/studentNavigation.js'
 import DashboardPage from '../src/DashboardPage.jsx'
 import { auditOutcomes } from '../src/auditOutcomes.js'
@@ -682,21 +685,23 @@ describe('cổng sinh viên và màn hình độc lập', () => {
     expect(portal).toContain('<dt>Phiên</dt><dd>Xem thử</dd>')
   })
 
-  // R132: with "Hồ sơ" already in the student navigation, the account group
-  // publishes only the pages that have no section of their own.
-  it('sidebar sinh viên không trùng nhãn và nhóm tài khoản chỉ có Tài khoản, Đổi mật khẩu', () => {
+  // R132/R138: the group must be the one AppShell really builds — its default
+  // admin items and its appended "Quay lại" — not a copy assembled in the test.
+  it('sidebar sinh viên render nhóm tài khoản thật của AppShell, không trùng nhãn', () => {
     expect(studentAccountSections.map(({ title }) => title)).toEqual(['Tài khoản', 'Đổi mật khẩu'])
-    // The admin shell keeps the full group (R132 defaults).
-    expect(read('AppShell.jsx')).toContain('function createAccountGroup(items = DEFAULT_ACCOUNT_ITEMS())')
+    // AppShell consumes the group builder instead of defining its own.
+    expect(read('AppShell.jsx')).toContain("import { BACK_TO_SECTIONS, createAccountGroup } from '../accountNavigation.js'")
 
-    const accountGroup = {
-      group: 'Tài khoản',
-      items: [...studentAccountSections, { id: 'back-to-sections', title: 'Quay lại' }],
-    }
+    const withIconNodes = (items) => items.map(({ iconName, ...item }) => ({
+      ...item, icon: createElement(PortalIcon, { name: iconName }),
+    }))
     const html = renderToStaticMarkup(createElement(AppSidebar, {
       navigationId: 'student-navigation',
       navigationLabel: 'Điều hướng chính',
-      sections: [...studentSections, accountGroup],
+      sections: [
+        ...studentSections.map((section) => ({ ...section, items: withIconNodes(section.items) })),
+        createAccountGroup(withIconNodes(studentAccountSections)),
+      ],
       activeSectionId: 'overview',
       onSelectSection: () => {},
       onHome: () => {},
@@ -706,6 +711,10 @@ describe('cổng sinh viên và màn hình độc lập', () => {
       'Tài khoản', 'Đổi mật khẩu', 'Quay lại'])
     expect(labels.filter((label) => label === 'Hồ sơ')).toHaveLength(1)
     expect(new Set(labels).size).toBe(labels.length)
+
+    // The admin path is the same builder with no argument: unchanged.
+    expect(createAccountGroup().items.map(({ title }) => title))
+      .toEqual(['Hồ sơ', 'Tài khoản', 'Đổi mật khẩu', 'Quay lại'])
   })
 
   // R134: every "Hồ sơ" in the student UI opens the detailed profile section,
@@ -753,5 +762,34 @@ describe('cổng sinh viên và màn hình độc lập', () => {
     const portal = pageSrc('StudentPortal.jsx')
     expect(portal).toContain('sections={student ? studentSections.map(')
     expect(portal).toContain('accountIdentifier={student?.studentCode}')
+  })
+
+  // R137: the build tolerates a free variable and oxlint does not enable
+  // no-undef, so an actual render is the only gate that catches a binding that
+  // moved out of the module (the studentPages regression).
+  it('render cổng sinh viên với bộ prop tối thiểu (smoke test)', () => {
+    const noop = () => {}
+    const html = renderToStaticMarkup(
+      createElement(ThemeContext.Provider, { value: { theme: 'light', toggleTheme() {} } },
+        createElement(StudentPortal, {
+          students: [],
+          cohorts: [],
+          activities: [],
+          participations: [],
+          certificates: [],
+          notifications: [],
+          studentPasswords: {},
+          onChangePassword: noop,
+          onUpdateEmail: noop,
+          onReadNotification: noop,
+          onManagementSignIn: noop,
+          onActivateDemoStudent: noop,
+          onVerifyDemoActivation: noop,
+          onRequestReset: noop,
+          onResetPassword: noop,
+        })))
+
+    expect(html).toContain('portal-auth-card')
+    expect(html).toContain('Chọn loại tài khoản để tiếp tục đăng nhập mẫu.')
   })
 })
