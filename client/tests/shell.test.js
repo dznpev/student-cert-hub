@@ -91,3 +91,18 @@ describe('shell mới — hành vi render', () => {
     expect((html.match(/portal-nav__badge/g) || []).length).toBe(1)
   })
 })
+
+describe('App.jsx — nhóm điều hướng', () => {
+  it('App.jsx định nghĩa section theo nhóm', () => {
+    const src = read('App.jsx')
+    expect(src).toMatch(/group:\s*'Nghiệp vụ'/)
+    expect(src).toMatch(/group:\s*'Hệ thống'/)
+    expect(src).toMatch(/group:\s*'Quản trị'/)
+  })
+
+  it('mục Nhật ký hệ thống chỉ xuất hiện một lần mỗi shell', () => {
+    const src = read('App.jsx')
+    const occurrences = (src.match(/id:\s*'audit'/g) || []).length
+    expect(occurrences).toBeLessThanOrEqual(3)
+  })
+})

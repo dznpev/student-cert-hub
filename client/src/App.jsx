@@ -1,7 +1,6 @@
 import StudentAccountLink from './StudentAccountLink.jsx'
 import { getStudentAccountStatus } from './studentAccountStatuses.js'
 import { useState, useSyncExternalStore } from 'react'
-import AdminLayout from './AdminLayout.jsx'
 import ActivitiesPage from './ActivitiesPage.jsx'
 import AuditLogsPage from './AuditLogsPage.jsx'
 import CertificateTemplatesPage from './CertificateTemplatesPage.jsx'
@@ -11,6 +10,7 @@ import CohortsPage from './CohortsPage.jsx'
 import DashboardPage from './DashboardPage.jsx'
 import ImportsPage from './ImportsPage.jsx'
 import StudentPortal from './StudentPortal.jsx'
+import AppShell from './components/AppShell.jsx'
 import { demoManagementAccounts } from './demoManagementAccounts.js'
 import { demoPassword } from './demoPassword.js'
 import { demoStudentActivation } from './demoStudentActivation.js'
@@ -30,27 +30,17 @@ import { queueCertificates, processCertificate } from './queueCertificates.js'
 import { compareCodesDescending } from './sortRecords.js'
 import { sampleAuditLogs } from './sampleAuditLogs.js'
 
-const sections = [
-  { id: 'overview', title: 'Tổng quan', page: DashboardPage },
-  { id: 'cohorts', title: 'Khóa tuyển sinh', page: CohortsPage },
-  { id: 'students', title: 'Sinh viên', page: StudentsPage },
-  { id: 'activities', title: 'Hoạt động', page: ActivitiesPage },
-  { id: 'participations', title: 'Lượt tham gia', page: ParticipationsPage },
-  { id: 'certificates', title: 'Chứng nhận', page: CertificatesPage },
-  { id: 'imports', title: 'Nhập dữ liệu Excel', page: ImportsPage },
-  { id: 'audit', title: 'Nhật ký hệ thống', page: AuditLogsPage },
-]
-
-const superAdminSections = [
-  { id: 'workspace', title: 'Khu quản trị' },
-  { id: 'accounts', title: 'Quản lý tài khoản' },
-  { id: 'templates', title: 'Mẫu chứng nhận' },
-  { id: 'audit', title: 'Nhật ký hệ thống' },
-]
-const superAdminWorkspaceSections = [
-  { id: 'back-to-super-admin', title: 'Về Super Admin' },
-  ...sections,
-]
+// Nav items carry no page component, so the render logic resolves it by id.
+const pageComponents = {
+  overview: DashboardPage,
+  cohorts: CohortsPage,
+  students: StudentsPage,
+  activities: ActivitiesPage,
+  participations: ParticipationsPage,
+  certificates: CertificatesPage,
+  imports: ImportsPage,
+  audit: AuditLogsPage,
+}
 
 function isDemoCodeExpired(request) {
   return Date.now() >= request.expiresAt
@@ -104,8 +94,34 @@ export default function App() {
   const [activities, setActivities] = useState(sampleActivities)
   const [auditLogs, setAuditLogs] = useState(sampleAuditLogs)
   const [notifications, setNotifications] = useState([])
-  const activeSection = sections.find((section) => section.id === activeSectionId)
-  const ActivePage = activeSection.page
+  const pendingCount = participations.filter(({ approvalStatus }) => approvalStatus === 'Pending').length
+  const businessItems = [
+    { id: 'overview', title: 'Tổng quan' },
+    { id: 'cohorts', title: 'Khóa tuyển sinh' },
+    { id: 'students', title: 'Sinh viên' },
+    { id: 'activities', title: 'Hoạt động' },
+    { id: 'participations', title: 'Lượt tham gia', badge: pendingCount },
+    { id: 'certificates', title: 'Chứng nhận' },
+    { id: 'imports', title: 'Nhập dữ liệu Excel' },
+  ]
+  const adminSections = [
+    { group: 'Nghiệp vụ', items: businessItems },
+    { group: 'Hệ thống', items: [{ id: 'audit', title: 'Nhật ký hệ thống' }] },
+  ]
+  const superAdminSections = [
+    { group: 'Quản trị', items: [
+      { id: 'accounts', title: 'Quản lý tài khoản' },
+      { id: 'templates', title: 'Mẫu chứng nhận' },
+    ] },
+    { group: 'Nghiệp vụ', items: businessItems },
+    { group: 'Hệ thống', items: [{ id: 'audit', title: 'Nhật ký hệ thống' }] },
+  ]
+  const superAdminWorkspaceSections = [
+    { group: 'Quản trị', items: [{ id: 'back-to-super-admin', title: 'Về Super Admin' }] },
+    ...adminSections,
+  ]
+  const activeSection = businessItems.find((section) => section.id === activeSectionId)
+  const ActivePage = pageComponents[activeSectionId]
 
   function requestStudentPasswordReset(studentCode) {
     const student = students.find((item) => item.studentCode === studentCode)
@@ -707,13 +723,18 @@ export default function App() {
 
   if (inSuperAdmin && superAdminSection !== 'workspace') {
     return (
-      <AdminLayout key="super-admin" sections={superAdminSections}
+      <AppShell key="super-admin" sections={superAdminSections}
         activeSectionId={superAdminSection} onSelectSection={(sectionId) => {
-          if (sectionId === 'workspace') setActiveSectionId('overview')
-          setSuperAdminSection(sectionId)
+          if (['accounts', 'templates', 'audit'].includes(sectionId)) {
+            setSuperAdminSection(sectionId)
+            return
+          }
+          setActiveSectionId(sectionId)
+          setSuperAdminSection('workspace')
         }} roleLabel="Super Admin · Bản xem thử"
-        accountIdentifier={managementAccount.username} onDemoSignOut={endManagementPreview}
-        onGoHome={() => setSuperAdminSection('accounts')} onChangePassword={changeManagementPassword}>
+        accountIdentifier={managementAccount.username} onSignOut={endManagementPreview}
+        onHome={() => setSuperAdminSection('accounts')} onChangePassword={changeManagementPassword}
+        search={null} onSearchChange={null} searchPlaceholder={null}>
         {superAdminSection === 'accounts' && (
           <SuperAdminAccounts students={students} managementAccounts={managementAccounts} currentAccountId={managementAccountId} onSaveManagementAccount={saveManagementAccount}
             onUpdateAdminLock={updateAdminLock} onUpdateStudentLock={updateStudentLock}
@@ -725,14 +746,14 @@ export default function App() {
             onUpdateStatus={updateCertificateTemplateStatus} />
         )}
         {superAdminSection === 'audit' && <AuditLogsPage auditLogs={auditLogs} />}
-      </AdminLayout>
+      </AppShell>
     )
   }
 
   return (
-    <AdminLayout
+    <AppShell
       key={inSuperAdmin ? 'super-admin' : 'admin'}
-      sections={inSuperAdmin ? superAdminWorkspaceSections : sections}
+      sections={inSuperAdmin ? superAdminWorkspaceSections : adminSections}
       activeSectionId={activeSectionId}
       onSelectSection={(sectionId) => {
         if (sectionId === 'back-to-super-admin') setSuperAdminSection('accounts')
@@ -740,9 +761,10 @@ export default function App() {
       }}
       roleLabel={inSuperAdmin ? 'Super Admin · Khu quản trị' : 'Admin cấp chứng nhận'}
       accountIdentifier={managementAccount?.username ?? 'admin'}
-      onDemoSignOut={endManagementPreview}
-      onGoHome={() => { if (inSuperAdmin) setSuperAdminSection('accounts'); else setActiveSectionId('overview') }}
+      onSignOut={endManagementPreview}
+      onHome={() => { if (inSuperAdmin) setSuperAdminSection('accounts'); else setActiveSectionId('overview') }}
       onChangePassword={managementRole && previewLocation === '#quan-tri-mau' ? changeManagementPassword : null}
+      search={null} onSearchChange={null} searchPlaceholder={null}
     >
       {ActivePage ? (
         <ActivePage
@@ -778,6 +800,6 @@ export default function App() {
           </div>
         </>
       )}
-    </AdminLayout>
+    </AppShell>
   )
 }
