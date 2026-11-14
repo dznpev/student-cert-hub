@@ -107,14 +107,21 @@ describe('component dùng chung', () => {
     expect(css).not.toContain('rounded-4')
   })
 
-  // R150: a blanket transition shorthand would replace a component's own
-  // transition — the mobile sidebar's `transform` slid not at all — so the
-  // theme fade may only name Bootstrap chrome, never a `.portal-*` surface.
-  it('khối chuyển cảnh theme không đè lên transition của component', () => {
+  // R150/R158: the theme fade must cover the portal surfaces that replaced the
+  // legacy `.card`, but a blanket shorthand here would replace a component's
+  // own transition — the mobile sidebar's `transform` slid not at all.
+  it('khối chuyển cảnh theme phủ bề mặt portal nhưng không đè transition riêng', () => {
     const css = readFileSync(new URL('../src/tokens/components.css', import.meta.url), 'utf-8')
     const block = /@media \(prefers-reduced-motion: no-preference\) \{([\s\S]*?)\n\}/.exec(css)?.[1] ?? ''
     expect(block, 'thiếu khối chuyển cảnh theme').toContain('transition:')
-    expect(block).not.toContain('.portal-')
+    for (const surface of ['.portal-panel', '.portal-topbar', '.portal-footer', '.portal-account-menu', '.portal-notifications']) {
+      expect(block, surface).toMatch(new RegExp(`${surface.replace('.', '\\.')}(?![\\w-])`))
+    }
+    for (const own of ['.portal-sidebar__panel', '.portal-metric', '.portal-nav__item',
+      '.portal-account-menu__trigger', '.portal-account-menu__item', '.portal-bell',
+      '.portal-table tbody tr', '.btn', '.fld']) {
+      expect(block, own).not.toContain(own)
+    }
   })
 
   it('ô chỉ số tự reset margin của <dl> và hai <dd> do Bootstrap reboot đặt vào', () => {
@@ -350,6 +357,26 @@ describe('trang Tổng quan', () => {
   it('DashboardPage không còn dùng rounded-4', () => {
     const src = dashboardSrc()
     expect(src).not.toContain('rounded-4')
+  })
+
+  // R157: the dashboard memoises its chart inputs on `activities`/`cohorts`, so
+  // App must hand it stable identities. Sorting inline in JSX rebuilt both
+  // arrays on every App render and destroyed/recreated both canvases.
+  it('App.jsx truyền mảng đã sắp xếp qua useMemo cho trang Tổng quan', () => {
+    const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf-8')
+    expect(app).toMatch(/const sortedActivities = useMemo\(/)
+    expect(app).toMatch(/const sortedCohorts = useMemo\(/)
+    expect(app).toContain('activities={sortedActivities}')
+    expect(app).toContain('cohorts={sortedCohorts}')
+    expect(app).not.toMatch(/activities=\{\[\.\.\.activities\]\.sort/)
+    expect(app).not.toMatch(/cohorts=\{\[\.\.\.cohorts\]\.sort/)
+  })
+
+  // R157: the redraw must still be theme-driven after the input stabilisation.
+  it('biểu đồ vẫn vẽ lại khi data-bs-theme đổi', () => {
+    const src = dashboardSrc()
+    expect(src).toContain("attributeFilter: ['data-bs-theme']")
+    expect(src).toMatch(/\[type,\s*labels,\s*values,\s*tones,\s*percentages,\s*themeTick\]/)
   })
 
   it('DashboardPage dùng Hero, PortalPanel và ô chỉ số nội tuyến', () => {

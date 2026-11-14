@@ -108,6 +108,17 @@ export default function App() {
   const adminSections = useMemo(() => createAdminSections(pendingCount), [pendingCount])
   const superAdminSections = useMemo(() => createSuperAdminSections(pendingCount), [pendingCount])
   const superAdminWorkspaceSections = useMemo(() => createSuperAdminWorkspaceSections(pendingCount), [pendingCount])
+  // Props are compared by identity in the pages that derive data from them
+  // (the dashboard memoises its charts on `activities`/`cohorts`), so the
+  // sorted copies must not be rebuilt on unrelated App re-renders (R157).
+  const sortedActivities = useMemo(
+    () => [...activities].sort((left, right) => compareCodesDescending(left.code, right.code)),
+    [activities],
+  )
+  const sortedCohorts = useMemo(
+    () => [...cohorts].sort((left, right) => compareCodesDescending(left.cohortCode, right.cohortCode)),
+    [cohorts],
+  )
   const activeSection = findNavItem(adminSections, activeSectionId)
   const superAdminActiveSection = findNavItem(superAdminSections, superAdminSection)
   const ActivePage = pageComponents[activeSectionId]
@@ -804,10 +815,10 @@ export default function App() {
           onImportParticipations={importParticipationPreview}
           importHistory={importHistory}
           onImportStudents={importStudentPreview}
-          activities={[...activities].sort((left, right) => compareCodesDescending(left.code, right.code))}
+          activities={sortedActivities}
           onAddActivity={addActivity}
           onUpdateActivity={updateActivity}
-          cohorts={[...cohorts].sort((left, right) => compareCodesDescending(left.cohortCode, right.cohortCode))}
+          cohorts={sortedCohorts}
           onAddCohort={addCohort}
           onUpdateCohort={updateCohort}
         />

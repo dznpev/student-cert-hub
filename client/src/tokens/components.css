@@ -978,13 +978,17 @@ select.fld {
   }
 }
 
-/* Theme-change fade for the Bootstrap chrome the token bridge recolours.
-   Component surfaces carry their own transitions and are deliberately not
-   listed: this shorthand would otherwise replace theirs — the mobile
-   sidebar's `transform` in particular (R150). */
+/* Theme-change fade for every surface the token bridge recolours: Bootstrap
+   chrome plus the portal surfaces that replaced the legacy `.card` (R158).
+   Selectors that declare their own transition are deliberately absent —
+   `.portal-metric`, `.portal-nav__item`, `.portal-bell`, `.portal-sidebar__panel`,
+   the account-menu trigger/item, `.btn`, `.fld` and table rows — because this
+   shorthand would replace theirs. Listing the sidebar here is what killed its
+   mobile slide (R150). */
 @media (prefers-reduced-motion: no-preference) {
   :is(body, .card, .form-control, .form-select, .text-body-secondary,
-    .table > :not(caption) > * > *) {
+    .table > :not(caption) > * > *, .portal-panel, .portal-topbar,
+    .portal-footer, .portal-account-menu, .portal-notifications) {
     transition: background-color var(--ws-dur-slow) ease, color var(--ws-dur-slow) ease,
       border-color var(--ws-dur-slow) ease, box-shadow var(--ws-dur-slow) ease;
   }
